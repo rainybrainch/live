@@ -1,0 +1,989 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RAINYBRAIN Radio Studio</title>
+<style>
+:root {
+  --bg:         #030610;
+  --line:       rgba(255,255,255,.11);
+  --text:       #f0f4ff;
+  --muted:      rgba(220,230,255,.52);
+  --accent:     #8fa8ff;
+  --host-c:     #5eb8f5;
+  --guest-c:    #f097c8;
+  --font-ui:    "Yu Gothic","Hiragino Kaku Gothic ProN","Noto Sans JP",system-ui,sans-serif;
+  color-scheme: dark;
+}
+* { box-sizing:border-box; }
+html,body { margin:0; width:100%; height:100%; overflow:hidden; background:var(--bg); color:var(--text); font-family:var(--font-ui); }
+button,input,select,textarea { font:inherit; }
+button {
+  min-height:36px; border:1px solid var(--line); border-radius:8px;
+  background:rgba(255,255,255,.07); color:var(--text); padding:7px 10px; cursor:pointer;
+  transition:background .12s;
+}
+button:hover { background:rgba(255,255,255,.13); }
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+button.primary { border-color:rgba(143,168,255,.5); background:rgba(143,168,255,.16); }
+button.good    { border-color:rgba(94,184,245,.5);  background:rgba(94,184,245,.16); }
+button.warn    { border-color:rgba(240,151,200,.5); background:rgba(240,151,200,.14); }
+input,select,textarea { width:100%; border:1px solid var(--line); border-radius:8px; background:rgba(0,0,0,.3); color:var(--text); padding:9px 10px; outline:none; }
+textarea { min-height:70px; resize:vertical; line-height:1.55; }
+
+/* ══════════════════════════════
+   STAGE
+══════════════════════════════ */
+.stage {
+  position:fixed; inset:0;
+  background:
+    linear-gradient(90deg, rgba(143,168,255,.04) 1px, transparent 1px) 0 0 / 56px 56px,
+    linear-gradient(0deg,  rgba(143,168,255,.03) 1px, transparent 1px) 0 0 / 56px 56px,
+    radial-gradient(ellipse at 15% 50%, rgba(94,184,245,.18), transparent 36rem),
+    radial-gradient(ellipse at 85% 50%, rgba(240,151,200,.15), transparent 36rem),
+    radial-gradient(ellipse at 50% 100%, rgba(143,168,255,.1), transparent 30rem),
+    linear-gradient(180deg, #040812 0%, #030610 50%, #060310 100%);
+  overflow:hidden;
+}
+
+/* スキャンライン（雰囲気用） */
+.stage::before {
+  content:"";
+  position:absolute; inset:0;
+  background:repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(143,168,255,.018) 2px, rgba(143,168,255,.018) 4px);
+  pointer-events:none; z-index:0;
+}
+
+/* ══════════════════════════════
+   BRAND
+══════════════════════════════ */
+.brand {
+  position:absolute; top:22px; left:26px; z-index:10;
+  display:flex; align-items:center; gap:10px;
+  padding:9px 13px; border:1px solid rgba(143,168,255,.2); border-radius:10px;
+  background:rgba(3,6,16,.72); backdrop-filter:blur(14px);
+  box-shadow:0 4px 24px rgba(0,0,0,.32), inset 0 1px 0 rgba(255,255,255,.07);
+}
+.mark {
+  width:32px; height:32px; display:grid; place-items:center; border-radius:8px;
+  background:linear-gradient(135deg, var(--host-c), var(--accent));
+  color:#03060e; font-weight:900; font-size:12px; letter-spacing:.04em;
+  box-shadow:0 2px 10px rgba(94,184,245,.3);
+}
+.brand strong { display:block; font-size:13px; line-height:1; letter-spacing:.04em; }
+.brand span   { display:block; color:var(--muted); font-size:10px; font-weight:700; margin-top:2px; letter-spacing:.1em; }
+
+/* ══════════════════════════════
+   TIMER + ON AIR
+══════════════════════════════ */
+.timer-wrap {
+  position:absolute; top:22px; left:50%; transform:translateX(-50%); z-index:10;
+  display:flex; flex-direction:column; align-items:center; gap:6px;
+}
+.on-air {
+  display:none; align-items:center; gap:5px;
+  padding:3px 10px; border-radius:999px;
+  background:rgba(255,60,60,.14); border:1px solid rgba(255,80,80,.45);
+  color:#ff6060; font-size:10px; font-weight:900; letter-spacing:.14em;
+}
+.on-air-dot {
+  width:7px; height:7px; border-radius:999px; background:#ff4040;
+  animation:blink 1s ease-in-out infinite;
+}
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.25} }
+body.recording .on-air { display:flex; }
+
+.timer-display {
+  display:flex; align-items:center; gap:10px;
+  padding:9px 18px; border:1px solid rgba(255,255,255,.12); border-radius:999px;
+  background:rgba(3,6,16,.72); backdrop-filter:blur(14px);
+  box-shadow:0 4px 20px rgba(0,0,0,.3), inset 0 1px 0 rgba(255,255,255,.06);
+  transition:border-color .3s, box-shadow .3s;
+}
+.timer-display.running {
+  border-color:rgba(94,184,245,.4);
+  box-shadow:0 4px 24px rgba(94,184,245,.12), inset 0 1px 0 rgba(255,255,255,.08);
+}
+.timer-time {
+  font-size:clamp(20px,1.8vw,32px); font-weight:900;
+  font-variant-numeric:tabular-nums; letter-spacing:.08em;
+  transition:color .3s;
+}
+.timer-display.running .timer-time { color:var(--host-c); text-shadow:0 0 18px rgba(94,184,245,.35); }
+.timer-label { font-size:10px; font-weight:900; letter-spacing:.12em; color:var(--muted); text-transform:uppercase; }
+.timer-btn {
+  width:28px; height:28px; min-height:28px; padding:0;
+  display:grid; place-items:center; border-radius:8px; font-size:13px;
+  border-color:rgba(143,168,255,.3); color:var(--muted);
+}
+.timer-btn.running {
+  background:linear-gradient(180deg,#c8d8ff,var(--accent));
+  border-color:var(--accent); color:#030810;
+  box-shadow:0 0 14px rgba(143,168,255,.28);
+}
+
+/* ══════════════════════════════
+   BACK LINK
+══════════════════════════════ */
+.back-link {
+  position:absolute; top:22px; right:26px; z-index:10;
+  display:flex; align-items:center; gap:7px;
+  padding:8px 13px; border:1px solid rgba(255,255,255,.11); border-radius:8px;
+  background:rgba(3,6,16,.72); backdrop-filter:blur(14px);
+  color:var(--muted); text-decoration:none; font-size:11px; font-weight:900;
+  letter-spacing:.06em; white-space:nowrap; transition:color .15s, border-color .15s;
+}
+.back-link:hover { color:var(--text); border-color:rgba(143,168,255,.4); }
+
+/* ══════════════════════════════
+   CHARACTER ZONES
+══════════════════════════════ */
+.host-zone, .guest-zone {
+  position:absolute; bottom:5vh; width:clamp(200px,25vw,380px); height:76vh;
+  display:grid; place-items:end center;
+  transition:filter .2s;
+}
+.host-zone  { left:3vw; }
+.guest-zone { right:3vw; }
+
+/* ゾーン背景グロー */
+.host-zone::before, .guest-zone::before {
+  content:""; position:absolute; inset:-20px; border-radius:24px; pointer-events:none;
+  opacity:.4; transition:opacity .3s, box-shadow .3s;
+}
+.host-zone::before  { background:radial-gradient(ellipse at 50% 60%, rgba(94,184,245,.12), transparent 65%); }
+.guest-zone::before { background:radial-gradient(ellipse at 50% 60%, rgba(240,151,200,.10), transparent 65%); }
+.host-zone.speaking::before  { opacity:1; box-shadow:0 0 60px rgba(94,184,245,.1) inset; }
+.guest-zone.speaking::before { opacity:1; box-shadow:0 0 60px rgba(240,151,200,.1) inset; }
+
+.char-placeholder {
+  width:100%; height:100%;
+  display:grid; place-items:center; text-align:center;
+  border:1px dashed rgba(255,255,255,.12); border-radius:16px;
+  color:rgba(255,255,255,.28); font-weight:900; letter-spacing:.08em;
+  font-size:clamp(13px,1.3vw,20px);
+  background:rgba(255,255,255,.018);
+}
+.guest-zone iframe {
+  position:absolute; inset:0; width:100%; height:100%;
+  border:0; border-radius:16px; border:1px dashed rgba(255,255,255,.12);
+}
+.guest-zone.has-embed .char-placeholder { display:none; }
+
+/* ネームタグ */
+.name-tag {
+  position:absolute; bottom:14px; left:50%; transform:translateX(-50%);
+  display:flex; align-items:center; gap:8px; padding:7px 16px;
+  border-radius:999px; white-space:nowrap; font-weight:900;
+  font-size:clamp(12px,1.1vw,17px); letter-spacing:.04em;
+  backdrop-filter:blur(12px);
+  transition:box-shadow .2s, border-color .2s;
+}
+.host-zone  .name-tag { background:rgba(3,12,24,.68); border:1px solid rgba(94,184,245,.25); color:var(--text); }
+.guest-zone .name-tag { background:rgba(24,3,16,.68); border:1px solid rgba(240,151,200,.22); color:var(--text); }
+.host-zone.speaking  .name-tag { border-color:rgba(94,184,245,.7);  box-shadow:0 0 18px rgba(94,184,245,.2); }
+.guest-zone.speaking .name-tag { border-color:rgba(240,151,200,.7); box-shadow:0 0 18px rgba(240,151,200,.2); }
+
+.voice-bars {
+  display:flex; align-items:center; gap:2px; height:14px;
+}
+.voice-bar {
+  width:3px; border-radius:2px; background:var(--bar-c, var(--accent));
+  transition:height .08s ease;
+  height:4px;
+}
+.host-zone  .voice-bar { --bar-c: var(--host-c); }
+.guest-zone .voice-bar { --bar-c: var(--guest-c); }
+
+/* ══════════════════════════════
+   CENTER DIVIDER（2人の間）
+══════════════════════════════ */
+.center-divider {
+  position:absolute; left:50%; top:10vh; bottom:130px;
+  transform:translateX(-50%);
+  width:1px;
+  background:linear-gradient(180deg, transparent, rgba(143,168,255,.18) 20%, rgba(143,168,255,.18) 80%, transparent);
+  pointer-events:none; z-index:1;
+}
+.center-divider::before {
+  content:"×";
+  position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+  color:rgba(143,168,255,.35); font-size:14px; font-weight:900;
+  letter-spacing:.02em;
+  background:var(--bg); padding:4px 6px;
+}
+
+/* ══════════════════════════════
+   COMMENTS（右サイド）
+══════════════════════════════ */
+.comments {
+  position:absolute;
+  right:calc(clamp(200px,25vw,380px) + 3vw + 24px);
+  top:90px; bottom:130px;
+  width:min(340px,22vw);
+  overflow:hidden; pointer-events:none; z-index:2;
+}
+.comment {
+  --user-color: var(--accent);
+  position:absolute; left:0; right:0; bottom:0;
+  padding:10px 12px; border-radius:10px;
+  background:rgba(255,255,255,.068);
+  border-left:3px solid var(--user-color);
+  animation:rise var(--life,16s) linear forwards;
+  text-shadow:0 1px 3px rgba(0,0,0,.65);
+  backdrop-filter:blur(8px);
+  box-shadow:0 4px 16px rgba(0,0,0,.22);
+}
+.comment.super {
+  background:linear-gradient(90deg,rgba(143,168,255,.2),rgba(255,255,255,.06));
+}
+.comment .user { color:var(--user-color); font-size:clamp(11px,1vw,14px); font-weight:900; margin-right:6px; }
+.comment .tag  { color:var(--muted); font-size:10px; font-weight:900; margin-right:6px; }
+.comment .text { font-size:clamp(14px,1.35vw,19px); line-height:1.5; font-weight:760; overflow-wrap:anywhere; }
+@keyframes rise {
+  0%   { opacity:0; transform:translateY(28px) scale(.96); }
+  9%   { opacity:1; transform:translateY(0) scale(1); }
+  82%  { opacity:1; }
+  100% { opacity:0; transform:translateY(calc(-100vh + 50px)); }
+}
+
+/* ══════════════════════════════
+   TITLE CARD
+══════════════════════════════ */
+.title-card {
+  position:absolute; left:32px; bottom:114px; width:min(500px,40vw);
+  padding:14px 18px;
+  border-left:4px solid var(--accent);
+  border-top:1px solid rgba(255,255,255,.1);
+  border-right:1px solid rgba(255,255,255,.06);
+  border-bottom:1px solid rgba(255,255,255,.06);
+  border-radius:8px;
+  background:linear-gradient(100deg, rgba(3,6,20,.9), rgba(3,6,20,.48));
+  backdrop-filter:blur(14px);
+  box-shadow:0 8px 32px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.06);
+}
+.title-card::before {
+  content:"";
+  position:absolute; left:-4px; top:10%; bottom:10%;
+  width:4px; border-radius:999px;
+  background:linear-gradient(180deg, var(--host-c), var(--accent), var(--guest-c));
+  animation:borderFlow 3s ease-in-out infinite alternate;
+}
+@keyframes borderFlow {
+  0%   { opacity:.6; }
+  100% { opacity:1; filter:brightness(1.2); }
+}
+.kicker {
+  color:var(--accent); font-size:11px; font-weight:900;
+  letter-spacing:.14em; margin-bottom:7px; text-transform:uppercase;
+  display:flex; align-items:center; gap:8px;
+}
+.kicker::before {
+  content:""; width:6px; height:6px; border-radius:999px;
+  background:var(--accent); box-shadow:0 0 6px var(--accent);
+  flex-shrink:0;
+}
+.card-title { font-size:clamp(18px,2.1vw,32px); line-height:1.15; font-weight:900; overflow-wrap:anywhere; }
+.card-sub   { margin-top:6px; color:rgba(220,230,255,.66); font-size:clamp(11px,1.05vw,15px); line-height:1.5; }
+
+/* ══════════════════════════════
+   CAPTION
+══════════════════════════════ */
+.caption {
+  position:absolute; left:50%; bottom:20px; transform:translateX(-50%);
+  width:min(900px,calc(100vw - 52px)); min-height:52px;
+  display:flex; align-items:center; gap:12px;
+  padding:12px 22px;
+  border:1px solid rgba(143,168,255,.16); border-radius:10px;
+  background:rgba(3,5,16,.76); backdrop-filter:blur(14px);
+  box-shadow:0 6px 28px rgba(0,0,0,.3), inset 0 1px 0 rgba(143,168,255,.08);
+  z-index:6;
+}
+.caption::before {
+  content:""; flex-shrink:0; width:3px; align-self:stretch;
+  border-radius:999px; background:linear-gradient(180deg, var(--host-c), var(--guest-c));
+}
+.caption-text {
+  flex:1; text-align:center;
+  font-size:clamp(17px,1.8vw,27px); line-height:1.35; font-weight:900;
+  text-shadow:0 2px 4px rgba(0,0,0,.65);
+}
+
+/* ══════════════════════════════
+   DOCK
+══════════════════════════════ */
+.dock {
+  position:fixed; right:14px; top:14px;
+  width:min(420px,calc(100vw - 28px)); max-height:calc(100vh - 28px); overflow:auto;
+  border:1px solid rgba(255,255,255,.11); border-radius:12px;
+  background:linear-gradient(180deg,rgba(255,255,255,.052),rgba(255,255,255,.016)), rgba(5,8,20,.94);
+  backdrop-filter:blur(18px); z-index:20;
+  box-shadow:0 28px 80px rgba(0,0,0,.48), inset 0 1px 0 rgba(255,255,255,.06);
+}
+body.panel-hidden .dock { display:none; }
+.dock-head {
+  display:flex; align-items:center; gap:9px;
+  padding:12px 14px; border-bottom:1px solid var(--line);
+  background:linear-gradient(90deg,rgba(143,168,255,.12),transparent 55%),rgba(255,255,255,.032);
+}
+.dock-title { flex:1; font-size:14px; font-weight:900; }
+.dock-title span { display:block; color:var(--muted); font-size:10px; margin-top:2px; }
+.dock-body  { padding:12px; display:grid; gap:11px; }
+.section {
+  border:1px solid rgba(255,255,255,.09); border-radius:9px;
+  background:linear-gradient(180deg,rgba(255,255,255,.048),rgba(255,255,255,.022));
+  padding:12px; display:grid; gap:10px;
+}
+.section-title { display:flex; align-items:center; gap:8px; font-size:13px; font-weight:900; }
+.step {
+  width:22px; height:22px; display:grid; place-items:center;
+  border-radius:999px; background:var(--accent); color:#030810; font-size:12px; font-weight:900;
+}
+.grid2 { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.actions { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.actions .wide { grid-column:1/-1; }
+.actions button { min-height:44px; font-weight:900; }
+.field { display:grid; gap:5px; }
+.field label { color:var(--muted); font-size:11px; font-weight:900; }
+.field input,.field select,.field textarea { min-height:40px; }
+.log { color:var(--muted); font-size:11px; line-height:1.5; border:1px solid var(--line); border-radius:8px; padding:8px; background:rgba(0,0,0,.22); max-height:80px; overflow:auto; }
+.status-text { color:var(--muted); font-size:11px; font-weight:800; }
+details { border:1px solid rgba(255,255,255,.09); border-radius:9px; background:rgba(0,0,0,.14); }
+summary { cursor:pointer; padding:10px; color:var(--muted); font-size:12px; font-weight:900; }
+details .inner { padding:0 10px 10px; display:grid; gap:10px; }
+
+/* ── Transcript plan toggle ── */
+.transcript-plan-row { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.plan-btn {
+  position:relative; display:flex; flex-direction:column; align-items:center;
+  gap:3px; padding:9px 8px; border-radius:9px; font-size:12px; font-weight:900;
+  border:1px solid var(--line); background:rgba(255,255,255,.05); color:var(--muted);
+  cursor:pointer; transition:all .15s;
+}
+.plan-btn.active { border-color:rgba(94,184,245,.5); background:rgba(94,184,245,.14); color:var(--text); }
+.plan-btn.pro    { border-color:rgba(200,144,216,.3); color:rgba(200,144,216,.6); cursor:default; }
+.plan-tag  { font-size:9px; font-weight:700; letter-spacing:.08em; opacity:.7; }
+.plan-soon {
+  position:absolute; top:-7px; right:-4px;
+  background:rgba(200,144,216,.22); border:1px solid rgba(200,144,216,.4);
+  color:#c890d8; font-size:9px; font-weight:900; letter-spacing:.06em;
+  padding:2px 6px; border-radius:999px;
+}
+.pro-placeholder {
+  display:grid; gap:10px; padding:14px;
+  border:1px dashed rgba(200,144,216,.25); border-radius:10px;
+  background:rgba(200,144,216,.04); text-align:center;
+}
+.pro-placeholder-icon  { font-size:1.8rem; line-height:1; }
+.pro-placeholder-title { font-size:13px; font-weight:900; color:rgba(200,144,216,.8); }
+.pro-placeholder-desc  { font-size:11px; color:var(--muted); line-height:1.6; }
+.pro-placeholder-key label { color:rgba(200,144,216,.6); }
+.pro-placeholder-key input { opacity:.4; }
+
+/* ── OPEN TAB ── */
+.open-tab {
+  position:fixed; right:14px; bottom:14px; z-index:40;
+  display:none; align-items:center; gap:8px;
+  min-height:44px; padding:0 15px;
+  border:1px solid rgba(143,168,255,.28); border-radius:10px;
+  background:rgba(3,6,20,.88); color:var(--text);
+  box-shadow:0 14px 36px rgba(0,0,0,.46); backdrop-filter:blur(16px);
+  font-weight:900; font-size:13px;
+}
+body.panel-hidden .open-tab { display:inline-flex; }
+.open-tab-dot {
+  width:8px; height:8px; border-radius:999px; background:var(--accent);
+  box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 18%,transparent);
+}
+
+@media (max-width:900px) {
+  .host-zone,.guest-zone { width:38vw; }
+  .comments { width:calc(100vw - 24px); right:12px; top:auto; bottom:140px; height:38vh; }
+  .title-card { left:12px; right:12px; width:auto; bottom:92px; }
+  .caption { bottom:10px; width:calc(100vw - 20px); }
+}
+</style>
+</head>
+<body>
+<main class="stage" id="stage">
+
+  <!-- ブランド -->
+  <div class="brand">
+    <div class="mark">RB</div>
+    <div><strong>RAINYBRAIN</strong><span id="brandMode">RADIO</span></div>
+  </div>
+
+  <!-- タイマー + ON AIR -->
+  <div class="timer-wrap">
+    <div class="on-air"><span class="on-air-dot"></span>ON AIR</div>
+    <div class="timer-display" id="timerDisplay">
+      <div>
+        <div class="timer-time" id="timerTime">--:--</div>
+        <div class="timer-label" id="timerLabel">REC TIMER</div>
+      </div>
+      <button class="timer-btn" id="stageTimerToggle" type="button">▶</button>
+      <button class="timer-btn" id="stageTimerReset"  type="button">↺</button>
+    </div>
+  </div>
+
+  <!-- 戻るリンク -->
+  <a class="back-link" id="backLink" href="index.html">📋 トピック管理</a>
+
+  <!-- センター分割線 -->
+  <div class="center-divider"></div>
+
+  <!-- ホスト（左） -->
+  <div class="host-zone" id="hostZone">
+    <div class="char-placeholder" id="hostPlaceholder">HOST V</div>
+    <div class="name-tag" id="hostTag">
+      <div class="voice-bars" id="hostBars">
+        <div class="voice-bar"></div><div class="voice-bar"></div>
+        <div class="voice-bar"></div><div class="voice-bar"></div>
+        <div class="voice-bar"></div>
+      </div>
+      <span id="hostLabel">HOST</span>
+    </div>
+  </div>
+
+  <!-- ゲスト（右） -->
+  <div class="guest-zone" id="guestZone">
+    <div class="char-placeholder" id="guestPlaceholder">GUEST V<br><small style="font-size:.7em;opacity:.6">VDO.Ninja URL を設定</small></div>
+    <iframe id="guestFrame" allow="camera;microphone;autoplay;display-capture" style="display:none"></iframe>
+    <div class="name-tag" id="guestTag">
+      <div class="voice-bars" id="guestBars">
+        <div class="voice-bar"></div><div class="voice-bar"></div>
+        <div class="voice-bar"></div><div class="voice-bar"></div>
+        <div class="voice-bar"></div>
+      </div>
+      <span id="guestLabel">GUEST</span>
+    </div>
+  </div>
+
+  <!-- コメント（右サイド） -->
+  <div class="comments" id="commentStream"></div>
+
+  <!-- タイトルカード -->
+  <section class="title-card">
+    <div class="kicker" id="kicker">RAINYBRAIN RADIO</div>
+    <div class="card-title" id="cardTitle">番組タイトル</div>
+    <div class="card-sub"   id="cardSub">2人でしゃべる</div>
+  </section>
+
+  <!-- 字幕 -->
+  <div class="caption" id="captionWrap">
+    <div class="caption-text" id="caption">「マイク開始」で文字起こしが始まります</div>
+  </div>
+
+</main>
+
+<!-- コントロールドック -->
+<aside id="dock" class="dock">
+  <div class="dock-head">
+    <div class="dock-title">Radio Studio<span>RAINYBRAIN 2人ラジオ収録</span></div>
+    <button id="hideDock" type="button">閉じる</button>
+    <button id="micBtn" class="good" type="button">マイク開始</button>
+  </div>
+  <div class="dock-body">
+
+    <section class="section">
+      <div class="section-title"><span class="step">1</span>番組設定</div>
+      <div class="field">
+        <label for="programTitle">タイトル</label>
+        <input id="programTitle" value="RAINYBRAIN Radio">
+      </div>
+      <div class="grid2">
+        <div class="field"><label for="hostName">ホスト名</label><input id="hostName" value="自分"></div>
+        <div class="field"><label for="guestName">ゲスト名</label><input id="guestName" value="ゲスト"></div>
+      </div>
+      <div class="field">
+        <label for="guestUrl">ゲスト映像 URL（VDO.Ninja）</label>
+        <input id="guestUrl" placeholder="https://vdo.ninja/?view=...">
+      </div>
+      <div class="actions">
+        <button id="applyBtn"      class="primary wide" type="button">ステージに反映</button>
+        <button id="copyObsBtn"    type="button">OBS URL</button>
+        <button id="fullscreenBtn" type="button">全画面</button>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-title"><span class="step">2</span>収録タイマー</div>
+      <div class="grid2">
+        <div class="field"><label for="timerMinutes">分</label><input id="timerMinutes" type="number" min="1" max="240" value="60"></div>
+        <div class="field">
+          <label for="timerPreset">プリセット</label>
+          <select id="timerPreset">
+            <option value="60">60分</option><option value="30">30分</option>
+            <option value="15">15分</option><option value="90">90分</option>
+          </select>
+        </div>
+      </div>
+      <div class="actions">
+        <button id="timerSetBtn"   type="button">反映</button>
+        <button id="timerStartBtn" class="good"  type="button">開始</button>
+        <button id="timerResetBtn" type="button">リセット</button>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-title"><span class="step">3</span>文字起こし</div>
+
+      <!-- 方式切り替え -->
+      <div class="transcript-plan-row">
+        <button class="plan-btn active" id="planFreeBtn"  type="button">無料<span class="plan-tag">Web Speech</span></button>
+        <button class="plan-btn pro"    id="planProBtn"   type="button">Pro<span class="plan-tag">Whisper API</span><span class="plan-soon">準備中</span></button>
+      </div>
+
+      <!-- 無料プランUI -->
+      <div id="planFreeArea">
+        <div class="actions">
+          <button id="clearTranscriptBtn" type="button">字幕クリア</button>
+          <button id="commentBtn" class="warn" type="button">コメント1件</button>
+        </div>
+        <div class="field">
+          <label for="manualTranscript">話題を手入力（Enter で反映）</label>
+          <input id="manualTranscript" placeholder="例: 自分らしさって何だろう">
+        </div>
+        <div id="transcriptLog" class="log">まだ文字起こしはありません。</div>
+      </div>
+
+      <!-- Proプランプレースホルダー -->
+      <div id="planProArea" style="display:none">
+        <div class="pro-placeholder">
+          <div class="pro-placeholder-icon">🎙</div>
+          <div class="pro-placeholder-title">Whisper API 連携</div>
+          <div class="pro-placeholder-desc">高精度な音声認識。話者識別・ノイズ除去対応。<br>Pro プランで利用可能になります。</div>
+          <div class="pro-placeholder-key">
+            <label for="whisperApiKey">OpenAI API Key（準備中）</label>
+            <input id="whisperApiKey" type="password" placeholder="sk-..." disabled>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <details>
+      <summary>コメント人格設定</summary>
+      <div class="inner">
+        <div class="field">
+          <label for="personaSheetUrl">人格 CSV / Google Sheets URL</label>
+          <input id="personaSheetUrl" value="https://docs.google.com/spreadsheets/d/1YNQUnDv18WsMm7H84Ytg3lIgvWmetLZ3bqyMm3RCgkI/export?format=csv">
+        </div>
+        <div class="grid2">
+          <div class="field">
+            <label for="commentSpeed">コメント速度</label>
+            <select id="commentSpeed">
+              <option value="normal">ふつう</option>
+              <option value="slow">ゆっくり</option>
+              <option value="fast">多め</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="commentEngine">生成方式</label>
+            <select id="commentEngine">
+              <option value="template">テンプレート</option>
+              <option value="gemini">Gemini（要サーバー）</option>
+            </select>
+          </div>
+        </div>
+        <div class="field"><label for="geminiProxyUrl">Gemini 中継 URL</label><input id="geminiProxyUrl" value="http://127.0.0.1:8788/gemini-comment"></div>
+        <div class="actions">
+          <button id="syncPersonaBtn" class="primary" type="button">人格同期</button>
+        </div>
+        <div class="status-text" id="personaStatus">未同期</div>
+      </div>
+    </details>
+
+  </div>
+</aside>
+
+<button class="open-tab" id="openDock" type="button">
+  <span class="open-tab-dot"></span>設定
+</button>
+
+<script>
+(() => {
+  "use strict";
+
+  const STORAGE_KEY         = "rainybrain_radio_studio_v2";
+  const SHARED_PERSONA_KEY  = "rainybrain_personas_v1";
+  const SHARED_COMMENT_KEY  = "rainybrain_comment_log_v1";
+  const PARAMS              = new URLSearchParams(location.search);
+  const SpeechRecognition   = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const $                   = id => document.getElementById(id);
+
+  const epFromUrl    = PARAMS.has("ep")           ? parseInt(PARAMS.get("ep"), 10) || null : null;
+  const titleFromUrl = PARAMS.has("programTitle") ? decodeURIComponent(PARAMS.get("programTitle")) : null;
+
+  const state = {
+    programTitle:"RAINYBRAIN Radio", hostName:"自分", guestName:"ゲスト", guestUrl:"",
+    personaSheetUrl:"https://docs.google.com/spreadsheets/d/1YNQUnDv18WsMm7H84Ytg3lIgvWmetLZ3bqyMm3RCgkI/export?format=csv",
+    geminiProxyUrl:"http://127.0.0.1:8788/gemini-comment",
+    commentEngine:"template", commentSpeed:"normal",
+    timer:{ durationSec:3600, remainingSec:3600, running:false, endAt:0 },
+    transcript:[]
+  };
+  Object.assign(state, load());
+  if (titleFromUrl) state.programTitle = titleFromUrl;
+  state.timer = normTimer(state.timer);
+
+  if (epFromUrl) $("kicker").textContent = `RAINYBRAIN RADIO · EP.${String(epFromUrl).padStart(3,"0")}`;
+
+  let personas      = loadPersonas();
+  let recognition   = null, listening   = false;
+  let audioCtx      = null, meterTimer  = null, micStream = null;
+  let commentTimer  = null, sheetSyncing = null;
+  let transcriptBuf = "", flushTimer = null, lastKey = "";
+
+  init();
+
+  function init() {
+    hydrate(); bind(); applyStage(); startClock(); scheduleComment(); syncPersonas(true);
+  }
+
+  function hydrate() {
+    ["programTitle","hostName","guestName","guestUrl","personaSheetUrl","geminiProxyUrl","commentEngine","commentSpeed"]
+      .forEach(id => { if ($(id)) $(id).value = state[id] || ""; });
+    $("timerMinutes").value = Math.max(1, Math.round(state.timer.durationSec / 60));
+    $("timerPreset").value  = String(Math.max(1, Math.round(state.timer.durationSec / 60)));
+  }
+
+  function bind() {
+    ["programTitle","hostName","guestName","guestUrl","personaSheetUrl","geminiProxyUrl","commentEngine","commentSpeed"]
+      .forEach(id => { if($(id)) $(id).addEventListener("input", () => { state[id]=$(id).value; save(); applyStage(); }); });
+    $("applyBtn")?.addEventListener("click", applyStage);
+    $("copyObsBtn")?.addEventListener("click", copyObsUrl);
+    $("fullscreenBtn")?.addEventListener("click", toggleFullscreen);
+    $("timerPreset")?.addEventListener("change", () => { $("timerMinutes").value=$("timerPreset").value; setTimer(); });
+    $("timerSetBtn")?.addEventListener("click", setTimer);
+    $("timerStartBtn")?.addEventListener("click", toggleTimer);
+    $("timerResetBtn")?.addEventListener("click", resetTimer);
+    $("stageTimerToggle")?.addEventListener("click", toggleTimer);
+    $("stageTimerReset")?.addEventListener("click", resetTimer);
+    $("micBtn")?.addEventListener("click", toggleMic);
+    $("clearTranscriptBtn")?.addEventListener("click", () => {
+      state.transcript=[]; save();
+      $("transcriptLog").textContent="まだ文字起こしはありません。";
+      $("caption").textContent="「マイク開始」で文字起こしが始まります";
+    });
+    $("commentBtn")?.addEventListener("click", () => spawnComment());
+    $("manualTranscript")?.addEventListener("keydown", e => {
+      if (e.key==="Enter") { const v=$("manualTranscript").value.trim(); if(!v) return; $("manualTranscript").value=""; pushTranscript(v); spawnComment(); e.preventDefault(); }
+    });
+    $("syncPersonaBtn")?.addEventListener("click", () => syncPersonas(false));
+    $("hideDock")?.addEventListener("click", () => document.body.classList.add("panel-hidden"));
+    $("openDock")?.addEventListener("click", () => document.body.classList.remove("panel-hidden"));
+    $("planFreeBtn")?.addEventListener("click", () => {
+      $("planFreeBtn").classList.add("active");
+      $("planProBtn").classList.remove("active");
+      $("planFreeArea").style.display = "";
+      $("planProArea").style.display  = "none";
+    });
+    $("planProBtn")?.addEventListener("click", () => {
+      $("planProBtn").classList.add("active");
+      $("planFreeBtn").classList.remove("active");
+      $("planFreeArea").style.display = "none";
+      $("planProArea").style.display  = "";
+    });
+    document.addEventListener("fullscreenchange", () => {
+      if($("fullscreenBtn")) $("fullscreenBtn").textContent = document.fullscreenElement ? "全画面解除" : "全画面";
+    });
+  }
+
+  function applyStage() {
+    $("cardTitle").textContent = state.programTitle || "RAINYBRAIN Radio";
+    $("cardSub").textContent   = [state.hostName, state.guestName].filter(Boolean).join(" × ") || "2人でしゃべる";
+    $("hostLabel").textContent = state.hostName || "HOST";
+    $("guestLabel").textContent= state.guestName|| "GUEST";
+    $("hostPlaceholder").textContent = (state.hostName||"HOST") + " V";
+
+    const gf = $("guestFrame"), gz = $("guestZone");
+    if (state.guestUrl) {
+      if (gf.src !== state.guestUrl) gf.src = state.guestUrl;
+      gf.style.display=""; gz.classList.add("has-embed");
+    } else { gz.classList.remove("has-embed"); gf.style.display="none"; }
+  }
+
+  /* ── Timer ── */
+  function normTimer(t) {
+    const dur = Math.max(60, parseInt(t?.durationSec||3600)||3600);
+    const end = parseInt(t?.endAt||0)||0;
+    const run = Boolean(t?.running && end>Date.now());
+    const rem = run ? Math.max(0,Math.ceil((end-Date.now())/1000)) : Math.max(0,Math.min(dur,parseInt(t?.remainingSec||dur)||dur));
+    return { durationSec:dur, remainingSec:rem, running:run, endAt:run?end:0 };
+  }
+  function setTimer() {
+    const m = Math.max(1,Math.min(240,parseInt($("timerMinutes").value||"60")||60));
+    state.timer={durationSec:m*60,remainingSec:m*60,running:false,endAt:0}; save(); updateClock();
+  }
+  function toggleTimer() {
+    state.timer=normTimer(state.timer);
+    if (state.timer.running) { state.timer.running=false; state.timer.endAt=0; }
+    else {
+      if(state.timer.remainingSec<=0) state.timer.remainingSec=state.timer.durationSec;
+      state.timer.running=true; state.timer.endAt=Date.now()+state.timer.remainingSec*1000;
+    }
+    save(); updateClock();
+  }
+  function resetTimer() {
+    state.timer=normTimer(state.timer);
+    state.timer.running=false; state.timer.endAt=0; state.timer.remainingSec=state.timer.durationSec;
+    save(); updateClock();
+  }
+  function updateClock() {
+    state.timer=normTimer(state.timer);
+    if(state.timer.running&&state.timer.remainingSec<=0){state.timer.running=false;state.timer.endAt=0;}
+    $("timerTime").textContent  = fmt(state.timer.remainingSec);
+    $("timerLabel").textContent = state.timer.running ? "REC RUNNING" : "REC TIMER";
+    $("timerDisplay").classList.toggle("running", state.timer.running);
+    document.body.classList.toggle("recording", state.timer.running);
+    if($("timerStartBtn")) $("timerStartBtn").textContent = state.timer.running?"停止":"開始";
+    if($("stageTimerToggle")) {
+      $("stageTimerToggle").textContent=state.timer.running?"Ⅱ":"▶";
+      $("stageTimerToggle").classList.toggle("running",state.timer.running);
+    }
+    save();
+  }
+  function fmt(sec) {
+    const n=Math.max(0,parseInt(sec||0)||0),h=Math.floor(n/3600),m=Math.floor((n%3600)/60),s=n%60;
+    return h>0?`${h}:${p(m)}:${p(s)}`:`${p(m)}:${p(s)}`;
+  }
+  function p(n){return String(n).padStart(2,"0");}
+  function startClock(){updateClock();setInterval(updateClock,1000);}
+  function toggleFullscreen(){document.fullscreenElement?document.exitFullscreen?.():$("stage").requestFullscreen?.();}
+
+  /* ── Transcript ── */
+  function pushTranscript(text) {
+    const clean=text.replace(/\s+/g," ").replace(/([。、！？!?])\s+/g,"$1").replace(/^(えー|えっと|あの|その|まあ)\s+/g,"").trim();
+    if(!clean) return;
+    const key=clean.replace(/[\s、。,.!！?？]/g,"");
+    if(!key||key===lastKey) return;
+    lastKey=key;
+    state.transcript.unshift({text:clean,at:Date.now()});
+    state.transcript=state.transcript.slice(0,40); save();
+    $("caption").textContent=clean;
+    $("transcriptLog").textContent=state.transcript.slice(0,10).map(x=>x.text).join("\n");
+    if(clean.length>=14) setTimeout(spawnComment,900);
+  }
+  function queueTranscript(text){
+    transcriptBuf=[transcriptBuf,text].filter(Boolean).join(" ").replace(/\s+/g," ").trim();
+    clearTimeout(flushTimer);
+    flushTimer=setTimeout(()=>{const t=transcriptBuf;transcriptBuf="";if(t)pushTranscript(t);},820);
+  }
+  function recentText(){return state.transcript.slice(0,6).map(x=>x.text).reverse().join("\n").slice(-1200);}
+
+  /* ── Mic + Voice Visualizer ── */
+  function toggleMic() {
+    if(!SpeechRecognition){setStatus("Chrome/Edgeの音声認識が必要です");return;}
+    if(listening){
+      listening=false; try{recognition.stop();}catch{} stopMeter();
+      $("micBtn").textContent="マイク開始"; $("micBtn").className="good"; return;
+    }
+    recognition=new SpeechRecognition();
+    recognition.lang="ja-JP"; recognition.continuous=true; recognition.interimResults=true;
+    recognition.onresult=e=>{
+      let fin="",int="";
+      for(let i=e.resultIndex;i<e.results.length;i++){
+        const t=e.results[i][0]?.transcript||"";
+        if(e.results[i].isFinal)fin+=t; else int+=t;
+      }
+      if(int) $("caption").textContent=int;
+      if(fin.trim()) queueTranscript(fin);
+    };
+    recognition.onerror=()=>{if(listening)setTimeout(()=>{try{recognition.start();}catch{}},1200);};
+    recognition.onend  =()=>{if(listening)setTimeout(()=>{try{recognition.start();}catch{}},700);};
+    recognition.start(); listening=true;
+    $("micBtn").textContent="マイク停止"; $("micBtn").className="warn";
+    startMeter();
+  }
+
+  async function startMeter(){
+    try{
+      micStream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true}});
+      audioCtx=new AudioContext();
+      const an=audioCtx.createAnalyser(); audioCtx.createMediaStreamSource(micStream).connect(an);
+      an.fftSize=64; const buf=new Uint8Array(an.frequencyBinCount);
+      const hostBars =[...$("hostBars").querySelectorAll(".voice-bar")];
+      const guestBars=[...$("guestBars").querySelectorAll(".voice-bar")];
+      meterTimer=setInterval(()=>{
+        an.getByteFrequencyData(buf);
+        const avg=buf.reduce((a,b)=>a+b,0)/buf.length/255;
+        const lvl=Math.min(1,avg*3.2);
+        // ホストバー
+        hostBars.forEach((b,i)=>{
+          const h=4+Math.round(lvl*(4+i*2)*(0.7+Math.random()*.6));
+          b.style.height=h+"px";
+        });
+        // ゲストバーは軽めに揺らす（ダミー）
+        guestBars.forEach((b,i)=>{
+          const h=4+Math.round(Math.random()*(2+i));
+          b.style.height=h+"px";
+        });
+        // スピーキング状態
+        $("hostZone").classList.toggle("speaking",lvl>0.08);
+      },80);
+    }catch{}
+  }
+
+  function stopMeter(){
+    clearInterval(meterTimer);
+    [...document.querySelectorAll(".voice-bar")].forEach(b=>b.style.height="4px");
+    $("hostZone").classList.remove("speaking");
+    if(audioCtx){audioCtx.close().catch(()=>{});audioCtx=null;}
+    if(micStream){micStream.getTracks().forEach(t=>t.stop());micStream=null;}
+  }
+
+  /* ── Comments ── */
+  function spawnComment(superChat=false){
+    const p=pickPersona(), text=buildComment(p);
+    addComment(text,p.name,p.color,superChat);
+    saveCommentLog({user:p.name,text});
+  }
+
+  function addComment(text,name,color,superChat=false){
+    const node=document.createElement("article");
+    node.className=`comment${superChat?" super":""}`;
+    node.style.setProperty("--user-color",color||"#8fa8ff");
+    node.style.setProperty("--life",`${text.length>30?18:14}s`);
+    node.innerHTML=`<span class="user"></span><span class="tag"></span><span class="text"></span>`;
+    node.querySelector(".user").textContent=`@${name}`;
+    node.querySelector(".tag").textContent=superChat?"Super":"AI";
+    node.querySelector(".text").textContent=text;
+    $("commentStream").append(node);
+    node.addEventListener("animationend",()=>node.remove());
+  }
+
+  function pickPersona(){
+    const list=personas.length?personas:defaultPersonas(), text=recentText();
+    return list.map(p=>({p,s:relevance(p,text)+Math.random()*.5})).sort((a,b)=>b.s-a.s)
+      .slice(0,Math.min(list.length,6))[Math.floor(Math.random()*Math.min(list.length,6))].p;
+  }
+
+  function relevance(p,text){
+    const hay=[p.name,p.roleType,p.reactionPattern,p.catchphrase,...(p.words||[]),...(p.interests||[])].join(" ");
+    let s=0;
+    text.split(/[\s、。,]+/).filter(w=>w.length>=2).forEach(w=>{if(hay.includes(w))s+=2;});
+    [[/AI|自動|実装/i,/AI|開発|実装/],[/創作|物語|作品/i,/創作|物語|哲学/],
+     [/笑|ネタ|ツッコミ/i,/お笑い|ネタ/],[/経済|投資|収益/i,/投資|経済/],
+     [/孤独|比較|感情/i,/孤独|感情|共感/]]
+    .forEach(([a,b])=>{if(a.test(text)&&b.test(hay))s+=4;});
+    return s;
+  }
+
+  function buildComment(p){
+    if(p.catchphrase&&Math.random()<.38) return p.catchphrase.slice(0,40);
+    const text=recentText(), kw=text.split(/[\s、。,]+/).filter(w=>w.length>=2)[0]||(p.words||[])[0]||"今の流れ";
+    const role=p.roleType||"共感勢";
+    const map={
+      "応援勢":[`${kw}いい流れ`,"その調子でいける","ここが見どころ"],
+      "質問勢":[`${kw}ってどういうこと？`,"今のところもう少し聞きたい"],
+      "共感勢":[`${kw}わかる`,"今の空気いいな","この話好きだなあ","深い"],
+      "懐疑勢":[`${kw}ほんと？`,"そこ少し違和感ある"],
+      "知識勢":[`${kw}の見方おもしろい`,"考察したくなる","そこ深掘りしてほしい"],
+      "ネタ勢":["それは草",`${kw}クセ強い`,"天才すぎる"],
+      "妄想勢":["ここから化けそう",`${kw}の可能性ある`,"この先広がるな"],
+      "初心者勢":["なるほど〜",`${kw}勉強になる`,"初めて聞いた"],
+      "開発者勢":[`${kw}実装できそう`,"仕組みとして面白い"],
+      "投資家勢":[`${kw}大化けある`,"その期待値ありそう"]
+    };
+    return (map[role]||map["共感勢"])[Math.floor(Math.random()*(map[role]||map["共感勢"]).length)].slice(0,40);
+  }
+
+  function intervalRange(){
+    if(state.commentSpeed==="fast") return [3000,7000];
+    if(state.commentSpeed==="slow") return [10000,18000];
+    return [6000,12000];
+  }
+  function scheduleComment(){
+    clearTimeout(commentTimer);
+    const [mn,mx]=intervalRange();
+    commentTimer=setTimeout(()=>{spawnComment();scheduleComment();},mn+Math.random()*(mx-mn));
+  }
+
+  /* ── Personas (shared) ── */
+  function defaultPersonas(){
+    return [
+      {name:"傾聴さん",  roleType:"共感勢",  catchphrase:"今の話、聞いてる。",  color:"#8fa8ff",words:[]},
+      {name:"盛り上げ隊",roleType:"応援勢",  catchphrase:"この流れいいぞ",      color:"#5eb8f5",words:[]},
+      {name:"ツッコミ屋",roleType:"ネタ勢",  catchphrase:"それは草",            color:"#f097c8",words:[]},
+      {name:"哲学好き",  roleType:"知識勢",  catchphrase:"深い話になってきた",  color:"#c890d8",words:[]}
+    ];
+  }
+  function loadPersonas(){
+    try{const r=JSON.parse(localStorage.getItem(SHARED_PERSONA_KEY)||"[]");return r.filter(p=>p&&p.name);}
+    catch{return[];}
+  }
+  async function syncPersonas(silent){
+    if(sheetSyncing) return;
+    sheetSyncing=true;
+    try{
+      const url=toSheetCsvUrl(state.personaSheetUrl);
+      const res=await fetch("/api/persona-sheet?url="+encodeURIComponent(url));
+      if(!res.ok) throw new Error("sheet "+res.status);
+      const data=await res.json();
+      if(!data.ok||!data.csv) throw new Error("empty");
+      personas=parsePersonas(data.csv);
+      localStorage.setItem(SHARED_PERSONA_KEY,JSON.stringify(personas));
+      setStatus(`人格 ${personas.length}件 同期済み`);
+    }catch{
+      personas=loadPersonas(); if(!personas.length) personas=defaultPersonas();
+      if(!silent) setStatus(`人格 ${personas.length}件（キャッシュ）`);
+      else setStatus(`デフォルト人格 ${personas.length}件`);
+    }finally{sheetSyncing=null;}
+  }
+
+  function parsePersonas(csv){
+    return parseCSV(csv).map((r,i)=>{
+      const name=r[0]; if(!name||name==="名前") return null;
+      return{id:"s"+i,name,personalityType:r[1]||"",roleType:r[2]||"",
+             reactionPattern:r[3]||"",catchphrase:r[4]||"",
+             words:tags(r[6]),interests:tags(r[8]),
+             color:["#8fa8ff","#f097c8","#f2c14e","#9be870","#c890d8"][i%5]};
+    }).filter(Boolean);
+  }
+  function parseCSV(text){
+    const rows=[];let row=[],cell="",quote=false;
+    const src=String(text||""),d=src.includes("\t")?"\t":",";
+    for(let i=0;i<src.length;i++){
+      const ch=src[i],nx=src[i+1];
+      if(ch==='"'){if(quote&&nx==='"'){cell+='"';i++;}else quote=!quote;}
+      else if(ch===d&&!quote){row.push(cell.trim());cell="";}
+      else if((ch==="\n"||ch==="\r")&&!quote){
+        if(ch==="\r"&&nx==="\n")i++;row.push(cell.trim());
+        if(row.some(Boolean))rows.push(row);row=[];cell="";
+      }else cell+=ch;
+    }
+    row.push(cell.trim());if(row.some(Boolean))rows.push(row);return rows;
+  }
+  function tags(v){return String(v||"").split(/[;,、，・\s]+/).map(x=>x.trim()).filter(Boolean).slice(0,12);}
+
+  /* ── Comment log (shared) ── */
+  function saveCommentLog(entry){
+    try{
+      const log=JSON.parse(localStorage.getItem(SHARED_COMMENT_KEY)||"[]");
+      log.push({...entry,screen:"radio",at:new Date().toISOString()});
+      localStorage.setItem(SHARED_COMMENT_KEY,JSON.stringify(log.slice(-200)));
+    }catch{}
+  }
+
+  /* ── URL / Storage ── */
+  function copyObsUrl(){
+    const url=new URL(location.href);
+    ["programTitle","hostName","guestName","guestUrl","commentEngine","commentSpeed"].forEach(k=>{if(state[k])url.searchParams.set(k,state[k]);});
+    url.searchParams.set("timerMinutes",String(Math.max(1,Math.round(state.timer.durationSec/60))));
+    if(epFromUrl) url.searchParams.set("ep",epFromUrl);
+    navigator.clipboard?.writeText(url.toString()); setStatus("OBS URL をコピーしました");
+  }
+  function toSheetCsvUrl(url){
+    const t=String(url||"").trim(),m=t.match(/\/spreadsheets\/d\/([^/]+)/);
+    if(!m) return t;
+    const gid=(t.match(/[?&]gid=(\d+)/)||[])[1];
+    return`https://docs.google.com/spreadsheets/d/${m[1]}/export?format=csv${gid?`&gid=${gid}`:""}`;
+  }
+  function setStatus(t){if($("personaStatus"))$("personaStatus").textContent=t;}
+  function save(){localStorage.setItem(STORAGE_KEY,JSON.stringify({...state,personas:undefined}));}
+  function load(){try{return JSON.parse(localStorage.getItem(STORAGE_KEY)||"{}");}catch{return{};}}
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RAINYBRAIN Book Stream</title>
+<style>
+:root {
+  --accent: #f2c14e;
+  --line: rgba(255,255,255,.13);
+  --text: #f7f8fb;
+  --muted: rgba(247,248,251,.58);
+  --font-ui: "Yu Gothic","Hiragino Kaku Gothic ProN","Noto Sans JP",system-ui,sans-serif;
+  --font-title: "Yu Mincho","Hiragino Mincho ProN","BIZ UDPMincho",serif;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin:0; width:100%; height:100%; overflow:hidden; background:#080608; color:var(--text); font-family:var(--font-ui); }
+button,input,select,textarea { font:inherit; }
+button {
+  min-height:36px; border:1px solid var(--line); border-radius:8px;
+  background:rgba(255,255,255,.08); color:var(--text); padding:7px 10px; cursor:pointer;
+}
+button:hover { background:rgba(255,255,255,.14); }
+button.primary { border-color:rgba(242,193,78,.55); background:rgba(242,193,78,.18); }
+button.good   { border-color:rgba(100,210,255,.5);  background:rgba(100,210,255,.16); }
+button.warn   { border-color:rgba(255,147,189,.5);  background:rgba(255,147,189,.14); }
+input,select,textarea {
+  width:100%; border:1px solid var(--line); border-radius:8px;
+  background:rgba(0,0,0,.28); color:var(--text); padding:9px 10px; outline:none;
+}
+textarea { min-height:70px; resize:vertical; line-height:1.55; }
+
+/* ── STAGE ── */
+.stage {
+  position:fixed; inset:0;
+  background:
+    radial-gradient(circle at 22% 12%, rgba(242,193,78,.16), transparent 30rem),
+    radial-gradient(circle at 78% 14%, rgba(200,160,100,.1), transparent 26rem),
+    linear-gradient(160deg, #120e08, #0d0a0e 55%, #080608);
+}
+
+/* ── BRAND ── */
+.brand {
+  position:absolute; top:20px; left:24px;
+  display:flex; align-items:center; gap:10px;
+  padding:9px 12px; border:1px solid var(--line); border-radius:8px;
+  background:rgba(8,6,4,.65); backdrop-filter:blur(10px); z-index:10;
+}
+.mark {
+  width:30px; height:30px; display:grid; place-items:center;
+  border-radius:7px; background:linear-gradient(135deg, var(--accent), #c89030);
+  color:#080608; font-weight:900; font-size:12px;
+}
+.brand strong { display:block; font-size:13px; line-height:1; }
+.brand span   { display:block; color:var(--muted); font-size:10px; font-weight:800; margin-top:2px; }
+
+/* ── TIMER ── */
+.timer-display {
+  position:absolute; top:20px; left:50%; transform:translateX(-50%);
+  display:flex; align-items:center; gap:10px;
+  padding:9px 16px; border:1px solid rgba(255,255,255,.14); border-radius:999px;
+  background:rgba(8,6,4,.65); backdrop-filter:blur(10px); z-index:10;
+}
+.timer-time {
+  font-size:clamp(18px,1.6vw,28px); font-weight:900;
+  font-variant-numeric:tabular-nums; letter-spacing:.06em;
+}
+.timer-display.running .timer-time { color:var(--accent); }
+.timer-label { font-size:10px; font-weight:900; letter-spacing:.1em; color:var(--muted); text-transform:uppercase; }
+.timer-btn {
+  width:28px; height:28px; min-height:28px; padding:0;
+  display:grid; place-items:center; border-radius:8px; font-size:13px;
+  border-color:rgba(242,193,78,.36);
+}
+.timer-btn.running { background:linear-gradient(180deg,#fff5ba,var(--accent)); color:#080608; }
+
+/* ── AVATAR ── */
+.avatar {
+  position:absolute; left:4vw; bottom:5vh; width:30vw; height:76vh;
+  display:grid; place-items:end center;
+}
+.avatar.empty::before {
+  content:"V CHARACTER";
+  width:100%; height:100%;
+  display:grid; place-items:center;
+  border:2px dashed rgba(255,255,255,.16); border-radius:12px;
+  color:rgba(255,255,255,.32); font-weight:900; letter-spacing:.08em;
+}
+.avatar img, .avatar video {
+  max-width:100%; max-height:100%;
+  object-fit:contain; filter:drop-shadow(0 24px 40px rgba(0,0,0,.48));
+}
+
+/* ── BOOK COVER ── */
+.book-cover {
+  position:absolute; right:5vw; bottom:8vh;
+  width:clamp(120px,13vw,210px);
+  display:none;
+}
+.book-cover img {
+  width:100%; border-radius:4px;
+  box-shadow:4px 8px 28px rgba(0,0,0,.62), -2px 0 0 rgba(0,0,0,.4);
+}
+.book-cover.show { display:block; }
+
+/* ── COMMENTS ── */
+.comments {
+  position:absolute; right:24px; top:80px; bottom:130px;
+  width:min(380px,28vw); overflow:hidden; pointer-events:none;
+}
+.comment {
+  --user-color: var(--accent);
+  position:absolute; left:0; right:0; bottom:0;
+  padding:9px 11px; border-radius:10px;
+  background:rgba(255,255,255,.068); border-left:3px solid var(--user-color);
+  animation:rise var(--life,16s) linear forwards;
+  text-shadow:0 1px 2px rgba(0,0,0,.6); backdrop-filter:blur(6px);
+}
+.comment.super { background:linear-gradient(90deg,rgba(242,193,78,.2),rgba(255,255,255,.06)); }
+.comment .user  { color:var(--user-color); font-size:clamp(11px,1.1vw,14px); font-weight:900; margin-right:6px; }
+.comment .tag   { color:var(--muted); font-size:10px; font-weight:900; margin-right:6px; }
+.comment .text  { font-size:clamp(14px,1.4vw,20px); line-height:1.45; font-weight:760; overflow-wrap:anywhere; }
+@keyframes rise {
+  0%   { opacity:0; transform:translateY(24px); }
+  8%   { opacity:1; transform:translateY(0); }
+  84%  { opacity:1; }
+  100% { opacity:0; transform:translateY(calc(-100vh + 40px)); }
+}
+
+/* ── TITLE CARD ── */
+.title-card {
+  position:absolute; left:32px; bottom:110px; width:min(520px,42vw);
+  padding:14px 18px;
+  border-left:5px solid var(--accent);
+  border-top:1px solid rgba(255,255,255,.12);
+  border-right:1px solid rgba(255,255,255,.08);
+  border-bottom:1px solid rgba(255,255,255,.08);
+  border-radius:8px;
+  background:linear-gradient(90deg,rgba(8,5,2,.88),rgba(8,5,2,.42));
+  backdrop-filter:blur(10px);
+}
+.kicker { color:var(--accent); font-size:11px; font-weight:900; letter-spacing:.1em; margin-bottom:6px; text-transform:uppercase; }
+.card-title { font-family:var(--font-title); font-size:clamp(22px,2.6vw,42px); line-height:1.1; font-weight:900; overflow-wrap:anywhere; }
+.card-author { margin-top:5px; color:rgba(247,248,251,.7); font-size:clamp(12px,1.2vw,16px); font-family:var(--font-title); }
+.card-affiliate {
+  margin-top:8px; display:inline-block;
+  color:var(--accent); font-size:11px; font-weight:900; letter-spacing:.06em;
+  text-decoration:none; border-bottom:1px solid rgba(242,193,78,.4);
+}
+.card-affiliate:hover { border-bottom-color:var(--accent); }
+
+/* ── CAPTION ── */
+.caption {
+  position:absolute; left:50%; bottom:18px; transform:translateX(-50%);
+  width:min(860px,calc(100vw - 56px)); min-height:52px;
+  display:grid; place-items:center;
+  padding:11px 20px; border:1px solid rgba(255,255,255,.14); border-radius:8px;
+  background:rgba(4,3,2,.72); backdrop-filter:blur(10px);
+  text-align:center; font-family:var(--font-title);
+  font-size:clamp(18px,1.9vw,28px); line-height:1.35; font-weight:900;
+  text-shadow:0 2px 3px rgba(0,0,0,.6); z-index:6;
+}
+
+/* ── DOCK ── */
+.dock {
+  position:fixed; right:14px; top:14px;
+  width:min(420px,calc(100vw - 28px)); max-height:calc(100vh - 28px); overflow:auto;
+  border:1px solid rgba(255,255,255,.13); border-radius:10px;
+  background:linear-gradient(180deg,rgba(255,255,255,.055),rgba(255,255,255,.018)), rgba(10,8,4,.92);
+  backdrop-filter:blur(16px); z-index:20;
+  box-shadow:0 28px 80px rgba(0,0,0,.44);
+}
+body.panel-hidden .dock { display:none; }
+.dock-head {
+  display:flex; align-items:center; gap:9px;
+  padding:12px 14px; border-bottom:1px solid var(--line);
+  background:linear-gradient(90deg,rgba(242,193,78,.14),transparent 60%),rgba(255,255,255,.04);
+}
+.dock-title { flex:1; font-size:14px; font-weight:900; }
+.dock-title span { display:block; color:var(--muted); font-size:10px; margin-top:2px; }
+.dock-body { padding:12px; display:grid; gap:12px; }
+.section {
+  border:1px solid rgba(255,255,255,.1); border-radius:8px;
+  background:linear-gradient(180deg,rgba(255,255,255,.052),rgba(255,255,255,.024));
+  padding:12px; display:grid; gap:10px;
+}
+.section-title { display:flex; align-items:center; gap:8px; font-size:13px; font-weight:900; }
+.step {
+  width:22px; height:22px; display:grid; place-items:center;
+  border-radius:999px; background:var(--accent); color:#080608; font-size:12px; font-weight:900;
+}
+.grid2 { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.actions { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.actions .wide { grid-column:1/-1; }
+.actions button { min-height:44px; font-weight:900; }
+.field { display:grid; gap:5px; }
+.field label { color:var(--muted); font-size:11px; font-weight:900; }
+.field input,.field select,.field textarea { min-height:40px; }
+.log { color:var(--muted); font-size:11px; line-height:1.45; border:1px solid var(--line); border-radius:8px; padding:8px; background:rgba(0,0,0,.2); max-height:80px; overflow:auto; }
+.status-text { color:var(--muted); font-size:11px; font-weight:800; }
+details { border:1px solid rgba(255,255,255,.1); border-radius:8px; background:rgba(0,0,0,.14); }
+summary { cursor:pointer; padding:10px; color:var(--muted); font-size:12px; font-weight:900; }
+details .inner { padding:0 10px 10px; display:grid; gap:10px; }
+.transcript-plan-row { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.plan-btn {
+  position:relative; display:flex; flex-direction:column; align-items:center;
+  gap:3px; padding:9px 8px; border-radius:9px; font-size:12px; font-weight:900;
+  border:1px solid var(--line); background:rgba(255,255,255,.05); color:var(--muted);
+  cursor:pointer; transition:all .15s;
+}
+.plan-btn.active { border-color:rgba(242,193,78,.5); background:rgba(242,193,78,.14); color:var(--text); }
+.plan-btn.pro    { border-color:rgba(200,144,216,.3); color:rgba(200,144,216,.6); cursor:default; }
+.plan-tag  { font-size:9px; font-weight:700; letter-spacing:.08em; opacity:.7; }
+.plan-soon {
+  position:absolute; top:-7px; right:-4px;
+  background:rgba(200,144,216,.22); border:1px solid rgba(200,144,216,.4);
+  color:#c890d8; font-size:9px; font-weight:900; padding:2px 6px; border-radius:999px;
+}
+.pro-placeholder { display:grid; gap:10px; padding:14px; border:1px dashed rgba(200,144,216,.25); border-radius:10px; background:rgba(200,144,216,.04); text-align:center; }
+.pro-placeholder-icon  { font-size:1.8rem; line-height:1; }
+.pro-placeholder-title { font-size:13px; font-weight:900; color:rgba(200,144,216,.8); }
+.pro-placeholder-desc  { font-size:11px; color:var(--muted); line-height:1.6; }
+.pro-placeholder-key label { color:rgba(200,144,216,.6); }
+.pro-placeholder-key input { opacity:.4; }
+
+/* ── OPEN TAB ── */
+.open-tab {
+  position:fixed; right:14px; bottom:14px; z-index:40;
+  display:none; align-items:center; gap:8px;
+  min-height:44px; padding:0 14px;
+  border:1px solid rgba(255,255,255,.22); border-radius:8px;
+  background:rgba(8,6,4,.86); color:var(--text);
+  box-shadow:0 16px 40px rgba(0,0,0,.44); backdrop-filter:blur(14px);
+  font-weight:900; font-size:13px;
+}
+body.panel-hidden .open-tab { display:inline-flex; }
+.open-tab-dot { width:8px; height:8px; border-radius:999px; background:var(--accent); box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 18%,transparent); }
+</style>
+</head>
+<body>
+
+<main class="stage" id="stage">
+
+  <div class="brand">
+    <div class="mark">RB</div>
+    <div><strong>RAINYBRAIN</strong><span id="brandMode">BOOK REVIEW</span></div>
+  </div>
+
+  <div class="timer-display" id="timerDisplay">
+    <div>
+      <div class="timer-time" id="timerTime">--:--</div>
+      <div class="timer-label" id="timerLabel">REC TIMER</div>
+    </div>
+    <button class="timer-btn" id="stageTimerToggle" type="button">▶</button>
+    <button class="timer-btn" id="stageTimerReset"  type="button">↺</button>
+  </div>
+
+  <div class="avatar empty" id="avatar"></div>
+
+  <div class="book-cover" id="bookCover"><img id="coverImg" src="" alt="book cover"></div>
+
+  <div class="comments" id="commentStream"></div>
+
+  <section class="title-card">
+    <div class="kicker" id="kicker">BOOK REVIEW</div>
+    <div class="card-title"  id="cardTitle">今日の紹介タイトル</div>
+    <div class="card-author" id="cardAuthor"></div>
+    <a  class="card-affiliate" id="cardAffiliate" href="#" target="_blank" style="display:none">Amazon で見る →</a>
+  </section>
+
+  <div class="caption" id="caption">「マイク開始」で文字起こしが始まります</div>
+
+</main>
+
+<aside id="dock" class="dock">
+  <div class="dock-head">
+    <div class="dock-title">Book Stream<span>RAINYBRAIN 本紹介配信</span></div>
+    <button id="hideDock"  type="button">閉じる</button>
+    <button id="micBtn" class="good" type="button">マイク開始</button>
+  </div>
+  <div class="dock-body">
+
+    <section class="section">
+      <div class="section-title"><span class="step">1</span>本の情報</div>
+      <div class="field">
+        <label for="bookTitle">タイトル</label>
+        <input id="bookTitle" placeholder="例: 嫌われる勇気">
+      </div>
+      <div class="field">
+        <label for="bookAuthor">著者</label>
+        <input id="bookAuthor" placeholder="例: 岸見一郎・古賀史健">
+      </div>
+      <div class="field">
+        <label for="affiliateUrl">Amazon アフィリエイト URL</label>
+        <input id="affiliateUrl" placeholder="https://amzn.to/...">
+      </div>
+      <div class="field">
+        <label for="coverUrl">表紙画像 URL（任意）</label>
+        <input id="coverUrl" placeholder="https://...">
+      </div>
+      <div class="actions">
+        <button id="applyBtn" class="primary wide" type="button">ステージに反映</button>
+        <button id="copyObsBtn" type="button">OBS URL</button>
+        <button id="fullscreenBtn" type="button">全画面</button>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-title"><span class="step">2</span>収録タイマー</div>
+      <div class="grid2">
+        <div class="field">
+          <label for="timerMinutes">分</label>
+          <input id="timerMinutes" type="number" min="1" max="240" value="30">
+        </div>
+        <div class="field">
+          <label for="timerPreset">プリセット</label>
+          <select id="timerPreset">
+            <option value="30">30分</option>
+            <option value="15">15分</option>
+            <option value="60">60分</option>
+          </select>
+        </div>
+      </div>
+      <div class="actions">
+        <button id="timerSetBtn"   type="button">反映</button>
+        <button id="timerStartBtn" class="good" type="button">開始</button>
+        <button id="timerResetBtn" type="button">リセット</button>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-title"><span class="step">3</span>文字起こし</div>
+      <div class="transcript-plan-row">
+        <button class="plan-btn active" id="planFreeBtn" type="button">無料<span class="plan-tag">Web Speech</span></button>
+        <button class="plan-btn pro"    id="planProBtn"  type="button">Pro<span class="plan-tag">Whisper API</span><span class="plan-soon">準備中</span></button>
+      </div>
+      <div id="planFreeArea">
+      <div class="actions">
+        <button id="clearTranscriptBtn" type="button">字幕クリア</button>
+        <button id="commentBtn" class="warn" type="button">コメント1件</button>
+      </div>
+      <div class="field">
+        <label for="manualTranscript">話題を手入力（Enter で反映）</label>
+        <input id="manualTranscript" placeholder="例: この本の一番刺さったところは">
+      </div>
+      <div id="transcriptLog" class="log">まだ文字起こしはありません。</div>
+      </div><!-- /planFreeArea -->
+      <div id="planProArea" style="display:none">
+        <div class="pro-placeholder">
+          <div class="pro-placeholder-icon">🎙</div>
+          <div class="pro-placeholder-title">Whisper API 連携</div>
+          <div class="pro-placeholder-desc">高精度な音声認識。Pro プランで利用可能になります。</div>
+          <div class="pro-placeholder-key">
+            <label for="whisperApiKey">OpenAI API Key（準備中）</label>
+            <input id="whisperApiKey" type="password" placeholder="sk-..." disabled>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <details>
+      <summary>コメント人格設定</summary>
+      <div class="inner">
+        <div class="field">
+          <label for="personaSheetUrl">人格 CSV / Google Sheets URL</label>
+          <input id="personaSheetUrl" value="https://docs.google.com/spreadsheets/d/1YNQUnDv18WsMm7H84Ytg3lIgvWmetLZ3bqyMm3RCgkI/export?format=csv">
+        </div>
+        <div class="grid2">
+          <div class="field">
+            <label for="commentSpeed">コメント速度</label>
+            <select id="commentSpeed">
+              <option value="normal">ふつう</option>
+              <option value="slow">ゆっくり</option>
+              <option value="fast">多め</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="avatarInput">Vキャラ素材 URL</label>
+            <input id="avatarInput" placeholder="assets/v-character.webm">
+          </div>
+        </div>
+        <div class="actions">
+          <button id="syncPersonaBtn" class="primary" type="button">人格同期</button>
+        </div>
+        <div class="status-text" id="personaStatus">未同期</div>
+      </div>
+    </details>
+
+  </div>
+</aside>
+
+<button class="open-tab" id="openDock" type="button">
+  <span class="open-tab-dot"></span>設定
+</button>
+
+<script>
+(() => {
+  "use strict";
+
+  /* ── 共通ストレージキー（全配信画面で統一） ── */
+  const SHARED_PERSONA_KEY  = "rainybrain_personas_v1";
+  const SHARED_COMMENT_KEY  = "rainybrain_comment_log_v1";
+  const SETTINGS_KEY        = "rainybrain_book_stream_v1";
+
+  const PARAMS = new URLSearchParams(location.search);
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const $ = id => document.getElementById(id);
+
+  const state = {
+    bookTitle:   PARAMS.get("title")  || "",
+    bookAuthor:  PARAMS.get("author") || "",
+    affiliateUrl:"",
+    coverUrl:    "",
+    avatarInput: "",
+    personaSheetUrl: "https://docs.google.com/spreadsheets/d/1YNQUnDv18WsMm7H84Ytg3lIgvWmetLZ3bqyMm3RCgkI/export?format=csv",
+    commentSpeed:"normal",
+    timer: { durationSec:1800, remainingSec:1800, running:false, endAt:0 }
+  };
+  Object.assign(state, loadSettings());
+  if (PARAMS.get("title"))  state.bookTitle  = PARAMS.get("title");
+  if (PARAMS.get("author")) state.bookAuthor = PARAMS.get("author");
+  state.timer = normalizeTimer(state.timer);
+
+  let personas      = loadPersonas();
+  let transcript    = [];
+  let commentTimer  = null;
+  let recognition   = null;
+  let listening     = false;
+  let audioCtx      = null;
+  let meterTimer    = null;
+  let micStream     = null;
+  let lastKey       = "";
+  let transcriptBuf = "";
+  let flushTimer    = null;
+
+  init();
+
+  function init() {
+    hydrate();
+    bind();
+    applyStage();
+    startClock();
+    scheduleComment();
+  }
+
+  function hydrate() {
+    ["bookTitle","bookAuthor","affiliateUrl","coverUrl","avatarInput","personaSheetUrl","commentSpeed"].forEach(id => {
+      if ($(id)) $(id).value = state[id] || "";
+    });
+    $("timerMinutes").value = Math.max(1, Math.round(state.timer.durationSec / 60));
+    $("timerPreset").value  = String(Math.max(1, Math.round(state.timer.durationSec / 60)));
+  }
+
+  function bind() {
+    ["bookTitle","bookAuthor","affiliateUrl","coverUrl","avatarInput","personaSheetUrl","commentSpeed"].forEach(id => {
+      if ($(id)) $(id).addEventListener("input", () => { state[id] = $(id).value; saveSettings(); applyStage(); });
+    });
+    $("applyBtn")?.addEventListener("click", applyStage);
+    $("copyObsBtn")?.addEventListener("click", copyObsUrl);
+    $("fullscreenBtn")?.addEventListener("click", toggleFullscreen);
+    $("timerPreset")?.addEventListener("change", () => { $("timerMinutes").value = $("timerPreset").value; setTimerFromInput(); });
+    $("timerSetBtn")?.addEventListener("click", setTimerFromInput);
+    $("timerStartBtn")?.addEventListener("click", toggleTimer);
+    $("timerResetBtn")?.addEventListener("click", resetTimer);
+    $("stageTimerToggle")?.addEventListener("click", toggleTimer);
+    $("stageTimerReset")?.addEventListener("click", resetTimer);
+    $("micBtn")?.addEventListener("click", toggleMic);
+    $("clearTranscriptBtn")?.addEventListener("click", () => {
+      transcript = [];
+      $("transcriptLog").textContent = "まだ文字起こしはありません。";
+      $("caption").textContent = "「マイク開始」で文字起こしが始まります";
+    });
+    $("commentBtn")?.addEventListener("click", spawnComment);
+    $("manualTranscript")?.addEventListener("keydown", e => {
+      if (e.key !== "Enter") return;
+      const v = $("manualTranscript").value.trim();
+      if (!v) return;
+      $("manualTranscript").value = "";
+      pushTranscript(v); spawnComment();
+    });
+    $("syncPersonaBtn")?.addEventListener("click", syncPersonas);
+    $("hideDock")?.addEventListener("click", () => document.body.classList.add("panel-hidden"));
+    $("planFreeBtn")?.addEventListener("click", () => {
+      $("planFreeBtn").classList.add("active"); $("planProBtn").classList.remove("active");
+      $("planFreeArea").style.display=""; $("planProArea").style.display="none";
+    });
+    $("planProBtn")?.addEventListener("click", () => {
+      $("planProBtn").classList.add("active"); $("planFreeBtn").classList.remove("active");
+      $("planFreeArea").style.display="none"; $("planProArea").style.display="";
+    });
+    $("openDock")?.addEventListener("click", () => document.body.classList.remove("panel-hidden"));
+    document.addEventListener("fullscreenchange", () => {
+      $("fullscreenBtn").textContent = document.fullscreenElement ? "全画面解除" : "全画面";
+    });
+  }
+
+  function applyStage() {
+    $("cardTitle").textContent  = state.bookTitle  || "今日の紹介タイトル";
+    $("cardAuthor").textContent = state.bookAuthor ? `著: ${state.bookAuthor}` : "";
+    const aff = $("cardAffiliate");
+    if (state.affiliateUrl) { aff.href = state.affiliateUrl; aff.style.display = ""; }
+    else aff.style.display = "none";
+    const cover = $("bookCover");
+    if (state.coverUrl) { $("coverImg").src = state.coverUrl; cover.classList.add("show"); }
+    else cover.classList.remove("show");
+    updateAvatar();
+  }
+
+  function updateAvatar() {
+    const src = state.avatarInput.trim();
+    const av  = $("avatar");
+    av.innerHTML = "";
+    av.classList.toggle("empty", !src);
+    if (!src) return;
+    const el = document.createElement(/\.(webm|mp4|mov)(\?.*)?$/i.test(src) ? "video" : "img");
+    el.src = src;
+    if (el.tagName === "VIDEO") { el.autoplay = true; el.loop = true; el.muted = true; el.playsInline = true; }
+    av.append(el);
+  }
+
+  /* ── Timer ── */
+  function normalizeTimer(t) {
+    const dur  = Math.max(60, parseInt(t?.durationSec  || 1800, 10) || 1800);
+    const endAt= parseInt(t?.endAt || 0, 10) || 0;
+    const run  = Boolean(t?.running && endAt > Date.now());
+    const rem  = run ? Math.max(0, Math.ceil((endAt - Date.now()) / 1000))
+                     : Math.max(0, Math.min(dur, parseInt(t?.remainingSec || dur, 10) || dur));
+    return { durationSec:dur, remainingSec:rem, running:run, endAt: run ? endAt : 0 };
+  }
+  function setTimerFromInput() {
+    const m = Math.max(1, Math.min(240, parseInt($("timerMinutes").value || "30") || 30));
+    state.timer = { durationSec:m*60, remainingSec:m*60, running:false, endAt:0 };
+    saveSettings(); updateClock();
+  }
+  function toggleTimer() {
+    state.timer = normalizeTimer(state.timer);
+    if (state.timer.running) { state.timer.running = false; state.timer.endAt = 0; }
+    else {
+      if (state.timer.remainingSec <= 0) state.timer.remainingSec = state.timer.durationSec;
+      state.timer.running = true; state.timer.endAt = Date.now() + state.timer.remainingSec * 1000;
+    }
+    saveSettings(); updateClock();
+  }
+  function resetTimer() {
+    state.timer = normalizeTimer(state.timer);
+    state.timer.running = false; state.timer.endAt = 0; state.timer.remainingSec = state.timer.durationSec;
+    saveSettings(); updateClock();
+  }
+  function updateClock() {
+    state.timer = normalizeTimer(state.timer);
+    if (state.timer.running && state.timer.remainingSec <= 0) { state.timer.running = false; state.timer.endAt = 0; }
+    $("timerTime").textContent = fmt(state.timer.remainingSec);
+    $("timerLabel").textContent = state.timer.running ? "REC RUNNING" : "REC TIMER";
+    $("timerDisplay").classList.toggle("running", state.timer.running);
+    $("timerStartBtn").textContent = state.timer.running ? "停止" : "開始";
+    $("stageTimerToggle").textContent = state.timer.running ? "Ⅱ" : "▶";
+    $("stageTimerToggle").classList.toggle("running", state.timer.running);
+    saveSettings();
+  }
+  function fmt(sec) {
+    const n=Math.max(0,parseInt(sec||0)||0), h=Math.floor(n/3600), m=Math.floor((n%3600)/60), s=n%60;
+    return h>0 ? `${h}:${pad(m)}:${pad(s)}` : `${pad(m)}:${pad(s)}`;
+  }
+  function pad(n) { return String(n).padStart(2,"0"); }
+  function startClock() { updateClock(); setInterval(updateClock, 1000); }
+  function toggleFullscreen() {
+    document.fullscreenElement ? document.exitFullscreen?.() : $("stage").requestFullscreen?.();
+  }
+
+  /* ── Transcript ── */
+  function pushTranscript(text) {
+    const clean = text.replace(/\s+/g," ").trim();
+    if (!clean) return;
+    const key = clean.replace(/[\s、。,.!！?？]/g,"");
+    if (!key || key === lastKey) return;
+    lastKey = key;
+    transcript.unshift({ text:clean, at:Date.now() });
+    transcript = transcript.slice(0,40);
+    $("caption").textContent = clean;
+    $("transcriptLog").textContent = transcript.slice(0,10).map(x=>x.text).join("\n");
+    if (clean.length >= 12) setTimeout(spawnComment, 900);
+  }
+  function queueTranscript(text) {
+    transcriptBuf = [transcriptBuf, text].filter(Boolean).join(" ").replace(/\s+/g," ").trim();
+    clearTimeout(flushTimer);
+    flushTimer = setTimeout(() => { const t=transcriptBuf; transcriptBuf=""; if(t) pushTranscript(t); }, 820);
+  }
+  function recentText() { return transcript.slice(0,6).map(x=>x.text).reverse().join("\n").slice(-1000); }
+
+  /* ── Mic ── */
+  function toggleMic() {
+    if (!SpeechRecognition) { setStatus("Chrome/Edgeの音声認識が必要です"); return; }
+    if (listening) {
+      listening = false; try { recognition.stop(); } catch {}
+      stopMeter(); $("micBtn").textContent="マイク開始"; $("micBtn").className="good"; return;
+    }
+    recognition = new SpeechRecognition();
+    recognition.lang = "ja-JP"; recognition.continuous = true; recognition.interimResults = true;
+    recognition.onresult = e => {
+      let fin="", int="";
+      for (let i=e.resultIndex; i<e.results.length; i++) {
+        const t=e.results[i][0]?.transcript||"";
+        if (e.results[i].isFinal) fin+=t; else int+=t;
+      }
+      if (int) $("caption").textContent = int;
+      if (fin.trim()) queueTranscript(fin);
+    };
+    recognition.onerror = () => { if(listening) setTimeout(()=>{ try{recognition.start();}catch{} },1200); };
+    recognition.onend   = () => { if(listening) setTimeout(()=>{ try{recognition.start();}catch{} },700); };
+    recognition.start(); listening=true;
+    $("micBtn").textContent="マイク停止"; $("micBtn").className="warn";
+    startMeter();
+  }
+  async function startMeter() {
+    try {
+      micStream = await navigator.mediaDevices.getUserMedia({ audio:{ echoCancellation:true, noiseSuppression:true } });
+      audioCtx  = new AudioContext();
+      const an  = audioCtx.createAnalyser();
+      audioCtx.createMediaStreamSource(micStream).connect(an);
+      an.fftSize = 256;
+      const buf = new Uint8Array(an.frequencyBinCount);
+      meterTimer = setInterval(()=>{ an.getByteFrequencyData(buf); }, 80);
+    } catch {}
+  }
+  function stopMeter() {
+    clearInterval(meterTimer);
+    if (audioCtx) { audioCtx.close().catch(()=>{}); audioCtx=null; }
+    if (micStream) { micStream.getTracks().forEach(t=>t.stop()); micStream=null; }
+  }
+
+  /* ── Comments ── */
+  function spawnComment(superChat=false) {
+    const p = pickPersona();
+    const text = buildComment(p);
+    addComment(text, p.name, p.color, superChat);
+    saveCommentLog({ user:p.name, text });
+  }
+
+  function addComment(text, name, color, superChat=false) {
+    const node = document.createElement("article");
+    node.className = `comment${superChat?" super":""}`;
+    node.style.setProperty("--user-color", color||"#f2c14e");
+    node.style.setProperty("--life", `${text.length>30?18:14}s`);
+    node.innerHTML = `<span class="user"></span><span class="tag"></span><span class="text"></span>`;
+    node.querySelector(".user").textContent = `@${name}`;
+    node.querySelector(".tag").textContent  = superChat ? "Super" : "AI";
+    node.querySelector(".text").textContent = text;
+    $("commentStream").append(node);
+    node.addEventListener("animationend", ()=>node.remove());
+  }
+
+  function pickPersona() {
+    const list = personas.length ? personas : defaultPersonas();
+    const text = recentText();
+    return list.map(p=>({ p, s:relevance(p,text)+Math.random()*.4 }))
+      .sort((a,b)=>b.s-a.s)
+      .slice(0, Math.min(list.length,6))[Math.floor(Math.random()*Math.min(list.length,6))].p;
+  }
+
+  function relevance(p, text) {
+    const hay=[p.name,p.roleType,p.reactionPattern,p.catchphrase,...(p.words||[]),...(p.interests||[])].join(" ");
+    let s=0;
+    text.split(/[\s、。,]+/).filter(w=>w.length>=2).forEach(w=>{ if(hay.includes(w)) s+=2; });
+    if (/本|著者|読書|感想|内容|物語|ページ/.test(text) && /本|読|書|物語|知識/.test(hay)) s+=4;
+    if (/哲学|思想|人生|考え|気づき/.test(text) && /哲学|思想|知識勢|妄想勢/.test(hay)) s+=3;
+    return s;
+  }
+
+  function buildComment(p) {
+    if (p.catchphrase && Math.random()<.36) return p.catchphrase.slice(0,40);
+    const text=recentText(), kw=text.split(/[\s、。,]+/).filter(w=>w.length>=2)[0]||(p.words||[])[0]||"今の話";
+    const role=p.roleType||"共感勢";
+    const map = {
+      "応援勢":   [`${kw}いい流れ`,"この調子で最後まで聞きたい"],
+      "質問勢":   [`${kw}ってどこが特に刺さりましたか？`,"その章もう少し聞きたい"],
+      "共感勢":   [`${kw}わかる`,"この本気になってた","今の話すごくよかった"],
+      "懐疑勢":   [`${kw}本当にそうかな`,"そこもう少し掘り下げてほしい"],
+      "知識勢":   [`${kw}の背景が面白い`,"考察したくなる本だ"],
+      "ネタ勢":   ["それは名言","その表現天才すぎる"],
+      "妄想勢":   [`${kw}から派生して考えると`,"読んだら人生変わりそう"],
+      "初心者勢": [`${kw}初めて知った`,"難しそうだけどわかりやすい"],
+      "開発者勢": [`${kw}を実践に落とすとどうなるか`,"実用性高そう"],
+      "投資家勢": [`${kw}は長期的に価値ある考え方`,"この視点は差がつく"]
+    };
+    const pool = map[role]||map["共感勢"];
+    return pool[Math.floor(Math.random()*pool.length)].slice(0,40);
+  }
+
+  function defaultPersonas() {
+    return [
+      { name:"読書好き",   roleType:"共感勢",   catchphrase:"この本気になってた",  color:"#f2c14e", words:[] },
+      { name:"哲学屋",     roleType:"知識勢",   catchphrase:"深い話になってきた",  color:"#c890d8", words:[] },
+      { name:"積読民",     roleType:"質問勢",   catchphrase:"買おうか迷ってた",    color:"#64d2ff", words:[] },
+      { name:"感想マン",   roleType:"応援勢",   catchphrase:"刺さる〜",            color:"#ff93bd", words:[] }
+    ];
+  }
+
+  function intervalRange() {
+    if (state.commentSpeed==="fast") return [3000,7000];
+    if (state.commentSpeed==="slow") return [10000,18000];
+    return [6000,12000];
+  }
+  function scheduleComment() {
+    clearTimeout(commentTimer);
+    const [mn,mx]=intervalRange();
+    commentTimer=setTimeout(()=>{ spawnComment(); scheduleComment(); }, mn+Math.random()*(mx-mn));
+  }
+
+  /* ── Personas (shared localStorage) ── */
+  function loadPersonas() {
+    try {
+      const raw = JSON.parse(localStorage.getItem(SHARED_PERSONA_KEY)||"[]");
+      return raw.filter(p=>p&&p.name);
+    } catch { return []; }
+  }
+  async function syncPersonas() {
+    try {
+      const url = toSheetCsvUrl(state.personaSheetUrl);
+      const res = await fetch("/api/persona-sheet?url="+encodeURIComponent(url));
+      if (!res.ok) throw new Error("sheet "+res.status);
+      const data = await res.json();
+      if (!data.ok||!data.csv) throw new Error("empty");
+      personas = parsePersonas(data.csv);
+      localStorage.setItem(SHARED_PERSONA_KEY, JSON.stringify(personas));
+      setStatus(`人格 ${personas.length}件 同期済み`);
+    } catch {
+      personas = loadPersonas();
+      setStatus(`人格 ${personas.length||4}件（キャッシュ）`);
+    }
+  }
+  function parsePersonas(csv) {
+    return parseCSV(csv).map((r,i)=>{
+      const name=r[0]; if(!name||name==="名前") return null;
+      return { id:"s"+i, name, personalityType:r[1]||"", roleType:r[2]||"",
+               reactionPattern:r[3]||"", catchphrase:r[4]||"",
+               words:tags(r[6]), interests:tags(r[8]),
+               color:["#f2c14e","#64d2ff","#ff93bd","#9be870","#c890d8"][i%5] };
+    }).filter(Boolean);
+  }
+  function parseCSV(text) {
+    const rows=[]; let row=[],cell="",quote=false;
+    const src=String(text||""), d=src.includes("\t")?"\t":",";
+    for(let i=0;i<src.length;i++){
+      const ch=src[i],nx=src[i+1];
+      if(ch==='"'){if(quote&&nx==='"'){cell+='"';i++;}else quote=!quote;}
+      else if(ch===d&&!quote){row.push(cell.trim());cell="";}
+      else if((ch==="\n"||ch==="\r")&&!quote){
+        if(ch==="\r"&&nx==="\n")i++; row.push(cell.trim());
+        if(row.some(Boolean))rows.push(row); row=[];cell="";
+      } else cell+=ch;
+    }
+    row.push(cell.trim()); if(row.some(Boolean))rows.push(row); return rows;
+  }
+  function tags(v) { return String(v||"").split(/[;,、・\s]+/).map(x=>x.trim()).filter(Boolean).slice(0,12); }
+
+  /* ── Comment log (shared) ── */
+  function saveCommentLog(entry) {
+    try {
+      const log = JSON.parse(localStorage.getItem(SHARED_COMMENT_KEY)||"[]");
+      log.push({ ...entry, screen:"book", at:new Date().toISOString() });
+      localStorage.setItem(SHARED_COMMENT_KEY, JSON.stringify(log.slice(-200)));
+    } catch {}
+  }
+
+  /* ── Persistence ── */
+  function saveSettings() {
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify({
+      bookTitle:state.bookTitle, bookAuthor:state.bookAuthor,
+      affiliateUrl:state.affiliateUrl, coverUrl:state.coverUrl,
+      avatarInput:state.avatarInput, personaSheetUrl:state.personaSheetUrl,
+      commentSpeed:state.commentSpeed, timer:state.timer
+    }));
+  }
+  function loadSettings() {
+    try { return JSON.parse(localStorage.getItem(SETTINGS_KEY)||"{}"); } catch { return {}; }
+  }
+
+  /* ── OBS URL ── */
+  function copyObsUrl() {
+    const url = new URL(location.href);
+    if (state.bookTitle)  url.searchParams.set("title",  state.bookTitle);
+    if (state.bookAuthor) url.searchParams.set("author", state.bookAuthor);
+    navigator.clipboard?.writeText(url.toString());
+    setStatus("OBS URL をコピーしました");
+  }
+
+  function toSheetCsvUrl(url) {
+    const t=String(url||"").trim(), m=t.match(/\/spreadsheets\/d\/([^/]+)/);
+    if(!m) return t;
+    const gid=(t.match(/[?&]gid=(\d+)/)||[])[1];
+    return `https://docs.google.com/spreadsheets/d/${m[1]}/export?format=csv${gid?`&gid=${gid}`:""}`;
+  }
+
+  function setStatus(t) { if($("personaStatus")) $("personaStatus").textContent=t; }
+})();
+</script>
+</body>
+</html>

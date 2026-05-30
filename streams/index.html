@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RAINYBRAIN Streams</title>
+<style>
+:root {
+  --bg: #07080d;
+  --line: rgba(255,255,255,.12);
+  --text: #f7f8fb;
+  --muted: rgba(247,248,251,.55);
+  --font: "Yu Gothic","Hiragino Kaku Gothic ProN","Noto Sans JP",system-ui,sans-serif;
+}
+* { box-sizing:border-box; margin:0; padding:0; }
+body {
+  min-height:100vh; background:var(--bg); color:var(--text); font-family:var(--font);
+  display:grid; place-items:center; padding:48px 16px;
+}
+h1 { font-size:clamp(1.4rem,3vw,2.2rem); font-weight:900; letter-spacing:.08em; margin-bottom:6px; }
+.sub { color:var(--muted); font-size:.72rem; letter-spacing:.22em; text-transform:uppercase; margin-bottom:48px; }
+.grid {
+  display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+  gap:16px; width:100%; max-width:860px;
+}
+.card {
+  display:flex; flex-direction:column; gap:10px;
+  padding:22px 20px;
+  border:1px solid var(--line); border-radius:12px;
+  background:rgba(255,255,255,.042);
+  text-decoration:none; color:var(--text);
+  transition:background .15s, border-color .15s, transform .15s;
+}
+.card:hover { background:rgba(255,255,255,.08); border-color:var(--card-color); transform:translateY(-2px); }
+.card-icon { font-size:2rem; line-height:1; }
+.card-name { font-size:1rem; font-weight:900; color:var(--card-color); }
+.card-desc { font-size:.72rem; color:var(--muted); line-height:1.6; }
+.card-tag  { font-size:.62rem; color:var(--card-color); opacity:.7; letter-spacing:.08em; margin-top:auto; }
+.card[data-color="book"]  { --card-color:#f2c14e; }
+.card[data-color="radio"] { --card-color:#64d2ff; }
+.card[data-color="game"]  { --card-color:#57d68d; }
+.card[data-color="movie"] { --card-color:#ff6b7a; }
+.card[data-color="study"] { --card-color:#c890d8; }
+.card.soon { opacity:.42; pointer-events:none; }
+.card.soon .card-tag::after { content:" · 準備中"; }
+</style>
+</head>
+<body>
+<div>
+  <h1>RAINYBRAIN STREAMS</h1>
+  <p class="sub">1人用 / 2人以上用 · 配信画面を選ぶ</p>
+  <div class="grid">
+
+    <a class="card" data-color="book" href="book.html">
+      <div class="card-icon">📚</div>
+      <div class="card-name">本紹介</div>
+      <div class="card-desc">1人でしゃべる。アフィリエイトリンク付き。コメント人格が本の感想で盛り上げる。</div>
+      <div class="card-tag">BOOK REVIEW</div>
+    </a>
+
+    <a class="card" data-color="radio" href="../radio/index.html">
+      <div class="card-icon">🎙</div>
+      <div class="card-name">対談配信</div>
+      <div class="card-desc">2人以上でしゃべる。ホスト＋ゲスト。トピックグリッドからテーマを選んで配信。</div>
+      <div class="card-tag">2+ PERSON LIVE</div>
+    </a>
+
+    <a class="card soon" data-color="game" href="game.html">
+      <div class="card-icon">🎮</div>
+      <div class="card-name">ゲーム実況</div>
+      <div class="card-desc">1人でゲームをしながら配信。コメントがゲームのノリで盛り上がる。</div>
+      <div class="card-tag">GAME STREAM</div>
+    </a>
+
+    <a class="card soon" data-color="movie" href="movie.html">
+      <div class="card-icon">🎬</div>
+      <div class="card-name">映画紹介</div>
+      <div class="card-desc">1人で映画を語る。シネマティックな画面デザイン。</div>
+      <div class="card-tag">MOVIE REVIEW</div>
+    </a>
+
+    <a class="card soon" data-color="study" href="study.html">
+      <div class="card-icon">🧠</div>
+      <div class="card-name">勉強・AI動画</div>
+      <div class="card-desc">教育・AI解説コンテンツ向け。知識系コメントが飛び交う。</div>
+      <div class="card-tag">EDU / AI</div>
+    </a>
+
+  </div>
+</div>
+</body>
+</html>
