@@ -806,7 +806,7 @@ body.panel-hidden .open-tab { display:inline-flex; }
       if(int) $("caption").textContent=int;
       if(fin.trim()) queueTranscript(fin);
     };
-    recognition.onerror=()=>{ if(listening){ clearTimeout(restartTimer); restartTimer=setTimeout(()=>{if(listening)try{recognition.start();}catch{},1200); } };
+    recognition.onerror=()=>{ if(listening){ clearTimeout(restartTimer); restartTimer=setTimeout(()=>{if(listening)try{recognition.start();}catch{}},1200); } };
     recognition.onend  =()=>{ if(listening){ clearTimeout(restartTimer); restartTimer=setTimeout(()=>{if(listening)try{recognition.start();}catch{}},700); } };
     recognition.start(); listening=true;
     $("micBtn").textContent="マイク停止"; $("micBtn").className="warn";
