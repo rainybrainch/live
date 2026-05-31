@@ -144,11 +144,16 @@ textarea { min-height:70px; resize:vertical; line-height:1.55; }
 .card-title { font-family:var(--font-title); font-size:clamp(22px,2.6vw,42px); line-height:1.1; font-weight:900; overflow-wrap:anywhere; }
 .card-author { margin-top:5px; color:rgba(247,248,251,.7); font-size:clamp(12px,1.2vw,16px); font-family:var(--font-title); }
 .card-affiliate {
-  margin-top:8px; display:inline-block;
-  color:var(--accent); font-size:11px; font-weight:900; letter-spacing:.06em;
-  text-decoration:none; border-bottom:1px solid rgba(242,193,78,.4);
+  margin-top:10px; display:inline-flex; align-items:center; gap:6px;
+  padding:7px 14px; border-radius:999px;
+  background:rgba(242,193,78,.18); border:1px solid rgba(242,193,78,.5);
+  color:var(--accent); font-size:11px; font-weight:900; letter-spacing:.08em;
+  text-decoration:none; transition:background .15s, box-shadow .15s;
 }
-.card-affiliate:hover { border-bottom-color:var(--accent); }
+.card-affiliate:hover {
+  background:rgba(242,193,78,.28);
+  box-shadow:0 0 14px rgba(242,193,78,.22);
+}
 
 /* ── CAPTION ── */
 .caption {
@@ -236,15 +241,41 @@ details .inner { padding:0 10px 10px; display:grid; gap:10px; }
 }
 body.panel-hidden .open-tab { display:inline-flex; }
 .open-tab-dot { width:8px; height:8px; border-radius:999px; background:var(--accent); box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 18%,transparent); }
+/* ── TOAST ── */
+.toast {
+  position:absolute; bottom:90px; left:50%; transform:translateX(-50%);
+  padding:9px 18px; border-radius:8px;
+  background:rgba(6,4,2,.92); border:1px solid rgba(255,255,255,.2);
+  color:var(--text); font-size:12px; font-weight:900; letter-spacing:.04em;
+  z-index:50; pointer-events:none; white-space:nowrap;
+  opacity:0; transition:opacity .22s;
+}
+.toast.show { opacity:1; }
+/* ── MIC LIVE ── */
+.mic-live { display:none; color:var(--accent); font-size:10px; font-weight:900; letter-spacing:.1em; }
+.mic-live.active { display:block; animation:blink 1.2s infinite; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+/* ── TIMER FLASH ── */
+@keyframes flashanim { 0%,100%{opacity:1} 50%{opacity:.15} }
+.timer-display.flash { animation:flashanim .35s 8; }
+/* ── SHORTCUT HINT ── */
+.shortcut-hint {
+  position:absolute; bottom:90px; right:24px;
+  color:rgba(255,255,255,.28); font-size:9px; font-weight:800; letter-spacing:.08em;
+  line-height:1.8; text-align:right; pointer-events:none; z-index:5;
+}
 </style>
 </head>
 <body>
 
 <main class="stage" id="stage">
 
+  <div id="toast" class="toast"></div>
+
   <div class="brand">
     <div class="mark">RB</div>
     <div><strong>RAINYBRAIN</strong><span id="brandMode">BOOK REVIEW</span></div>
+    <div class="mic-live" id="micLive">● LIVE</div>
   </div>
 
   <div class="timer-display" id="timerDisplay">
@@ -266,7 +297,7 @@ body.panel-hidden .open-tab { display:inline-flex; }
     <div class="kicker" id="kicker">BOOK REVIEW</div>
     <div class="card-title"  id="cardTitle">今日の紹介タイトル</div>
     <div class="card-author" id="cardAuthor"></div>
-    <a  class="card-affiliate" id="cardAffiliate" href="#" target="_blank" style="display:none">Amazon で見る →</a>
+    <a class="card-affiliate" id="cardAffiliate" href="#" target="_blank" style="display:none">🛒 Amazon で購入する</a>
   </section>
 
   <div class="caption" id="caption">「マイク開始」で文字起こしが始まります</div>
@@ -495,6 +526,14 @@ body.panel-hidden .open-tab { display:inline-flex; }
     document.addEventListener("fullscreenchange", () => {
       $("fullscreenBtn").textContent = document.fullscreenElement ? "全画面解除" : "全画面";
     });
+    document.addEventListener("keydown", e => {
+      if (e.target.matches("input,textarea,select")) return;
+      if (e.code==="Space"){ e.preventDefault(); toggleTimer(); toast(state.timer.running ? "⏸ タイマー停止" : "▶ タイマー開始"); }
+      if (e.key==="m"||e.key==="M") toggleMic();
+      if (e.key==="c"||e.key==="C") { spawnComment(); toast("💬 コメント生成"); }
+      if (e.key==="f"||e.key==="F") toggleFullscreen();
+      if (e.key==="h"||e.key==="H") { document.body.classList.toggle("panel-hidden"); toast(document.body.classList.contains("panel-hidden") ? "パネル非表示" : "パネル表示"); }
+    });
   }
 
   function applyStage() {
@@ -550,8 +589,16 @@ body.panel-hidden .open-tab { display:inline-flex; }
     saveSettings(); updateClock();
   }
   function updateClock() {
+    const prevRem = state.timer.remainingSec;
     state.timer = normalizeTimer(state.timer);
-    if (state.timer.running && state.timer.remainingSec <= 0) { state.timer.running = false; state.timer.endAt = 0; }
+    if (state.timer.running && state.timer.remainingSec <= 0) {
+      state.timer.running = false; state.timer.endAt = 0;
+      if (prevRem > 0) {
+        toast("⏱ タイマー終了！");
+        $("timerDisplay")?.classList.add("flash");
+        setTimeout(()=>$("timerDisplay")?.classList.remove("flash"), 2800);
+      }
+    }
     $("timerTime").textContent = fmt(state.timer.remainingSec);
     $("timerLabel").textContent = state.timer.running ? "REC RUNNING" : "REC TIMER";
     $("timerDisplay").classList.toggle("running", state.timer.running);
@@ -591,11 +638,18 @@ body.panel-hidden .open-tab { display:inline-flex; }
 
   /* ── Mic ── */
   function toggleMic() {
-    if (!SpeechRecognition) { setStatus("Chrome/Edgeの音声認識が必要です"); return; }
+    if (!SpeechRecognition) {
+      $("caption").textContent = "⚠ Chrome / Edge が必要です（音声認識非対応）";
+      toast("Chrome/Edge の音声認識が必要です"); return;
+    }
     if (listening) {
       clearTimeout(restartTimer);
       listening = false; try { recognition.stop(); } catch {}
-      stopMeter(); $("micBtn").textContent="マイク開始"; $("micBtn").className="good"; return;
+      stopMeter();
+      $("micBtn").textContent="マイク開始"; $("micBtn").className="good";
+      $("micLive")?.classList.remove("active");
+      toast("マイク停止");
+      return;
     }
     recognition = new SpeechRecognition();
     recognition.lang = "ja-JP"; recognition.continuous = true; recognition.interimResults = true;
@@ -612,6 +666,8 @@ body.panel-hidden .open-tab { display:inline-flex; }
     recognition.onend   = () => { if(listening){ clearTimeout(restartTimer); restartTimer=setTimeout(()=>{if(listening)try{recognition.start();}catch{}},700); } };
     recognition.start(); listening=true;
     $("micBtn").textContent="マイク停止"; $("micBtn").className="warn";
+    $("micLive")?.classList.add("active");
+    toast("マイク開始 — 話してください");
     startMeter();
   }
   async function startMeter() {
@@ -672,16 +728,16 @@ body.panel-hidden .open-tab { display:inline-flex; }
     const text=recentText(), kw=text.split(/[\s、。,]+/).filter(w=>w.length>=2)[0]||(p.words||[])[0]||"今の話";
     const role=p.roleType||"共感勢";
     const map = {
-      "応援勢":   [`${kw}いい流れ`,"この調子で最後まで聞きたい"],
-      "質問勢":   [`${kw}ってどこが特に刺さりましたか？`,"その章もう少し聞きたい"],
-      "共感勢":   [`${kw}わかる`,"この本気になってた","今の話すごくよかった"],
-      "懐疑勢":   [`${kw}本当にそうかな`,"そこもう少し掘り下げてほしい"],
-      "知識勢":   [`${kw}の背景が面白い`,"考察したくなる本だ"],
-      "ネタ勢":   ["それは名言","その表現天才すぎる"],
-      "妄想勢":   [`${kw}から派生して考えると`,"読んだら人生変わりそう"],
-      "初心者勢": [`${kw}初めて知った`,"難しそうだけどわかりやすい"],
-      "開発者勢": [`${kw}を実践に落とすとどうなるか`,"実用性高そう"],
-      "投資家勢": [`${kw}は長期的に価値ある考え方`,"この視点は差がつく"]
+      "応援勢":   [`${kw}のとこ好き`,"今日の紹介当たり回","この調子で最後まで聞きたい","もっと聞かせてほしい"],
+      "質問勢":   [`${kw}ってどこが特に刺さりましたか？`,"その章もう少し聞きたい","続き気になる","著者に会って聞きたい"],
+      "共感勢":   [`${kw}わかる`,"この本気になってた","言語化してくれてありがとう","それ自分も思ってた","今の話すごくよかった"],
+      "懐疑勢":   [`${kw}本当にそうかな`,"そこもう少し掘り下げてほしい","逆の見方もできそう","著者の意図は別かも"],
+      "知識勢":   [`${kw}の背景が面白い`,"考察したくなる本だ","著者の他の作品も読みたい","このテーマ深い"],
+      "ネタ勢":   ["それは名言","その表現天才すぎる","草","このタイトルだけで勝ってる"],
+      "妄想勢":   [`${kw}から派生して考えると`,"読んだら人生変わりそう","続編あってほしい","これ映像化してほしい"],
+      "初心者勢": [`${kw}初めて知った`,"難しそうだけどわかりやすい","メモしなきゃ","これ入門書として最高"],
+      "開発者勢": [`${kw}を実践に落とすとどうなるか`,"実用性高そう","チームに共有したい","仕事に使えそう"],
+      "投資家勢": [`${kw}は長期的に価値ある考え方`,"この視点は差がつく","コスパいい知識","読んだ人と話したい"]
     };
     const pool = map[role]||map["共感勢"];
     return pool[Math.floor(Math.random()*pool.length)].slice(0,40);
@@ -716,17 +772,23 @@ body.panel-hidden .open-tab { display:inline-flex; }
   }
   async function syncPersonas() {
     try {
-      const url = toSheetCsvUrl(state.personaSheetUrl);
-      const res = await fetch("/api/persona-sheet?url="+encodeURIComponent(url));
-      if (!res.ok) throw new Error("sheet "+res.status);
-      const data = await res.json();
-      if (!data.ok||!data.csv) throw new Error("empty");
-      personas = parsePersonas(data.csv);
+      const csvUrl = toSheetCsvUrl(state.personaSheetUrl);
+      let csv = null;
+      try { const r=await fetch(csvUrl,{cache:"no-store"}); if(r.ok) csv=await r.text(); } catch {}
+      if (!csv) {
+        try {
+          const r=await fetch("/api/persona-sheet?url="+encodeURIComponent(csvUrl));
+          if(r.ok){const d=await r.json(); if(d.ok&&d.csv)csv=d.csv;}
+        } catch {}
+      }
+      if (!csv) throw new Error("no csv");
+      personas = parsePersonas(csv);
       localStorage.setItem(SHARED_PERSONA_KEY, JSON.stringify(personas));
       setStatus(`人格 ${personas.length}件 同期済み`);
     } catch {
       personas = loadPersonas();
-      setStatus(`人格 ${personas.length||4}件（キャッシュ）`);
+      if (!personas.length) personas = defaultPersonas();
+      setStatus(`人格 ${personas.length}件（キャッシュ）`);
     }
   }
   function parsePersonas(csv) {
@@ -781,8 +843,12 @@ body.panel-hidden .open-tab { display:inline-flex; }
     const url = new URL(location.href);
     if (state.bookTitle)  url.searchParams.set("title",  state.bookTitle);
     if (state.bookAuthor) url.searchParams.set("author", state.bookAuthor);
-    navigator.clipboard?.writeText(url.toString());
-    setStatus("OBS URL をコピーしました");
+    const str = url.toString();
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(str)
+        .then(()=>toast("OBS URL をコピーしました ✓"))
+        .catch(()=>{ prompt("URL をコピーしてください:", str); });
+    } else { prompt("URL をコピーしてください:", str); }
   }
 
   function toSheetCsvUrl(url) {
@@ -792,7 +858,13 @@ body.panel-hidden .open-tab { display:inline-flex; }
     return `https://docs.google.com/spreadsheets/d/${m[1]}/export?format=csv${gid?`&gid=${gid}`:""}`;
   }
 
-  function setStatus(t) { if($("personaStatus")) $("personaStatus").textContent=t; }
+  let toastTimer=null;
+  function toast(msg) {
+    const el=$("toast"); if(!el) return;
+    clearTimeout(toastTimer); el.textContent=msg; el.classList.add("show");
+    toastTimer=setTimeout(()=>el.classList.remove("show"),2800);
+  }
+  function setStatus(t) { if($("personaStatus")) $("personaStatus").textContent=t; toast(t); }
 })();
 </script>
 </body>

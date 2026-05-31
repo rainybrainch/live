@@ -165,10 +165,11 @@ body.recording .on-air { display:flex; }
   font-size:clamp(13px,1.3vw,20px);
   background:rgba(255,255,255,.018);
 }
-.guest-zone iframe {
+.host-zone iframe, .guest-zone iframe {
   position:absolute; inset:0; width:100%; height:100%;
-  border:0; border-radius:16px; border:1px dashed rgba(255,255,255,.12);
+  border:0; border-radius:16px; outline:1px dashed rgba(255,255,255,.12);
 }
+.host-zone.has-embed  .char-placeholder { display:none; }
 .guest-zone.has-embed .char-placeholder { display:none; }
 
 /* ネームタグ */
@@ -194,7 +195,19 @@ body.recording .on-air { display:flex; }
   height:4px;
 }
 .host-zone  .voice-bar { --bar-c: var(--host-c); }
-.guest-zone .voice-bar { --bar-c: var(--guest-c); }
+.guest-zone .voice-bar {
+  --bar-c: var(--guest-c);
+  animation: bar-idle 2s ease-in-out infinite;
+}
+.guest-zone .voice-bar:nth-child(1) { animation-delay:  0s; }
+.guest-zone .voice-bar:nth-child(2) { animation-delay: .3s; }
+.guest-zone .voice-bar:nth-child(3) { animation-delay: .6s; }
+.guest-zone .voice-bar:nth-child(4) { animation-delay: .9s; }
+.guest-zone .voice-bar:nth-child(5) { animation-delay:1.2s; }
+@keyframes bar-idle {
+  0%,100% { height:4px; opacity:.5; }
+  50%      { height:9px; opacity:1; }
+}
 
 /* ══════════════════════════════
    CENTER DIVIDER（2人の間）
@@ -446,6 +459,7 @@ body.panel-hidden .open-tab { display:inline-flex; }
 
   <!-- ホスト（左） -->
   <div class="host-zone" id="hostZone">
+    <iframe id="hostFrame" allow="camera;microphone;autoplay;display-capture" style="display:none"></iframe>
     <div class="char-placeholder" id="hostPlaceholder">HOST V</div>
     <div class="name-tag" id="hostTag">
       <div class="voice-bars" id="hostBars">
@@ -510,9 +524,15 @@ body.panel-hidden .open-tab { display:inline-flex; }
         <div class="field"><label for="hostName">ホスト名</label><input id="hostName" value="自分"></div>
         <div class="field"><label for="guestName">ゲスト名</label><input id="guestName" value="ゲスト"></div>
       </div>
-      <div class="field">
-        <label for="guestUrl">ゲスト映像 URL（VDO.Ninja）</label>
-        <input id="guestUrl" placeholder="https://vdo.ninja/?view=...">
+      <div class="grid2">
+        <div class="field">
+          <label for="hostUrl">ホスト映像 URL（VDO.Ninja）</label>
+          <input id="hostUrl" placeholder="https://vdo.ninja/?view=...">
+        </div>
+        <div class="field">
+          <label for="guestUrl">ゲスト映像 URL（VDO.Ninja）</label>
+          <input id="guestUrl" placeholder="https://vdo.ninja/?view=...">
+        </div>
       </div>
       <div class="actions">
         <button id="applyBtn"      class="primary wide" type="button">ステージに反映</button>
@@ -630,7 +650,7 @@ body.panel-hidden .open-tab { display:inline-flex; }
   const titleFromUrl = PARAMS.has("programTitle") ? decodeURIComponent(PARAMS.get("programTitle")) : null;
 
   const state = {
-    programTitle:"RAINYBRAIN Radio", hostName:"自分", guestName:"ゲスト", guestUrl:"",
+    programTitle:"RAINYBRAIN Radio", hostName:"自分", guestName:"ゲスト", hostUrl:"", guestUrl:"",
     personaSheetUrl:"https://docs.google.com/spreadsheets/d/1YNQUnDv18WsMm7H84Ytg3lIgvWmetLZ3bqyMm3RCgkI/export?format=csv",
     geminiProxyUrl:"http://127.0.0.1:8788/gemini-comment",
     commentEngine:"template", commentSpeed:"normal",
@@ -657,14 +677,14 @@ body.panel-hidden .open-tab { display:inline-flex; }
   }
 
   function hydrate() {
-    ["programTitle","hostName","guestName","guestUrl","personaSheetUrl","geminiProxyUrl","commentEngine","commentSpeed"]
+    ["programTitle","hostName","guestName","hostUrl","guestUrl","personaSheetUrl","geminiProxyUrl","commentEngine","commentSpeed"]
       .forEach(id => { if ($(id)) $(id).value = state[id] || ""; });
     $("timerMinutes").value = Math.max(1, Math.round(state.timer.durationSec / 60));
     $("timerPreset").value  = String(Math.max(1, Math.round(state.timer.durationSec / 60)));
   }
 
   function bind() {
-    ["programTitle","hostName","guestName","guestUrl","personaSheetUrl","geminiProxyUrl","commentEngine","commentSpeed"]
+    ["programTitle","hostName","guestName","hostUrl","guestUrl","personaSheetUrl","geminiProxyUrl","commentEngine","commentSpeed"]
       .forEach(id => { if($(id)) $(id).addEventListener("input", () => { state[id]=$(id).value; save(); applyStage(); }); });
     $("applyBtn")?.addEventListener("click", applyStage);
     $("copyObsBtn")?.addEventListener("click", copyObsUrl);
@@ -712,6 +732,12 @@ body.panel-hidden .open-tab { display:inline-flex; }
     $("hostLabel").textContent = state.hostName || "HOST";
     $("guestLabel").textContent= state.guestName|| "GUEST";
     $("hostPlaceholder").textContent = (state.hostName||"HOST") + " V";
+
+    const hf = $("hostFrame"),  hz = $("hostZone");
+    if (state.hostUrl) {
+      if (hf.src !== state.hostUrl) hf.src = state.hostUrl;
+      hf.style.display=""; hz.classList.add("has-embed");
+    } else { hz.classList.remove("has-embed"); hf.style.display="none"; }
 
     const gf = $("guestFrame"), gz = $("guestZone");
     if (state.guestUrl) {
@@ -891,16 +917,16 @@ body.panel-hidden .open-tab { display:inline-flex; }
     const text=recentText(), kw=text.split(/[\s、。,]+/).filter(w=>w.length>=2)[0]||(p.words||[])[0]||"今の流れ";
     const role=p.roleType||"共感勢";
     const map={
-      "応援勢":[`${kw}いい流れ`,"その調子でいける","ここが見どころ"],
-      "質問勢":[`${kw}ってどういうこと？`,"今のところもう少し聞きたい"],
-      "共感勢":[`${kw}わかる`,"今の空気いいな","この話好きだなあ","深い"],
-      "懐疑勢":[`${kw}ほんと？`,"そこ少し違和感ある"],
-      "知識勢":[`${kw}の見方おもしろい`,"考察したくなる","そこ深掘りしてほしい"],
-      "ネタ勢":["それは草",`${kw}クセ強い`,"天才すぎる"],
-      "妄想勢":["ここから化けそう",`${kw}の可能性ある`,"この先広がるな"],
-      "初心者勢":["なるほど〜",`${kw}勉強になる`,"初めて聞いた"],
-      "開発者勢":[`${kw}実装できそう`,"仕組みとして面白い"],
-      "投資家勢":[`${kw}大化けある`,"その期待値ありそう"]
+      "応援勢":[`${kw}いい流れ`,`${kw}のとこ好き`,"その調子でいける","ここが見どころ","もっと聞かせてほしい","今日の配信当たり回だ"],
+      "質問勢":[`${kw}ってどういうこと？`,"今のところもう少し聞きたい",`${kw}どこで知ったんですか`,`${kw}について詳しく教えてほしい`,"そこ掘り下げてほしい"],
+      "共感勢":[`${kw}わかる`,`${kw}めちゃわかる`,"今の空気いいな","この話好きだなあ","深い","それ自分もずっと思ってた","言語化してくれてありがとう"],
+      "懐疑勢":[`${kw}ほんと？`,"そこ少し違和感ある",`${kw}逆に考えると`,`${kw}もっと慎重に見た方がよくない？`,"その前提が怪しい気がする"],
+      "知識勢":[`${kw}の見方おもしろい`,"考察したくなる","そこ深掘りしてほしい",`${kw}って実は複雑なんだよな`,"この視点は新しい"],
+      "ネタ勢":["それは草","天才か",`${kw}クセ強すぎる`,"これは名言",`${kw}ってワード好きすぎる`,"こういう話好きだわ"],
+      "妄想勢":["ここから化けそう",`${kw}の可能性ある`,"この先広がるな",`${kw}をテーマに何か作れそう`,"このふたりの会話いつも密度高い"],
+      "初心者勢":["なるほど〜",`${kw}勉強になる`,"初めて聞いた","こういう話聞きたかった",`${kw}ってそういう意味なんだ`],
+      "開発者勢":[`${kw}実装できそう`,"仕組みとして面白い",`${kw}プロダクトにしたらどうなる`,"これ設計に活かせる"],
+      "投資家勢":[`${kw}大化けある`,"その期待値ありそう",`${kw}にリソース張りたい`,"長期で見ると面白い"]
     };
     return (map[role]||map["共感勢"])[Math.floor(Math.random()*(map[role]||map["共感勢"]).length)].slice(0,40);
   }
@@ -933,12 +959,22 @@ body.panel-hidden .open-tab { display:inline-flex; }
     if(sheetSyncing) return;
     sheetSyncing=true;
     try{
-      const url=toSheetCsvUrl(state.personaSheetUrl);
-      const res=await fetch("/api/persona-sheet?url="+encodeURIComponent(url));
-      if(!res.ok) throw new Error("sheet "+res.status);
-      const data=await res.json();
-      if(!data.ok||!data.csv) throw new Error("empty");
-      personas=parsePersonas(data.csv);
+      const csvUrl=toSheetCsvUrl(state.personaSheetUrl);
+      let csv=null;
+      // 直接取得（GitHub Pages でも動作）
+      try{
+        const r=await fetch(csvUrl,{cache:"no-store"});
+        if(r.ok) csv=await r.text();
+      }catch{}
+      // ローカルプロキシ経由（フォールバック）
+      if(!csv){
+        try{
+          const r=await fetch("/api/persona-sheet?url="+encodeURIComponent(csvUrl));
+          if(r.ok){const d=await r.json(); if(d.ok&&d.csv)csv=d.csv;}
+        }catch{}
+      }
+      if(!csv) throw new Error("no csv");
+      personas=parsePersonas(csv);
       localStorage.setItem(SHARED_PERSONA_KEY,JSON.stringify(personas));
       setStatus(`人格 ${personas.length}件 同期済み`);
     }catch{
@@ -985,7 +1021,7 @@ body.panel-hidden .open-tab { display:inline-flex; }
   /* ── URL / Storage ── */
   function copyObsUrl(){
     const url=new URL(location.href);
-    ["programTitle","hostName","guestName","guestUrl","commentEngine","commentSpeed"].forEach(k=>{if(state[k])url.searchParams.set(k,state[k]);});
+    ["programTitle","hostName","guestName","hostUrl","guestUrl","commentEngine","commentSpeed"].forEach(k=>{if(state[k])url.searchParams.set(k,state[k]);});
     url.searchParams.set("timerMinutes",String(Math.max(1,Math.round(state.timer.durationSec/60))));
     if(epFromUrl) url.searchParams.set("ep",epFromUrl);
     navigator.clipboard?.writeText(url.toString()); setStatus("OBS URL をコピーしました");
