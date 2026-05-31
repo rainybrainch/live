@@ -426,6 +426,7 @@ body.panel-hidden .open-tab { display:inline-flex; }
   let transcript    = [];
   let commentTimer  = null;
   let recognition   = null;
+  let restartTimer  = null;
   let listening     = false;
   let audioCtx      = null;
   let meterTimer    = null;
@@ -480,6 +481,7 @@ body.panel-hidden .open-tab { display:inline-flex; }
       pushTranscript(v); spawnComment();
     });
     $("syncPersonaBtn")?.addEventListener("click", syncPersonas);
+    $("commentSpeed")?.addEventListener("change", () => { state.commentSpeed=$("commentSpeed").value; saveSettings(); scheduleComment(); });
     $("hideDock")?.addEventListener("click", () => document.body.classList.add("panel-hidden"));
     $("planFreeBtn")?.addEventListener("click", () => {
       $("planFreeBtn").classList.add("active"); $("planProBtn").classList.remove("active");
@@ -556,7 +558,6 @@ body.panel-hidden .open-tab { display:inline-flex; }
     $("timerStartBtn").textContent = state.timer.running ? "停止" : "開始";
     $("stageTimerToggle").textContent = state.timer.running ? "Ⅱ" : "▶";
     $("stageTimerToggle").classList.toggle("running", state.timer.running);
-    saveSettings();
   }
   function fmt(sec) {
     const n=Math.max(0,parseInt(sec||0)||0), h=Math.floor(n/3600), m=Math.floor((n%3600)/60), s=n%60;
@@ -592,6 +593,7 @@ body.panel-hidden .open-tab { display:inline-flex; }
   function toggleMic() {
     if (!SpeechRecognition) { setStatus("Chrome/Edgeの音声認識が必要です"); return; }
     if (listening) {
+      clearTimeout(restartTimer);
       listening = false; try { recognition.stop(); } catch {}
       stopMeter(); $("micBtn").textContent="マイク開始"; $("micBtn").className="good"; return;
     }
@@ -606,8 +608,8 @@ body.panel-hidden .open-tab { display:inline-flex; }
       if (int) $("caption").textContent = int;
       if (fin.trim()) queueTranscript(fin);
     };
-    recognition.onerror = () => { if(listening) setTimeout(()=>{ try{recognition.start();}catch{} },1200); };
-    recognition.onend   = () => { if(listening) setTimeout(()=>{ try{recognition.start();}catch{} },700); };
+    recognition.onerror = () => { if(listening){ clearTimeout(restartTimer); restartTimer=setTimeout(()=>{if(listening)try{recognition.start();}catch{}},1200); } };
+    recognition.onend   = () => { if(listening){ clearTimeout(restartTimer); restartTimer=setTimeout(()=>{if(listening)try{recognition.start();}catch{}},700); } };
     recognition.start(); listening=true;
     $("micBtn").textContent="マイク停止"; $("micBtn").className="warn";
     startMeter();
@@ -619,8 +621,6 @@ body.panel-hidden .open-tab { display:inline-flex; }
       const an  = audioCtx.createAnalyser();
       audioCtx.createMediaStreamSource(micStream).connect(an);
       an.fftSize = 256;
-      const buf = new Uint8Array(an.frequencyBinCount);
-      meterTimer = setInterval(()=>{ an.getByteFrequencyData(buf); }, 80);
     } catch {}
   }
   function stopMeter() {

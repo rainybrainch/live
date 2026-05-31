@@ -578,6 +578,9 @@
       opacity: 0.9;
     }
 
+    @keyframes flash-warn { 0%,100%{opacity:1} 40%{opacity:.25} }
+    .flash-warn { animation: flash-warn .45s ease; }
+
     @keyframes rain-fall {
       from { transform: translateY(-12%); }
       to { transform: translateY(12%); }
@@ -1043,7 +1046,14 @@
       renderCellStatus(index);
     });
 
-    function requireActive() { return activeIndex !== null; }
+    function requireActive() {
+      if (activeIndex !== null) return true;
+      stageTitle.classList.remove("flash-warn");
+      void stageTitle.offsetWidth;
+      stageTitle.classList.add("flash-warn");
+      stageTitle.addEventListener("animationend", () => stageTitle.classList.remove("flash-warn"), { once: true });
+      return false;
+    }
 
     toggleStatusBtn.addEventListener("click", () => {
       if (!requireActive()) return;

@@ -397,6 +397,17 @@ body.panel-hidden .open-tab { display:inline-flex; }
   box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 18%,transparent);
 }
 
+/* ── Status toast ── */
+.status-toast {
+  position:absolute; bottom:90px; left:50%; transform:translateX(-50%);
+  padding:7px 16px; border-radius:999px;
+  background:rgba(3,6,16,.88); border:1px solid rgba(143,168,255,.3);
+  color:var(--muted); font-size:12px; font-weight:900; letter-spacing:.06em;
+  white-space:nowrap; pointer-events:none; z-index:20;
+  opacity:0; transition:opacity .25s;
+}
+.status-toast.show { opacity:1; }
+
 @media (max-width:900px) {
   .host-zone,.guest-zone { width:38vw; }
   .comments { width:calc(100vw - 24px); right:12px; top:auto; bottom:140px; height:38vh; }
@@ -469,6 +480,9 @@ body.panel-hidden .open-tab { display:inline-flex; }
     <div class="card-title" id="cardTitle">番組タイトル</div>
     <div class="card-sub"   id="cardSub">2人でしゃべる</div>
   </section>
+
+  <!-- ステータストースト -->
+  <div class="status-toast" id="statusToast"></div>
 
   <!-- 字幕 -->
   <div class="caption" id="captionWrap">
@@ -634,6 +648,7 @@ body.panel-hidden .open-tab { display:inline-flex; }
   let audioCtx      = null, meterTimer  = null, micStream = null;
   let commentTimer  = null, sheetSyncing = null;
   let transcriptBuf = "", flushTimer = null, lastKey = "";
+  let restartTimer  = null;
 
   init();
 
@@ -671,6 +686,7 @@ body.panel-hidden .open-tab { display:inline-flex; }
       if (e.key==="Enter") { const v=$("manualTranscript").value.trim(); if(!v) return; $("manualTranscript").value=""; pushTranscript(v); spawnComment(); e.preventDefault(); }
     });
     $("syncPersonaBtn")?.addEventListener("click", () => syncPersonas(false));
+    $("commentSpeed")?.addEventListener("change", () => { state.commentSpeed=$("commentSpeed").value; save(); scheduleComment(); });
     $("hideDock")?.addEventListener("click", () => document.body.classList.add("panel-hidden"));
     $("openDock")?.addEventListener("click", () => document.body.classList.remove("panel-hidden"));
     $("planFreeBtn")?.addEventListener("click", () => {
@@ -742,7 +758,6 @@ body.panel-hidden .open-tab { display:inline-flex; }
       $("stageTimerToggle").textContent=state.timer.running?"Ⅱ":"▶";
       $("stageTimerToggle").classList.toggle("running",state.timer.running);
     }
-    save();
   }
   function fmt(sec) {
     const n=Math.max(0,parseInt(sec||0)||0),h=Math.floor(n/3600),m=Math.floor((n%3600)/60),s=n%60;
@@ -776,6 +791,7 @@ body.panel-hidden .open-tab { display:inline-flex; }
   function toggleMic() {
     if(!SpeechRecognition){setStatus("Chrome/Edgeの音声認識が必要です");return;}
     if(listening){
+      clearTimeout(restartTimer);
       listening=false; try{recognition.stop();}catch{} stopMeter();
       $("micBtn").textContent="マイク開始"; $("micBtn").className="good"; return;
     }
@@ -790,8 +806,8 @@ body.panel-hidden .open-tab { display:inline-flex; }
       if(int) $("caption").textContent=int;
       if(fin.trim()) queueTranscript(fin);
     };
-    recognition.onerror=()=>{if(listening)setTimeout(()=>{try{recognition.start();}catch{}},1200);};
-    recognition.onend  =()=>{if(listening)setTimeout(()=>{try{recognition.start();}catch{}},700);};
+    recognition.onerror=()=>{ if(listening){ clearTimeout(restartTimer); restartTimer=setTimeout(()=>{if(listening)try{recognition.start();}catch{},1200); } };
+    recognition.onend  =()=>{ if(listening){ clearTimeout(restartTimer); restartTimer=setTimeout(()=>{if(listening)try{recognition.start();}catch{}},700); } };
     recognition.start(); listening=true;
     $("micBtn").textContent="マイク停止"; $("micBtn").className="warn";
     startMeter();
@@ -980,7 +996,12 @@ body.panel-hidden .open-tab { display:inline-flex; }
     const gid=(t.match(/[?&]gid=(\d+)/)||[])[1];
     return`https://docs.google.com/spreadsheets/d/${m[1]}/export?format=csv${gid?`&gid=${gid}`:""}`;
   }
-  function setStatus(t){if($("personaStatus"))$("personaStatus").textContent=t;}
+  function setStatus(t){
+    if($("personaStatus"))$("personaStatus").textContent=t;
+    clearTimeout(setStatus._t);
+    const toast=$("statusToast");
+    if(toast){toast.textContent=t;toast.classList.add("show");setStatus._t=setTimeout(()=>toast.classList.remove("show"),3000);}
+  }
   function save(){localStorage.setItem(STORAGE_KEY,JSON.stringify({...state,personas:undefined}));}
   function load(){try{return JSON.parse(localStorage.getItem(STORAGE_KEY)||"{}");}catch{return{};}}
 })();
