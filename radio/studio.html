@@ -623,6 +623,13 @@ body.panel-hidden .open-tab { display:inline-flex; }
         <div class="field"><label for="geminiProxyUrl">Gemini 中継 URL</label><input id="geminiProxyUrl" value="http://127.0.0.1:8788/gemini-comment"></div>
         <div class="actions">
           <button id="syncPersonaBtn" class="primary" type="button">人格同期</button>
+          <a href="https://rainybrainch.github.io/comment-studio/ai-comment-personas.html" target="_blank"
+             style="display:flex;align-items:center;justify-content:center;min-height:44px;padding:7px 10px;
+                    border:1px solid rgba(224,160,255,.45);border-radius:8px;
+                    background:rgba(224,160,255,.12);color:#e0a0ff;font-weight:900;
+                    font-size:12px;text-decoration:none;letter-spacing:.04em;">
+            🎭 Channel OS
+          </a>
         </div>
         <div class="status-text" id="personaStatus">未同期</div>
       </div>
@@ -952,8 +959,19 @@ body.panel-hidden .open-tab { display:inline-flex; }
     ];
   }
   function loadPersonas(){
-    try{const r=JSON.parse(localStorage.getItem(SHARED_PERSONA_KEY)||"[]");return r.filter(p=>p&&p.name);}
-    catch{return[];}
+    const result=[];
+    // Channel OS → Comment Studio 経由の人格（最優先）
+    try{
+      const p=JSON.parse(localStorage.getItem("all_domedia_personas_v5")||"[]");
+      result.push(...p.filter(x=>x&&x.name&&x.enabled!==false));
+    }catch{}
+    // 独自シートキー（補完）
+    try{
+      const ids=new Set(result.map(x=>x.id||x.name));
+      const p=JSON.parse(localStorage.getItem(SHARED_PERSONA_KEY)||"[]");
+      result.push(...p.filter(x=>x&&x.name&&!ids.has(x.id||x.name)));
+    }catch{}
+    return result;
   }
   async function syncPersonas(silent){
     if(sheetSyncing) return;
