@@ -421,6 +421,58 @@ body.panel-hidden .open-tab { display:inline-flex; }
 }
 .status-toast.show { opacity:1; }
 
+/* ── Layout variants ── */
+body.comment-left .comments {
+  right:auto;
+  left:calc(clamp(200px,25vw,380px) + 3vw + 24px);
+}
+body.title-right .title-card { left:auto; right:32px; }
+body.swap-sides .host-zone  { left:auto; right:3vw; }
+body.swap-sides .guest-zone { right:auto; left:3vw; }
+body.swap-sides .title-card { left:auto; right:32px; }
+body.swap-sides.title-right .title-card { left:32px; right:auto; }
+
+/* ── Stage controls（全画面・レイアウト） ── */
+.stage-controls {
+  position:absolute; bottom:22px; right:22px;
+  display:flex; gap:6px; z-index:8;
+}
+body.panel-hidden .stage-controls { right:22px; }
+.sc-btn {
+  width:34px; height:34px; min-height:34px; padding:0;
+  display:grid; place-items:center; border-radius:8px;
+  border:1px solid rgba(255,255,255,.16);
+  background:rgba(3,6,16,.62); backdrop-filter:blur(10px);
+  color:var(--muted); font-size:15px; cursor:pointer;
+  transition:background .15s, color .15s;
+}
+.sc-btn:hover { background:rgba(143,168,255,.18); color:var(--text); }
+.sc-btn.active { background:rgba(143,168,255,.22); border-color:var(--accent); color:var(--accent); }
+
+/* layout panel */
+.layout-panel {
+  position:absolute; bottom:66px; right:22px; z-index:30;
+  display:none; flex-direction:column; gap:8px;
+  padding:12px; border:1px solid rgba(255,255,255,.14); border-radius:10px;
+  background:rgba(3,6,16,.92); backdrop-filter:blur(16px);
+  min-width:180px;
+}
+.layout-panel.open { display:flex; }
+.lp-label { font-size:10px; font-weight:900; letter-spacing:.1em; color:var(--muted); text-transform:uppercase; }
+.lp-row { display:flex; gap:6px; flex-wrap:wrap; }
+.lp-btn {
+  flex:1; min-width:70px; padding:6px 8px; font-size:11px; font-weight:900;
+  border:1px solid var(--line); border-radius:7px;
+  background:rgba(255,255,255,.06); color:var(--muted); cursor:pointer;
+  transition:all .15s; white-space:nowrap; text-align:center;
+}
+.lp-btn:hover   { background:rgba(143,168,255,.14); color:var(--text); border-color:rgba(143,168,255,.4); }
+.lp-btn.active  { background:rgba(143,168,255,.2); color:var(--accent); border-color:var(--accent); }
+
+/* OBS モード */
+body.obs-mode .dock, body.obs-mode .open-tab,
+body.obs-mode .back-link, body.obs-mode .stage-controls { display:none !important; }
+
 @media (max-width:900px) {
   .host-zone,.guest-zone { width:38vw; }
   .comments { width:calc(100vw - 24px); right:12px; top:auto; bottom:140px; height:38vh; }
@@ -502,6 +554,37 @@ body.panel-hidden .open-tab { display:inline-flex; }
   <div class="caption" id="captionWrap">
     <div class="caption-text" id="caption">「マイク開始」で文字起こしが始まります</div>
   </div>
+
+  <!-- ステージコントロール -->
+  <div class="stage-controls">
+    <button class="sc-btn" id="layoutToggleBtn" title="レイアウト調整">⊞</button>
+    <button class="sc-btn" id="stageFullscreenBtn" title="全画面（F）">⛶</button>
+  </div>
+
+  <!-- レイアウトパネル -->
+  <div class="layout-panel" id="layoutPanel">
+    <div class="lp-label">コメント位置</div>
+    <div class="lp-row">
+      <button class="lp-btn active" id="lp-comment-right" type="button">右</button>
+      <button class="lp-btn"        id="lp-comment-left"  type="button">左</button>
+    </div>
+    <div class="lp-label" style="margin-top:4px">タイトル位置</div>
+    <div class="lp-row">
+      <button class="lp-btn active" id="lp-title-left"  type="button">左下</button>
+      <button class="lp-btn"        id="lp-title-right" type="button">右下</button>
+    </div>
+    <div class="lp-label" style="margin-top:4px">配置</div>
+    <div class="lp-row">
+      <button class="lp-btn active" id="lp-normal" type="button">標準</button>
+      <button class="lp-btn"        id="lp-swap"   type="button">左右反転</button>
+    </div>
+    <div class="lp-label" style="margin-top:4px">プリセット</div>
+    <div class="lp-row">
+      <button class="lp-btn" id="lp-preset-default" type="button">Default</button>
+      <button class="lp-btn" id="lp-preset-obs"     type="button">OBS録画</button>
+    </div>
+  </div>
+
 
 </main>
 
@@ -740,8 +823,94 @@ body.panel-hidden .open-tab { display:inline-flex; }
       $("planProArea").style.display  = "";
     });
     document.addEventListener("fullscreenchange", () => {
-      if($("fullscreenBtn")) $("fullscreenBtn").textContent = document.fullscreenElement ? "全画面解除" : "全画面";
+      const fs = !!document.fullscreenElement;
+      if($("fullscreenBtn")) $("fullscreenBtn").textContent = fs ? "全画面解除" : "全画面";
+      if($("stageFullscreenBtn")) $("stageFullscreenBtn").textContent = fs ? "✕" : "⛶";
     });
+
+    // ステージコントロール
+    $("stageFullscreenBtn")?.addEventListener("click", toggleFullscreen);
+
+    const layoutPanel = $("layoutPanel");
+    $("layoutToggleBtn")?.addEventListener("click", () => {
+      layoutPanel?.classList.toggle("open");
+      $("layoutToggleBtn")?.classList.toggle("active", layoutPanel?.classList.contains("open"));
+    });
+
+    // レイアウトボタン
+    function setLayoutBtn(group, activeId) {
+      document.querySelectorAll(`[id^="lp-${group}"]`).forEach(b => b.classList.toggle("active", b.id === activeId));
+    }
+
+    $("lp-comment-right")?.addEventListener("click", () => {
+      document.body.classList.remove("comment-left");
+      setLayoutBtn("comment", "lp-comment-right");
+      saveLayout();
+    });
+    $("lp-comment-left")?.addEventListener("click", () => {
+      document.body.classList.add("comment-left");
+      setLayoutBtn("comment", "lp-comment-left");
+      saveLayout();
+    });
+    $("lp-title-left")?.addEventListener("click", () => {
+      document.body.classList.remove("title-right");
+      setLayoutBtn("title", "lp-title-left");
+      saveLayout();
+    });
+    $("lp-title-right")?.addEventListener("click", () => {
+      document.body.classList.add("title-right");
+      setLayoutBtn("title", "lp-title-right");
+      saveLayout();
+    });
+    $("lp-normal")?.addEventListener("click", () => {
+      document.body.classList.remove("swap-sides");
+      setLayoutBtn("normal", "lp-normal"); setLayoutBtn("swap", "lp-normal");
+      saveLayout();
+    });
+    $("lp-swap")?.addEventListener("click", () => {
+      document.body.classList.add("swap-sides");
+      document.querySelectorAll('[id^="lp-normal"],[id^="lp-swap"]').forEach(b => b.classList.toggle("active", b.id === "lp-swap"));
+      saveLayout();
+    });
+    $("lp-preset-default")?.addEventListener("click", () => {
+      document.body.classList.remove("comment-left","title-right","swap-sides","obs-mode");
+      ["lp-comment-right","lp-title-left","lp-normal"].forEach(id => { const el=$(id); if(el) el.classList.add("active"); });
+      ["lp-comment-left","lp-title-right","lp-swap"].forEach(id => { const el=$(id); if(el) el.classList.remove("active"); });
+      saveLayout();
+    });
+    $("lp-preset-obs")?.addEventListener("click", () => {
+      document.body.classList.add("panel-hidden");
+      document.body.classList.add("obs-mode");
+      layoutPanel?.classList.remove("open");
+      saveLayout();
+    });
+
+    // キーボードショートカット
+    document.addEventListener("keydown", e => {
+      const tag = document.activeElement?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+      if (e.key === "f" || e.key === "F") toggleFullscreen();
+      if (e.key === "l" || e.key === "L") layoutPanel?.classList.toggle("open");
+      if (e.key === "Escape") layoutPanel?.classList.remove("open");
+    });
+
+    // レイアウト保存・復元
+    const LAYOUT_KEY = "rainybrain_radio_layout_v1";
+    function saveLayout() {
+      localStorage.setItem(LAYOUT_KEY, JSON.stringify({
+        commentLeft: document.body.classList.contains("comment-left"),
+        titleRight:  document.body.classList.contains("title-right"),
+        swapSides:   document.body.classList.contains("swap-sides")
+      }));
+    }
+    (function restoreLayout() {
+      try {
+        const l = JSON.parse(localStorage.getItem(LAYOUT_KEY) || "{}");
+        if (l.commentLeft) { document.body.classList.add("comment-left"); $("lp-comment-left")?.classList.add("active"); $("lp-comment-right")?.classList.remove("active"); }
+        if (l.titleRight)  { document.body.classList.add("title-right");  $("lp-title-right")?.classList.add("active"); $("lp-title-left")?.classList.remove("active"); }
+        if (l.swapSides)   { document.body.classList.add("swap-sides");   $("lp-swap")?.classList.add("active"); $("lp-normal")?.classList.remove("active"); }
+      } catch {}
+    })();
   }
 
   function applyStage() {
