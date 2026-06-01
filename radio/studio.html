@@ -615,12 +615,16 @@ body.panel-hidden .open-tab { display:inline-flex; }
           <div class="field">
             <label for="commentEngine">生成方式</label>
             <select id="commentEngine">
-              <option value="template">テンプレート</option>
-              <option value="gemini">Gemini（要サーバー）</option>
+              <option value="template">テンプレート（無料・オフライン）</option>
+              <option value="gemini">Gemini AI（有料・リアルタイム）</option>
             </select>
           </div>
         </div>
-        <div class="field"><label for="geminiProxyUrl">Gemini 中継 URL</label><input id="geminiProxyUrl" value="http://127.0.0.1:8788/gemini-comment"></div>
+        <div class="field">
+          <label for="streamingGeminiKey">配信用 Gemini API キー（有料枠）</label>
+          <input id="streamingGeminiKey" type="password" placeholder="AIzaSy... または AQ.Ab8...">
+          <div style="margin-top:3px;font-size:10px;color:var(--muted)">生成方式を「Gemini AI」にすると使用されます</div>
+        </div>
         <div class="actions">
           <button id="syncPersonaBtn" class="primary" type="button">人格同期</button>
           <a href="https://rainybrainch.github.io/comment-studio/ai-comment-personas.html" target="_blank"
@@ -656,6 +660,8 @@ body.panel-hidden .open-tab { display:inline-flex; }
   const epFromUrl    = PARAMS.has("ep")           ? parseInt(PARAMS.get("ep"), 10) || null : null;
   const titleFromUrl = PARAMS.has("programTitle") ? decodeURIComponent(PARAMS.get("programTitle")) : null;
 
+  const STREAMING_KEY_STORAGE = "streaming_gemini_key_v1";
+
   const state = {
     programTitle:"RAINYBRAIN Radio", hostName:"自分", guestName:"ゲスト", hostUrl:"", guestUrl:"",
     personaSheetUrl:"https://docs.google.com/spreadsheets/d/1YNQUnDv18WsMm7H84Ytg3lIgvWmetLZ3bqyMm3RCgkI/export?format=csv",
@@ -686,6 +692,7 @@ body.panel-hidden .open-tab { display:inline-flex; }
   function hydrate() {
     ["programTitle","hostName","guestName","hostUrl","guestUrl","personaSheetUrl","geminiProxyUrl","commentEngine","commentSpeed"]
       .forEach(id => { if ($(id)) $(id).value = state[id] || ""; });
+    if ($("streamingGeminiKey")) $("streamingGeminiKey").value = localStorage.getItem(STREAMING_KEY_STORAGE) || "";
     $("timerMinutes").value = Math.max(1, Math.round(state.timer.durationSec / 60));
     $("timerPreset").value  = String(Math.max(1, Math.round(state.timer.durationSec / 60)));
   }
@@ -711,6 +718,10 @@ body.panel-hidden .open-tab { display:inline-flex; }
     $("commentBtn")?.addEventListener("click", () => spawnComment());
     $("manualTranscript")?.addEventListener("keydown", e => {
       if (e.key==="Enter") { const v=$("manualTranscript").value.trim(); if(!v) return; $("manualTranscript").value=""; pushTranscript(v); spawnComment(); e.preventDefault(); }
+    });
+    $("streamingGeminiKey")?.addEventListener("change", () => {
+      const k = $("streamingGeminiKey").value.trim();
+      if (k) localStorage.setItem(STREAMING_KEY_STORAGE, k);
     });
     $("syncPersonaBtn")?.addEventListener("click", () => syncPersonas(false));
     $("commentSpeed")?.addEventListener("change", () => { state.commentSpeed=$("commentSpeed").value; save(); scheduleComment(); });
@@ -884,9 +895,52 @@ body.panel-hidden .open-tab { display:inline-flex; }
 
   /* ── Comments ── */
   function spawnComment(superChat=false){
-    const p=pickPersona(), text=buildComment(p);
-    addComment(text,p.name,p.color,superChat);
-    saveCommentLog({user:p.name,text});
+    const streamKey = localStorage.getItem(STREAMING_KEY_STORAGE) || "";
+    if (state.commentEngine === "gemini" && streamKey) {
+      spawnGeminiComment(superChat, streamKey);
+    } else {
+      const p=pickPersona(), text=buildComment(p);
+      addComment(text,p.name,p.color,superChat);
+      saveCommentLog({user:p.name,text});
+    }
+  }
+
+  async function spawnGeminiComment(superChat, apiKey) {
+    try {
+      const list = personas.length ? personas : defaultPersonas();
+      const p    = pickPersona();
+      const recent = recentText();
+
+      const prompt = `あなたは「${p.name}」というライブ配信の視聴者です。
+口調: ${p.tone || p.roleType || "自然に反応する"}
+${p.catchphrase ? `口癖: ${p.catchphrase}` : ""}
+
+今の配信の会話:
+${recent || "配信開始。2人がしゃべり始めたところ。"}
+
+この会話に対して、視聴者として自然なコメントを1つだけ書いてください。
+40文字以内、日本語のみ、コメント文のみ出力（説明・記号・かぎかっこ不要）。`;
+
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+      const res = await fetch(url, {
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({
+          contents:[{parts:[{text:prompt}]}],
+          generationConfig:{temperature:0.9, maxOutputTokens:80}
+        })
+      });
+      if (!res.ok) throw new Error("API " + res.status);
+      const data = await res.json();
+      const text = (data.candidates?.[0]?.content?.parts?.[0]?.text || "").replace(/[\n\r「」『』]/g,"").trim().slice(0,40);
+      if (!text) throw new Error("empty");
+      addComment(text, p.name, p.color, superChat);
+      saveCommentLog({user:p.name, text});
+    } catch(e) {
+      // Gemini 失敗時はテンプレートにフォールバック
+      const p=pickPersona(), text=buildComment(p);
+      addComment(text,p.name,p.color,superChat);
+    }
   }
 
   function addComment(text,name,color,superChat=false){
