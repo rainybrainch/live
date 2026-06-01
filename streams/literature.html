@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>文学紹介 – RAINYBRAIN</title>
+<style>
+body { margin:0; background:#0e0c08; color:#c4b48a; font-family:system-ui,sans-serif;
+       display:grid; place-items:center; height:100vh; }
+.msg { text-align:center; font-size:14px; letter-spacing:.08em; }
+.dot { animation:blink 1s ease-in-out infinite; display:inline-block; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.2} }
+</style>
+</head>
+<body>
+<div class="msg">🖋 文学紹介を起動中<span class="dot">…</span></div>
+<script>
+(function(){
+  try {
+    const k='all_domedia_comment_settings_v5';
+    const s=JSON.parse(localStorage.getItem(k)||'{}');
+    s.genre='book';
+    s.programTitle='文学紹介';
+    localStorage.setItem(k,JSON.stringify(s));
+  } catch(_){}
+  location.replace('https://rainybrainch.github.io/comment-studio/ai-comment-system.html');
+})();
+</script>
+</body>
+</html>
