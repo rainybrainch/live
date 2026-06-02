@@ -100,18 +100,19 @@ body.recording .timer-time{color:var(--acc);text-shadow:0 0 18px rgba(201,168,76
 }
 .timer-btn.running{background:linear-gradient(180deg,#f0d890,var(--acc));border-color:var(--acc);color:#030800;box-shadow:0 0 14px rgba(201,168,76,.28);}
 
-/* ── KEYWORD CARD (bottom-left) ── */
+/* ── KEYWORD CARD (top-left) ── */
 .keyword-card{
-  position:absolute;left:32px;bottom:110px;width:min(480px,42vw);
+  position:absolute;left:26px;top:80px;width:min(400px,38vw);
   padding:14px 18px;
   border-left:4px solid var(--acc);
   border-top:1px solid rgba(255,255,255,.1);
   border-right:1px solid rgba(255,255,255,.06);
   border-bottom:1px solid rgba(255,255,255,.06);
   border-radius:8px;
-  background:linear-gradient(100deg,rgba(6,10,4,.9),rgba(6,10,4,.48));
+  background:linear-gradient(100deg,rgba(6,10,4,.9),rgba(6,10,4,.55));
   backdrop-filter:blur(14px);
   box-shadow:0 8px 32px rgba(0,0,0,.28),inset 0 1px 0 rgba(255,255,255,.06);
+  z-index:5;
 }
 .kicker{
   color:var(--acc);font-size:10px;font-weight:900;letter-spacing:.16em;
@@ -119,18 +120,28 @@ body.recording .timer-time{color:var(--acc);text-shadow:0 0 18px rgba(201,168,76
   display:flex;align-items:center;gap:7px;
 }
 .kicker::before{content:"";width:5px;height:5px;border-radius:999px;background:var(--acc);box-shadow:0 0 6px var(--acc);flex-shrink:0;}
-.keyword-main{font-family:var(--serif);font-size:clamp(16px,2vw,30px);line-height:1.15;font-weight:700;}
-.keyword-sub{margin-top:5px;color:rgba(240,232,200,.6);font-size:clamp(10px,.95vw,14px);line-height:1.5;}
-
-/* ── ARCHIVE CHIP (above keyword card) ── */
+.keyword-main{font-family:var(--serif);font-size:clamp(22px,2.8vw,42px);line-height:1.1;font-weight:700;}
+.keyword-sub{margin-top:4px;color:rgba(240,232,200,.6);font-size:clamp(10px,.9vw,13px);line-height:1.5;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden;}
+.keyword-agenda{
+  margin-top:10px;padding-top:10px;
+  border-top:1px solid rgba(201,168,76,.15);
+  display:flex;flex-direction:column;gap:3px;
+}
+.agenda-label{
+  font-size:9px;font-weight:900;letter-spacing:.16em;text-transform:uppercase;
+  color:rgba(201,168,76,.55);
+}
+.agenda-text{
+  font-size:clamp(11px,1vw,14px);color:var(--text);line-height:1.55;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
+}
+.keyword-footer{margin-top:10px;display:flex;align-items:center;gap:8px;}
 .archive-link{
-  position:absolute;left:32px;bottom:74px;
-  display:flex;align-items:center;gap:7px;
-  padding:5px 12px;border-radius:999px;
-  border:1px solid rgba(201,168,76,.28);background:rgba(201,168,76,.1);
+  display:inline-flex;align-items:center;gap:6px;
+  padding:4px 11px;border-radius:999px;
+  border:1px solid rgba(201,168,76,.28);background:rgba(201,168,76,.08);
   color:var(--acc);font-size:10px;font-weight:900;letter-spacing:.08em;
   cursor:pointer;transition:background .15s;text-decoration:none;
-  backdrop-filter:blur(10px);z-index:6;
 }
 .archive-link:hover{background:rgba(201,168,76,.2);}
 
@@ -397,13 +408,17 @@ body.obs-mode .dock,body.obs-mode .open-tab,body.obs-mode .sc-btns{display:none!
   <section class="keyword-card">
     <div class="kicker" id="kicker">RB-TREE ECONOMICS</div>
     <div class="keyword-main" id="keywordMain">今日のキーワード</div>
-    <div class="keyword-sub" id="keywordSub">ここで学ぶ経済用語を設定してください</div>
+    <div class="keyword-sub"  id="keywordSub">ここで学ぶ経済用語を設定してください</div>
+    <div class="keyword-agenda" id="agendaWrap">
+      <div class="agenda-label">本日の議題</div>
+      <div class="agenda-text" id="agendaText">—</div>
+    </div>
+    <div class="keyword-footer">
+      <a class="archive-link" id="archiveChip" href="https://rainybrainch.github.io/rb-tree-archive/economics.html" target="_blank" rel="noopener">
+        🌲 RB-Tree Archive ↗
+      </a>
+    </div>
   </section>
-
-  <!-- Archive link -->
-  <a class="archive-link" id="archiveChip" href="https://rainybrainch.github.io/rb-tree-archive/economics.html" target="_blank" rel="noopener">
-    🌲 RB-Tree Archive ↗
-  </a>
 
   <!-- Status toast -->
   <div class="status-toast" id="statusToast"></div>
@@ -456,8 +471,8 @@ body.obs-mode .dock,body.obs-mode .open-tab,body.obs-mode .sc-btns{display:none!
         <input id="keywordInput" placeholder="例: 金利、インフレ、為替" value="今日のキーワード">
       </div>
       <div class="field">
-        <label>説明（サブテキスト）</label>
-        <input id="subInput" placeholder="例: お金を借りる価格。中央銀行が調整する。">
+        <label>本日の議題</label>
+        <input id="subInput" placeholder="例: なぜ紙切れに価値があるのか？">
       </div>
       <div class="field">
         <label>学習ステージ</label>
@@ -688,6 +703,7 @@ function init(){
 function hydrate(){
   $("keywordInput").value = state.keyword||"";
   $("subInput").value     = state.sub||"";
+  const _ag=$("agendaText"); if(_ag){_ag.textContent=state.sub||"—";if($("agendaWrap"))$("agendaWrap").style.display=state.sub?"":"none";}
   $("commentSpeed").value = state.commentSpeed||"normal";
   $("commentEngine").value= state.commentEngine||"template";
   $("personaSheetUrl").value = state.personaSheetUrl||"";
@@ -944,6 +960,8 @@ function applyStage(){
   const sub=state.sub=$("subInput").value||"";
   $("keywordMain").textContent=kw;
   $("keywordSub").textContent=sub;
+  const agEl=$("agendaText");
+  if(agEl){agEl.textContent=sub||"—";$("agendaWrap").style.display=sub?"":"none";}
   $("kicker").textContent="RB-TREE ECONOMICS";
   save();
 }
@@ -1020,7 +1038,14 @@ function updateClock(){
 function fmt(sec){const n=Math.max(0,parseInt(sec)||0),h=Math.floor(n/3600),m=Math.floor((n%3600)/60),s=n%60;return h>0?`${h}:${p(m)}:${p(s)}`:`${p(m)}:${p(s)}`;}
 function p(n){return String(n).padStart(2,"0");}
 function startClock(){updateClock();setInterval(updateClock,1000);}
-function toggleFullscreen(){document.fullscreenElement?document.exitFullscreen?.():$("stage").requestFullscreen?.();}
+function toggleFullscreen(){
+  if(document.fullscreenElement){
+    document.exitFullscreen?.();
+  } else {
+    (document.documentElement.requestFullscreen?.() || Promise.resolve())
+      .catch(()=>{});
+  }
+}
 
 // ── Caption (multi-line) ──
 function renderCaption(interim){
