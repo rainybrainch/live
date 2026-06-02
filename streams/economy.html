@@ -221,6 +221,7 @@ body.recording .timer-time{color:var(--acc);text-shadow:0 0 18px rgba(201,168,76
 .dock{
   position:fixed;left:50%;top:14px;transform:translateX(-50%);
   width:min(480px,calc(100vw - 28px));max-height:calc(100vh - 28px);overflow:auto;
+  user-select:none;
   border:1px solid rgba(255,255,255,.1);border-radius:12px;
   background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.015)),rgba(6,10,4,.95);
   backdrop-filter:blur(18px);z-index:20;
@@ -232,7 +233,9 @@ body.panel-hidden .dock{display:none;}
   display:flex;align-items:center;gap:9px;
   padding:12px 14px;border-bottom:1px solid var(--line);
   background:linear-gradient(90deg,rgba(201,168,76,.14),transparent 55%),rgba(255,255,255,.03);
+  cursor:grab;
 }
+.dock-head:active{cursor:grabbing;}
 .dock-title{flex:1;font-size:14px;font-weight:900;font-family:var(--serif);}
 .dock-title span{display:block;color:var(--muted);font-size:10px;margin-top:2px;}
 .dock-body{padding:12px;display:grid;gap:11px;}
@@ -266,7 +269,7 @@ body.panel-hidden .dock{display:none;}
 
 /* Open tab */
 .open-tab{
-  position:fixed;left:50%;bottom:14px;transform:translateX(-50%);z-index:40;
+  position:fixed;right:14px;bottom:14px;z-index:40;
   display:none;align-items:center;gap:8px;
   min-height:44px;padding:0 15px;
   border:1px solid rgba(201,168,76,.3);border-radius:10px;
@@ -724,6 +727,47 @@ function bind(){
   $("subInput")?.addEventListener("input",()=>{state.sub=$("subInput").value;save();});
   $("stageFullscreenBtn")?.addEventListener("click",toggleFullscreen);
   $("dockFullscreenBtn")?.addEventListener("click",toggleFullscreen);
+  // ── Dock drag ──
+  (function(){
+    const dock=$("dock"), head=$("dock")?.querySelector(".dock-head");
+    if(!dock||!head) return;
+    let dragging=false, ox=0, oy=0;
+    head.addEventListener("mousedown",e=>{
+      if(e.target.closest("button")) return;
+      dragging=true;
+      const r=dock.getBoundingClientRect();
+      // 初回ドラッグ時: transform を解除して left/top を実座標に固定
+      dock.style.transform="none";
+      dock.style.left=r.left+"px";
+      dock.style.top =r.top +"px";
+      ox=e.clientX-r.left; oy=e.clientY-r.top;
+      e.preventDefault();
+    });
+    document.addEventListener("mousemove",e=>{
+      if(!dragging) return;
+      const maxX=window.innerWidth -dock.offsetWidth;
+      const maxY=window.innerHeight-dock.offsetHeight;
+      dock.style.left=Math.max(0,Math.min(maxX,e.clientX-ox))+"px";
+      dock.style.top =Math.max(0,Math.min(maxY,e.clientY-oy))+"px";
+    });
+    document.addEventListener("mouseup",()=>{dragging=false;});
+    // タッチ対応
+    head.addEventListener("touchstart",e=>{
+      if(e.target.closest("button")) return;
+      const t=e.touches[0], r=dock.getBoundingClientRect();
+      dock.style.transform="none";
+      dock.style.left=r.left+"px"; dock.style.top=r.top+"px";
+      ox=t.clientX-r.left; oy=t.clientY-r.top;
+    },{passive:true});
+    document.addEventListener("touchmove",e=>{
+      if(!head.matches(":active")) return;
+      const t=e.touches[0];
+      const maxX=window.innerWidth -dock.offsetWidth;
+      const maxY=window.innerHeight-dock.offsetHeight;
+      dock.style.left=Math.max(0,Math.min(maxX,t.clientX-ox))+"px";
+      dock.style.top =Math.max(0,Math.min(maxY,t.clientY-oy))+"px";
+    },{passive:true});
+  })();
   $("stageTimerToggle")?.addEventListener("click",toggleTimer);
   $("stageTimerReset")?.addEventListener("click",resetTimer);
   $("timerPreset")?.addEventListener("change",()=>{$("timerMinutes").value=$("timerPreset").value;setTimer();});
