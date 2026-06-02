@@ -177,6 +177,66 @@ textarea{resize:vertical;}
 }
 .lyrics-edit:focus{background:rgba(0,0,0,.4);}
 
+/* ── FULLSCREEN LYRICS MODE ── */
+body.fullscreen-lyrics .layout{display:none!important;}
+body.fullscreen-lyrics .mini-view{display:none!important;}
+.fullscreen-view{
+  display:none;
+  position:fixed;inset:0;z-index:20;
+  background:var(--bg);
+  flex-direction:column;align-items:center;justify-content:center;
+  padding:40px 60px;
+}
+body.fullscreen-lyrics .fullscreen-view{display:flex;}
+.fl-song{
+  text-align:center;margin-bottom:28px;flex-shrink:0;
+}
+.fl-title{font-family:var(--serif);font-size:clamp(22px,3.5vw,42px);font-weight:700;color:var(--text);margin-bottom:6px;}
+.fl-artist{font-size:14px;color:var(--muted);}
+.fl-lyrics{
+  width:100%;max-width:820px;max-height:70vh;overflow-y:auto;
+  font-family:var(--serif);font-size:clamp(16px,2.2vw,26px);line-height:2.4;
+  white-space:pre-wrap;text-align:center;color:var(--text);
+  scroll-behavior:smooth;
+}
+.fl-lyrics.empty{color:var(--faint);font-style:italic;}
+.fl-actions{
+  position:fixed;bottom:20px;left:50%;transform:translateX(-50%);
+  display:flex;gap:8px;z-index:25;
+}
+.fl-btn{
+  padding:7px 18px;border-radius:8px;border:1px solid rgba(232,121,160,.3);
+  background:rgba(13,8,16,.85);backdrop-filter:blur(10px);
+  color:var(--muted);font-size:11px;font-weight:900;cursor:pointer;transition:all .15s;
+}
+.fl-btn:hover{border-color:rgba(232,121,160,.6);color:var(--acc);}
+
+/* ── COUNTDOWN TIMER ── */
+.countdown-wrap{
+  display:flex;align-items:center;gap:8px;flex-shrink:0;
+}
+.countdown-display{
+  font-family:var(--serif);font-size:15px;font-weight:700;
+  color:var(--muted);letter-spacing:.06em;min-width:58px;text-align:right;
+  transition:color .3s;
+}
+.countdown-display.running{color:var(--acc);}
+.countdown-display.urgent{color:#ff6b6b;animation:urgentPulse .8s ease-in-out infinite;}
+@keyframes urgentPulse{0%,100%{opacity:1}50%{opacity:.5}}
+.countdown-input{
+  width:52px;padding:4px 7px;border-radius:6px;
+  border:1px solid var(--line);background:rgba(0,0,0,.3);
+  font-size:11px;color:var(--text);outline:none;text-align:center;
+}
+.countdown-input:focus{border-color:rgba(232,121,160,.4);}
+.countdown-btn{
+  padding:4px 10px;border-radius:6px;border:1px solid var(--line);
+  background:rgba(255,255,255,.04);font-size:10px;font-weight:900;
+  color:var(--muted);cursor:pointer;transition:all .15s;
+}
+.countdown-btn:hover{border-color:rgba(232,121,160,.3);color:var(--acc);}
+.countdown-btn.active{border-color:rgba(232,121,160,.4);background:rgba(232,121,160,.1);color:var(--acc);}
+
 /* ── OBS MODE ── */
 body.obs-mode{background:transparent!important;}
 body.obs-mode .header{background:rgba(13,8,16,.82);}
@@ -224,30 +284,30 @@ body.mini .mini-view{display:flex!important;}
 
 /* ── COMMENTS ── */
 .comments-wrap{
-  position:fixed;right:16px;bottom:20px;
-  width:240px;z-index:50;
-  display:flex;flex-direction:column;gap:6px;
-  pointer-events:none;
+  position:fixed;inset:0;pointer-events:none;z-index:50;overflow:hidden;
 }
-body.mini .comments-wrap,
-body.obs-mode .comments-wrap{right:10px;width:200px;}
 .comment-item{
-  display:flex;align-items:flex-start;gap:7px;
+  position:absolute;
+  display:inline-flex;align-items:flex-start;gap:7px;
   padding:8px 11px;border-radius:10px;
-  background:rgba(13,8,16,.82);backdrop-filter:blur(8px);
-  border:1px solid rgba(232,121,160,.2);
-  animation:slideIn .3s ease;
-  opacity:1;transition:opacity .5s;
+  background:rgba(13,8,16,.88);backdrop-filter:blur(10px);
+  border:1px solid rgba(232,121,160,.25);
+  pointer-events:none;white-space:nowrap;max-width:220px;
+  animation:commentRise var(--cr-dur,9s) ease-out forwards;
 }
-@keyframes slideIn{from{transform:translateX(20px);opacity:0}to{transform:translateX(0);opacity:1}}
-.comment-item.fade{opacity:0;}
-.ci-icon{font-size:16px;flex-shrink:0;line-height:1.3;}
+@keyframes commentRise{
+  0%  {transform:translateY(0) scale(.82);opacity:0;}
+  7%  {transform:translateY(-18px) scale(1);opacity:1;}
+  78% {opacity:1;}
+  100%{transform:translateY(-96vh);opacity:0;}
+}
+.ci-icon{font-size:15px;flex-shrink:0;line-height:1.3;}
 .ci-body{flex:1;min-width:0;}
 .ci-name{font-size:9px;font-weight:900;color:var(--acc);letter-spacing:.04em;margin-bottom:2px;}
-.ci-text{font-size:12px;color:var(--text);line-height:1.5;}
+.ci-text{font-size:12px;color:var(--text);line-height:1.45;}
 .comment-ctrl{
-  position:fixed;right:16px;bottom:0px;
-  display:flex;gap:5px;z-index:51;padding-bottom:4px;
+  position:fixed;right:16px;bottom:4px;
+  display:flex;gap:5px;z-index:51;
 }
 .cc-btn{
   padding:4px 10px;border-radius:6px;
@@ -256,6 +316,54 @@ body.obs-mode .comments-wrap{right:10px;width:200px;}
 }
 .cc-btn:hover{border-color:rgba(232,121,160,.4);color:var(--acc);}
 .cc-btn.active{border-color:rgba(232,121,160,.5);background:rgba(232,121,160,.1);color:var(--acc);}
+
+/* ── SING EFFECT ── */
+.bg-effect{
+  position:fixed;inset:0;z-index:0;pointer-events:none;
+  transition:opacity 2s ease;opacity:0;
+  background:
+    radial-gradient(ellipse 80% 60% at 50% 50%, var(--glow-center,transparent), transparent 70%),
+    radial-gradient(ellipse 100% 40% at 50% 100%, var(--glow-bottom,transparent), transparent 60%);
+}
+.edge-glow{
+  position:fixed;inset:0;z-index:0;pointer-events:none;
+  box-shadow:inset 0 0 0px var(--edge-color,transparent);
+  transition:box-shadow 2s ease, opacity 2s ease;opacity:0;
+}
+/* intensity levels */
+body[data-lv="1"] .bg-effect{opacity:1;--glow-center:rgba(232,121,160,.07);--glow-bottom:rgba(184,82,122,.06);}
+body[data-lv="2"] .bg-effect{opacity:1;--glow-center:rgba(232,121,160,.14);--glow-bottom:rgba(184,82,122,.12);}
+body[data-lv="3"] .bg-effect{opacity:1;--glow-center:rgba(232,121,160,.25);--glow-bottom:rgba(150,60,200,.18);}
+body[data-lv="4"] .bg-effect{opacity:1;--glow-center:rgba(240,100,180,.4);--glow-bottom:rgba(120,40,220,.3);}
+body[data-lv="1"] .edge-glow{opacity:1;box-shadow:inset 0 0 40px rgba(232,121,160,.12);}
+body[data-lv="2"] .edge-glow{opacity:1;box-shadow:inset 0 0 70px rgba(232,121,160,.22);}
+body[data-lv="3"] .edge-glow{opacity:1;box-shadow:inset 0 0 120px rgba(232,121,160,.38),inset 0 0 40px rgba(150,60,200,.2);animation:edgePulse 2s ease-in-out infinite;}
+body[data-lv="4"] .edge-glow{opacity:1;box-shadow:inset 0 0 160px rgba(240,80,180,.55),inset 0 0 60px rgba(120,40,220,.4);animation:edgePulse .9s ease-in-out infinite;}
+@keyframes edgePulse{0%,100%{opacity:1}50%{opacity:.6}}
+
+/* particles */
+.particle{
+  position:fixed;pointer-events:none;z-index:2;
+  font-size:var(--ps,16px);opacity:0;user-select:none;
+  animation:particleRise var(--pd,4s) ease-in forwards;
+}
+@keyframes particleRise{
+  0%  {transform:translateY(0)   translateX(0)                  rotate(0deg);  opacity:0;}
+  8%  {opacity:var(--po,.9);}
+  88% {opacity:var(--po,.9);}
+  100%{transform:translateY(-90vh) translateX(var(--px,0px))  rotate(var(--pr,180deg)); opacity:0;}
+}
+
+/* intensity badge */
+.lv-badge{
+  position:fixed;left:16px;bottom:20px;z-index:51;
+  padding:5px 12px;border-radius:999px;
+  font-size:11px;font-weight:900;letter-spacing:.08em;
+  background:rgba(13,8,16,.8);border:1px solid rgba(232,121,160,.3);
+  color:var(--acc);display:none;
+  transition:all .5s;
+}
+body[data-lv] .lv-badge{display:block;}
 
 /* Toast */
 .toast{position:fixed;bottom:20px;right:20px;z-index:999;padding:8px 16px;border-radius:8px;background:#1a0814;border:1px solid rgba(232,121,160,.4);color:var(--acc);font-size:12px;font-weight:700;opacity:0;transition:opacity .25s;pointer-events:none;max-width:280px;}
@@ -267,6 +375,11 @@ body.obs-mode .comments-wrap{right:10px;width:200px;}
 <body>
 
 <div class="toast" id="toast"></div>
+
+<!-- ── SING EFFECT LAYERS ── -->
+<div class="bg-effect" id="bgEffect"></div>
+<div class="edge-glow" id="edgeGlow"></div>
+<div class="lv-badge" id="lvBadge"></div>
 
 <!-- ── COMMENTS ── -->
 <div class="comments-wrap" id="commentsWrap"></div>
@@ -289,7 +402,15 @@ body.obs-mode .comments-wrap{right:10px;width:200px;}
     <button class="mode-btn"        id="modeSingle"  onclick="setMode('single')">🎵 単発</button>
   </div>
 
+  <!-- カウントダウンタイマー -->
+  <div class="countdown-wrap">
+    <input class="countdown-input" id="cdInput" type="text" value="4:00" placeholder="4:00" title="分:秒">
+    <button class="countdown-btn" id="cdBtn" onclick="toggleCountdown()">▶ タイマー</button>
+    <span class="countdown-display" id="cdDisplay">4:00</span>
+  </div>
+
   <div class="header-btns">
+    <button class="btn-hd" id="btnFullLyrics" onclick="toggleFullLyrics()">⛶ 歌詞全画面</button>
     <button class="btn-hd" id="btnMini" onclick="toggleMini()">⬜ ミニ</button>
     <button class="btn-hd" id="btnObs"  onclick="toggleObs()">📺 OBS</button>
     <a class="h-back btn-hd" href="index.html">← TOP</a>
@@ -400,6 +521,28 @@ body.obs-mode .comments-wrap{right:10px;width:200px;}
 
 </div>
 
+<!-- ── FULLSCREEN LYRICS VIEW ── -->
+<div class="fullscreen-view" id="fullscreenView">
+  <div class="fl-song">
+    <div class="fl-title"  id="flTitle">—</div>
+    <div class="fl-artist" id="flArtist"></div>
+  </div>
+  <div class="fl-lyrics" id="flLyrics">
+    <span style="color:var(--faint);font-style:italic;">歌詞がここに表示されます</span>
+  </div>
+  <div class="fl-actions">
+    <button class="fl-btn" onclick="toggleAutoScroll()">▶ 自動スクロール</button>
+    <select id="flScrollSpeed" style="background:rgba(0,0,0,.6);border:1px solid var(--line);border-radius:6px;color:var(--muted);font-size:10px;padding:2px 6px;outline:none;">
+      <option value="0.4">遅い</option>
+      <option value="0.8" selected>普通</option>
+      <option value="1.5">速い</option>
+      <option value="2.5">かなり速い</option>
+    </select>
+    <button class="fl-btn" onclick="markCurrentDone()">✅ 歌い終わり</button>
+    <button class="fl-btn" onclick="toggleFullLyrics()">✕ 閉じる</button>
+  </div>
+</div>
+
 <script>
 // ════════════════════════════════════
 //  State
@@ -413,6 +556,13 @@ let currentId   = null;
 let miniMode    = false;
 let obsMode     = false;
 let lyricsEditMode = false;
+
+// intensity
+let lv = 0;
+let lvTimer = null;
+let lvFadeTimer = null;
+let particleTimer = null;
+const PARTICLES = ['♪','♫','♩','✦','★','✨','🎵','🌸','💫'];
 
 // ════════════════════════════════════
 //  Init
@@ -484,6 +634,7 @@ function setCurrent(id) {
   currentId   = id;
   saveSetlist();
   renderAll();
+  startIntensity();
 }
 
 function markCurrentDone() {
@@ -494,6 +645,7 @@ function markCurrentDone() {
   saveSetlist();
   renderAll();
   showToast('✅ 歌い終わりました');
+  stopIntensity();
 }
 
 function nextSong() {
@@ -507,8 +659,10 @@ function nextSong() {
     next.status = 'current';
     currentId   = next.id;
     showToast(`▶ 「${next.title}」へ`);
+    startIntensity();
   } else {
     currentId = null;
+    stopIntensity();
     showToast('セットリスト終了');
   }
   saveSetlist();
@@ -522,6 +676,7 @@ function clearCurrent() {
     currentId = null;
     saveSetlist();
     renderAll();
+    stopIntensity();
   }
 }
 
@@ -550,6 +705,7 @@ function setSingleSong() {
   renderMiniNow(title, artist);
   document.getElementById('npActions').style.display = 'flex';
   document.getElementById('npDot').style.display = '';
+  startIntensity();
 }
 
 // ════════════════════════════════════
@@ -614,6 +770,8 @@ function renderNowPlaying(title, artist) {
     titleEl.innerHTML = '<span style="color:var(--faint);font-style:italic;font-size:16px;">曲を選んでください</span>';
     artistEl.textContent = '';
   }
+  // fullscreen sync
+  if (fullscreenLyrics) syncFullscreenLyrics();
 }
 
 function renderMiniView() {
@@ -682,6 +840,8 @@ function updateLyricsDisplay() {
     disp.innerHTML = '<span class="empty">ここに歌詞が表示されます</span>';
   }
   if (miniLy) miniLy.textContent = val;
+  // fullscreen sync
+  if (fullscreenLyrics) syncFullscreenLyrics();
   localStorage.setItem(LY_KEY, val);
 }
 
@@ -735,15 +895,23 @@ function toggleAutoScroll() {
   }
 }
 
+function getActiveLyricsEl() {
+  // fullscreen mode uses flLyrics; normal uses lyricsDisplay
+  if (document.body.classList.contains('fullscreen-lyrics')) {
+    return document.getElementById('flLyrics');
+  }
+  return document.getElementById('lyricsDisplay');
+}
+
 function runAutoScroll() {
   if (autoScrollTimer) clearInterval(autoScrollTimer);
-  const el = document.getElementById('lyricsDisplay');
+  const el = getActiveLyricsEl();
   if (!el) return;
-  const speed = parseFloat(document.getElementById('scrollSpeed')?.value || '0.8');
+  const speedId = document.body.classList.contains('fullscreen-lyrics') ? 'flScrollSpeed' : 'scrollSpeed';
+  const speed = parseFloat(document.getElementById(speedId)?.value || '0.8');
   autoScrollTimer = setInterval(() => {
     if (!autoScrollActive) { clearInterval(autoScrollTimer); return; }
     el.scrollTop += speed;
-    // 最後まで来たら停止
     if (el.scrollTop + el.clientHeight >= el.scrollHeight - 2) {
       autoScrollActive = false;
       clearInterval(autoScrollTimer);
@@ -756,9 +924,197 @@ function runAutoScroll() {
 
 // 速度変更時にリアルタイム反映
 document.addEventListener('DOMContentLoaded', () => {
-  const sp = document.getElementById('scrollSpeed');
-  if (sp) sp.addEventListener('change', () => { if (autoScrollActive) runAutoScroll(); });
+  ['scrollSpeed','flScrollSpeed'].forEach(id => {
+    const sp = document.getElementById(id);
+    if (sp) sp.addEventListener('change', () => { if (autoScrollActive) runAutoScroll(); });
+  });
 });
+
+// ════════════════════════════════════
+//  Fullscreen Lyrics
+// ════════════════════════════════════
+let fullscreenLyrics = false;
+
+function toggleFullLyrics() {
+  fullscreenLyrics = !fullscreenLyrics;
+  document.body.classList.toggle('fullscreen-lyrics', fullscreenLyrics);
+  const btn = document.getElementById('btnFullLyrics');
+  btn.textContent = fullscreenLyrics ? '✕ 全画面解除' : '⛶ 歌詞全画面';
+  btn.classList.toggle('active', fullscreenLyrics);
+  if (fullscreenLyrics) {
+    syncFullscreenLyrics();
+    if (autoScrollActive) { autoScrollActive = false; toggleAutoScroll(); }
+  }
+}
+
+function syncFullscreenLyrics() {
+  const lyrics = document.getElementById('lyricsEdit')?.value || '';
+  const fl = document.getElementById('flLyrics');
+  if (!fl) return;
+  if (lyrics.trim()) {
+    fl.classList.remove('empty');
+    fl.textContent = lyrics;
+  } else {
+    fl.innerHTML = '<span style="color:var(--faint);font-style:italic;">歌詞がここに表示されます</span>';
+  }
+  // sync title/artist
+  const title  = document.getElementById('npTitle')?.textContent || '—';
+  const artist = document.getElementById('npArtist')?.textContent || '';
+  const flT = document.getElementById('flTitle');
+  const flA = document.getElementById('flArtist');
+  if (flT) flT.textContent = title;
+  if (flA) { flA.textContent = artist; flA.style.display = artist ? '' : 'none'; }
+}
+
+// ════════════════════════════════════
+//  Countdown Timer
+// ════════════════════════════════════
+let cdRemaining = 0;
+let cdTotal     = 0;
+let cdRunning   = false;
+let cdInterval  = null;
+
+function parseTime(str) {
+  const parts = str.trim().split(':');
+  if (parts.length === 2) return parseInt(parts[0]) * 60 + parseInt(parts[1]);
+  return parseInt(parts[0]) || 0;
+}
+
+function formatTime(sec) {
+  const m = Math.floor(sec / 60);
+  const s = sec % 60;
+  return `${m}:${String(s).padStart(2, '0')}`;
+}
+
+function toggleCountdown() {
+  if (cdRunning) {
+    stopCountdown();
+  } else {
+    const input = document.getElementById('cdInput');
+    const secs = parseTime(input?.value || '4:00');
+    if (secs <= 0) return;
+    cdTotal     = secs;
+    cdRemaining = secs;
+    cdRunning   = true;
+    updateCdDisplay();
+    const btn = document.getElementById('cdBtn');
+    if (btn) { btn.textContent = '⏹ 停止'; btn.classList.add('active'); }
+    cdInterval = setInterval(() => {
+      if (cdRemaining <= 0) { stopCountdown(); return; }
+      cdRemaining--;
+      updateCdDisplay();
+      // コメント頻度をカウントダウン残り時間で調整
+      syncCommentFrequency();
+    }, 1000);
+  }
+}
+
+function stopCountdown() {
+  clearInterval(cdInterval);
+  cdRunning = false;
+  cdInterval = null;
+  const btn = document.getElementById('cdBtn');
+  if (btn) { btn.textContent = '▶ タイマー'; btn.classList.remove('active'); }
+  const disp = document.getElementById('cdDisplay');
+  if (disp) { disp.classList.remove('running','urgent'); }
+  cdRemaining = 0;
+  syncCommentFrequency();
+}
+
+function updateCdDisplay() {
+  const disp = document.getElementById('cdDisplay');
+  if (!disp) return;
+  disp.textContent = formatTime(cdRemaining);
+  const ratio = cdTotal > 0 ? cdRemaining / cdTotal : 1;
+  disp.classList.toggle('running', cdRunning && ratio > 0.25);
+  disp.classList.toggle('urgent',  cdRunning && ratio <= 0.25);
+}
+
+function syncCommentFrequency() {
+  // カウントダウンが進むほど（残り時間が減るほど）コメントが増える
+  if (!cdRunning || cdTotal <= 0) return;
+  const ratio = cdRemaining / cdTotal; // 1.0(開始) → 0(終了)
+  // ratio が下がるとコメント間隔も下がる（頻度↑）
+  // lv はエフェクト用なので別途 cdLv を使う（コメント頻度計算のみ）
+  // getCommentInterval() は lv を参照するが、ここでは cdLv で上書き
+  // ratio 1.0→lv0, 0.75→lv1, 0.5→lv2, 0.25→lv3, 0→lv4
+  const cdLv = Math.min(4, Math.floor((1 - ratio) * 5));
+  if (commentInterval && commentsActive) {
+    clearInterval(commentInterval);
+    const bases = [5000, 3700, 2600, 1700, 1000];
+    const vars  = [1000,  750,  600,  500,  400];
+    const interval = bases[cdLv] + randomBetween(-vars[cdLv], vars[cdLv]);
+    commentInterval = setInterval(spawnComment, interval);
+  }
+}
+
+// ════════════════════════════════════
+//  Intensity Effect
+// ════════════════════════════════════
+function startIntensity() {
+  clearInterval(lvTimer);
+  clearTimeout(lvFadeTimer);
+  clearTimeout(particleTimer);
+  lvTimer = null; particleTimer = null;
+  lv = 1;
+  applyLv();
+  lvTimer = setInterval(() => {
+    if (lv < 4) { lv++; applyLv(); }
+  }, 25000);
+  scheduleParticles();
+}
+
+function stopIntensity() {
+  clearInterval(lvTimer);
+  clearTimeout(particleTimer);
+  lvTimer = null; particleTimer = null;
+  const fadeLv = () => {
+    if (lv <= 0) { document.body.removeAttribute('data-lv'); return; }
+    lv--;
+    applyLv();
+    lvFadeTimer = setTimeout(fadeLv, 900);
+  };
+  fadeLv();
+}
+
+function applyLv() {
+  const badge = document.getElementById('lvBadge');
+  if (lv <= 0) {
+    document.body.removeAttribute('data-lv');
+    if (badge) badge.textContent = '';
+  } else {
+    document.body.dataset.lv = lv;
+    const labels = ['WARM UP ♪','RISING ♫','PEAK ✨','CLIMAX 🔥'];
+    if (badge) badge.textContent = 'Lv.' + lv + ' ' + labels[lv - 1];
+  }
+}
+
+function scheduleParticles() {
+  if (!lvTimer && lv <= 0) return;
+  const counts   = [1, 2, 4, 7];
+  const delays   = [3200, 2000, 1100, 600];
+  const count = lv > 0 ? counts[lv - 1] : 0;
+  for (let i = 0; i < count; i++) spawnParticle();
+  const next = lv > 0 ? delays[lv - 1] + randomBetween(-150, 150) : 9999;
+  particleTimer = setTimeout(scheduleParticles, next);
+}
+
+function spawnParticle() {
+  const el = document.createElement('span');
+  el.className = 'particle';
+  el.textContent = PARTICLES[Math.floor(Math.random() * PARTICLES.length)];
+  const x   = randomBetween(3, 95);
+  const sz  = randomBetween(14, 26);
+  const dur = randomBetween(3500, 6200);
+  const dx  = randomBetween(-130, 130);
+  const rot = randomBetween(-210, 210);
+  const op  = Math.min(0.95, 0.55 + lv * 0.1);
+  el.style.cssText =
+    `left:${x}vw;bottom:4vh;` +
+    `--ps:${sz}px;--pd:${dur}ms;--po:${op};--px:${dx}px;--pr:${rot}deg;`;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), dur + 300);
+}
 
 // ════════════════════════════════════
 //  Comments
@@ -782,7 +1138,7 @@ const MAX_COMMENTS  = 5;
 
 function startComments() {
   if (commentInterval) clearInterval(commentInterval);
-  commentInterval = setInterval(spawnComment, randomBetween(2500, 5000));
+  commentInterval = setInterval(spawnComment, getCommentInterval());
 }
 
 function stopComments() {
@@ -807,6 +1163,11 @@ function spawnComment() {
 
   const el = document.createElement('div');
   el.className = 'comment-item';
+
+  const leftPct = randomBetween(3, 62);
+  const dur = randomBetween(7500, 11500);
+  el.style.cssText = `left:${leftPct}vw;bottom:70px;--cr-dur:${dur}ms;`;
+
   el.innerHTML = `
     <span class="ci-icon">${persona.icon}</span>
     <div class="ci-body">
@@ -814,27 +1175,21 @@ function spawnComment() {
       <div class="ci-text">${text}</div>
     </div>`;
   wrap.appendChild(el);
+  setTimeout(() => el.remove(), dur + 400);
 
-  // 最大件数を超えたら古いものを削除
-  const items = wrap.querySelectorAll('.comment-item');
-  if (items.length > MAX_COMMENTS) {
-    const oldest = items[0];
-    oldest.classList.add('fade');
-    setTimeout(() => oldest.remove(), 500);
-  }
-
-  // 一定時間後に消える
-  const lifetime = randomBetween(7000, 12000);
-  setTimeout(() => {
-    el.classList.add('fade');
-    setTimeout(() => el.remove(), 500);
-  }, lifetime);
-
-  // 次のコメントまでの間隔をランダムに再設定
+  // 次のコメントまでの間隔（lv が高いほど短い）
   if (commentInterval) {
     clearInterval(commentInterval);
-    commentInterval = setInterval(spawnComment, randomBetween(2500, 5000));
+    commentInterval = setInterval(spawnComment, getCommentInterval());
   }
+}
+
+function getCommentInterval() {
+  // lv 0=4000-6000ms / lv1=3000-4500 / lv2=2000-3200 / lv3=1200-2200 / lv4=600-1400
+  const bases = [5000, 3700, 2600, 1700, 1000];
+  const vars  = [1000,  750,  600,  500,  400];
+  const l = Math.max(0, Math.min(4, lv));
+  return bases[l] + randomBetween(-vars[l], vars[l]);
 }
 
 function randomBetween(min, max) {
