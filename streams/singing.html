@@ -230,7 +230,7 @@ body.mini .mini-view{display:flex!important;}
 
 /* ── COMMENTS ── */
 .comments-wrap{
-  position:fixed;inset:0;pointer-events:none;z-index:5;overflow:hidden;
+  position:fixed;inset:0;pointer-events:none;z-index:15;overflow:hidden;
 }
 .comment-item{
   position:absolute;
@@ -1015,7 +1015,7 @@ function spawnComment() {
   const el = document.createElement('div');
   el.className = 'comment-item';
 
-  const leftPct = randomBetween(3, 62);
+  const leftPct = randomBetween(3, 70);
   const dur = randomBetween(13000, 19000);
   el.style.cssText = `left:${leftPct}vw;bottom:70px;--cr-dur:${dur}ms;`;
 
