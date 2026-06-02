@@ -3,101 +3,1008 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>RB-Tree Politics — 政治の樹</title>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;700&display=swap" rel="stylesheet">
+<title>RB-Tree Politics</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;700&family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">
 <style>
-:root { --c: #6bb6ff; --c2: #2a5a8a; }
-*{margin:0;padding:0;box-sizing:border-box;}
-html,body{height:100%;background:#04080f;color:#9ac8f0;font-family:"Noto Serif JP",serif;overflow:hidden;}
-body{display:grid;place-items:center;}
-
-.wrap{text-align:center;display:flex;flex-direction:column;align-items:center;gap:20px;}
-
-.tree-svg{width:120px;height:130px;}
-.trunk{fill:none;stroke:#1a3050;stroke-width:5;stroke-linecap:round;}
-.bough{fill:none;stroke:#2a4870;stroke-width:3;stroke-linecap:round;}
-.leaf{fill:var(--c);opacity:0;}
-.leaf.l1{animation:grow 2.4s ease forwards .4s;}
-.leaf.l2{animation:grow 2.4s ease forwards .7s;}
-.leaf.l3{animation:grow 2.4s ease forwards 1.0s;}
-.leaf.l4{animation:grow 2.4s ease forwards 1.3s;}
-.leaf.l5{animation:grow 2.4s ease forwards 1.6s;}
-.leaf.l6{animation:grow 2.4s ease forwards 1.9s;}
-@keyframes grow{0%{opacity:0;transform:scale(.2);}60%{opacity:1;}100%{opacity:.88;transform:scale(1);}}
-
-.rb{font-size:10px;letter-spacing:.22em;color:rgba(107,182,255,.48);font-family:system-ui,sans-serif;font-weight:700;}
-.title{font-size:22px;font-weight:700;letter-spacing:.06em;color:var(--c);line-height:1.2;}
-.sub{font-size:11px;letter-spacing:.18em;color:rgba(107,182,255,.5);text-transform:uppercase;font-family:system-ui,sans-serif;}
-
-.stages{display:flex;gap:10px;margin-top:4px;}
-.stage{font-size:12px;opacity:0;animation:fadeIn .6s ease forwards;}
-.stage:nth-child(1){animation-delay:2.2s;}
-.stage:nth-child(2){animation-delay:2.5s;}
-.stage:nth-child(3){animation-delay:2.8s;}
-.stage:nth-child(4){animation-delay:3.1s;}
-.stage:nth-child(5){animation-delay:3.4s;}
-@keyframes fadeIn{to{opacity:.65;}}
-
-.loading{
-  display:flex;align-items:center;gap:8px;
-  font-size:11px;letter-spacing:.1em;color:rgba(107,182,255,.4);
-  font-family:system-ui,sans-serif;
-  opacity:0;animation:fadeIn .5s ease forwards 3.6s;
+:root {
+  --bg:      #040810;
+  --line:    rgba(107,182,255,.15);
+  --text:    #c8dff0;
+  --muted:   rgba(200,223,240,.52);
+  --faint:   rgba(200,223,240,.3);
+  --acc:     #6bb6ff;
+  --acc2:    #2a5a8a;
+  --good:    #7ec87a;
+  --danger:  #e07870;
+  --font:    "Noto Sans JP", sans-serif;
+  --serif:   "Noto Serif JP", serif;
+  color-scheme: dark;
 }
-.dot-loader{display:flex;gap:4px;}
-.dot-loader span{width:4px;height:4px;border-radius:999px;background:var(--c);opacity:.3;animation:blink 1s ease-in-out infinite;}
-.dot-loader span:nth-child(2){animation-delay:.2s;}
-.dot-loader span:nth-child(3){animation-delay:.4s;}
-@keyframes blink{0%,100%{opacity:.3;}50%{opacity:.9;}}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:var(--font);}
+button,input,select,textarea{font:inherit;color:inherit;}
+button{min-height:36px;border:1px solid var(--line);border-radius:8px;background:rgba(255,255,255,.07);padding:7px 10px;cursor:pointer;transition:background .12s;}
+button:hover{background:rgba(255,255,255,.13);}
+button.primary{border-color:rgba(107,182,255,.5);background:rgba(107,182,255,.16);}
+button.good{border-color:rgba(126,200,122,.5);background:rgba(126,200,122,.14);}
+button.warn{border-color:rgba(224,120,112,.5);background:rgba(224,120,112,.14);}
+input,select,textarea{width:100%;border:1px solid var(--line);border-radius:8px;background:rgba(0,0,0,.3);padding:8px 10px;outline:none;}
+textarea{min-height:70px;resize:vertical;line-height:1.55;}
+label{color:var(--muted);font-size:11px;font-weight:900;}
+
+/* ── STAGE ── */
+.stage{
+  position:fixed;inset:0;
+  background:
+    linear-gradient(90deg,rgba(107,182,255,.04) 1px,transparent 1px) 0 0/56px 56px,
+    linear-gradient(0deg, rgba(107,182,255,.03) 1px,transparent 1px) 0 0/56px 56px,
+    radial-gradient(ellipse at 15% 80%, rgba(107,182,255,.12),transparent 36rem),
+    radial-gradient(ellipse at 85% 20%, rgba(107,182,255,.08),transparent 30rem),
+    linear-gradient(160deg,#04090f 0%,#040810 60%,#030812 100%);
+  overflow:hidden;
+}
+.stage::before{
+  content:"";position:absolute;inset:0;
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(107,182,255,.015) 2px,rgba(107,182,255,.015) 4px);
+  pointer-events:none;z-index:0;
+}
+
+/* ── BRAND ── */
+.brand{
+  position:absolute;top:22px;left:26px;z-index:10;
+  display:flex;align-items:center;gap:10px;
+  padding:9px 14px;border:1px solid rgba(107,182,255,.2);border-radius:10px;
+  background:rgba(4,8,16,.74);backdrop-filter:blur(14px);
+  box-shadow:0 4px 24px rgba(0,0,0,.32),inset 0 1px 0 rgba(255,255,255,.06);
+}
+.brand-mark{
+  width:32px;height:32px;display:grid;place-items:center;border-radius:8px;
+  background:linear-gradient(135deg,#2a5a8a,#6bb6ff);
+  font-size:15px;box-shadow:0 2px 10px rgba(107,182,255,.3);
+}
+.brand strong{display:block;font-size:12px;line-height:1;letter-spacing:.04em;font-family:var(--serif);}
+.brand span{display:block;color:var(--muted);font-size:9px;font-weight:700;margin-top:2px;letter-spacing:.14em;}
+
+/* ── STAGE BADGE ── */
+.stage-badge{
+  position:absolute;top:22px;left:50%;transform:translateX(-50%);z-index:10;
+  display:flex;align-items:center;gap:12px;
+  padding:9px 20px;border:1px solid rgba(107,182,255,.22);border-radius:999px;
+  background:rgba(4,8,16,.74);backdrop-filter:blur(14px);
+}
+.stage-icon{font-size:20px;line-height:1;}
+.stage-name{font-family:var(--serif);font-size:14px;font-weight:700;letter-spacing:.06em;color:var(--acc);}
+.stage-en{font-size:9px;color:var(--muted);letter-spacing:.14em;margin-top:1px;}
+.on-air-dot{
+  width:7px;height:7px;border-radius:999px;background:#ff4040;
+  animation:blink 1s ease-in-out infinite;display:none;
+}
+body.recording .on-air-dot{display:block;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
+
+/* ── TIMER ── */
+.timer-wrap{
+  position:absolute;top:22px;right:26px;z-index:10;
+  display:flex;align-items:center;gap:10px;
+  padding:9px 14px;border:1px solid rgba(255,255,255,.1);border-radius:999px;
+  background:rgba(4,8,16,.74);backdrop-filter:blur(14px);
+}
+.timer-time{font-size:clamp(18px,1.6vw,28px);font-weight:900;font-variant-numeric:tabular-nums;letter-spacing:.08em;}
+body.recording .timer-time{color:var(--acc);text-shadow:0 0 18px rgba(107,182,255,.35);}
+.timer-btn{
+  width:26px;height:26px;min-height:26px;padding:0;
+  display:grid;place-items:center;border-radius:7px;font-size:12px;
+  border-color:rgba(107,182,255,.3);color:var(--muted);
+}
+.timer-btn.running{background:linear-gradient(180deg,#b0d4ff,var(--acc));border-color:var(--acc);color:#010408;box-shadow:0 0 14px rgba(107,182,255,.28);}
+
+/* ── KEYWORD CARD ── */
+.keyword-card{
+  position:absolute;left:32px;bottom:110px;width:min(480px,42vw);
+  padding:14px 18px;
+  border-left:4px solid var(--acc);
+  border-top:1px solid rgba(255,255,255,.1);
+  border-right:1px solid rgba(255,255,255,.06);
+  border-bottom:1px solid rgba(255,255,255,.06);
+  border-radius:8px;
+  background:linear-gradient(100deg,rgba(4,8,16,.9),rgba(4,8,16,.48));
+  backdrop-filter:blur(14px);
+  box-shadow:0 8px 32px rgba(0,0,0,.28),inset 0 1px 0 rgba(255,255,255,.06);
+}
+.kicker{
+  color:var(--acc);font-size:10px;font-weight:900;letter-spacing:.16em;
+  text-transform:uppercase;margin-bottom:6px;
+  display:flex;align-items:center;gap:7px;
+}
+.kicker::before{content:"";width:5px;height:5px;border-radius:999px;background:var(--acc);box-shadow:0 0 6px var(--acc);flex-shrink:0;}
+.keyword-main{font-family:var(--serif);font-size:clamp(16px,2vw,30px);line-height:1.15;font-weight:700;}
+.keyword-sub{margin-top:5px;color:rgba(200,223,240,.6);font-size:clamp(10px,.95vw,14px);line-height:1.5;}
+
+/* ── ARCHIVE CHIP ── */
+.archive-link{
+  position:absolute;left:32px;bottom:74px;
+  display:flex;align-items:center;gap:7px;
+  padding:5px 12px;border-radius:999px;
+  border:1px solid rgba(107,182,255,.28);background:rgba(107,182,255,.1);
+  color:var(--acc);font-size:10px;font-weight:900;letter-spacing:.08em;
+  cursor:pointer;transition:background .15s;text-decoration:none;
+  backdrop-filter:blur(10px);z-index:6;
+}
+.archive-link:hover{background:rgba(107,182,255,.2);}
+
+/* ── COMMENTS ── */
+.comments{
+  position:absolute;
+  right:28px;top:80px;bottom:120px;
+  width:min(320px,22vw);
+  overflow:hidden;pointer-events:none;z-index:2;
+}
+.comment{
+  --uc:var(--acc);
+  position:absolute;left:0;right:0;bottom:0;
+  padding:10px 12px;border-radius:11px;
+  background:rgba(4,8,16,.8);
+  border:1px solid rgba(255,255,255,.1);
+  border-left:3px solid var(--uc);
+  animation:rise var(--life,16s) linear forwards;
+  backdrop-filter:blur(12px);
+  box-shadow:0 6px 20px rgba(0,0,0,.3);
+}
+.comment .user{color:var(--uc);font-size:clamp(10px,.8vw,12px);font-weight:900;margin-right:6px;}
+.comment .tag{color:var(--muted);font-size:9px;font-weight:900;border:1px solid rgba(255,255,255,.14);border-radius:999px;padding:1px 5px;margin-right:6px;}
+.comment .text{display:block;margin-top:4px;font-size:clamp(12px,1.1vw,16px);line-height:1.52;font-weight:700;overflow-wrap:anywhere;}
+@keyframes rise{0%{opacity:0;transform:translateY(20px) scale(.97);}8%{opacity:1;transform:none;}80%{opacity:1;}100%{opacity:0;transform:translateY(calc(-100vh + 50px));}}
+
+/* ── CAPTION ── */
+.caption{
+  position:absolute;left:0;right:0;bottom:0;z-index:6;
+  padding:0 24px 16px;
+  display:flex;justify-content:center;align-items:flex-end;
+  pointer-events:none;
+}
+.caption::before{
+  content:"";position:absolute;left:0;right:0;bottom:0;height:160px;
+  background:linear-gradient(to top,rgba(4,8,16,.92),transparent);
+  z-index:-1;
+}
+.caption-card{
+  width:min(960px,calc(100vw - 300px));
+  display:flex;align-items:stretch;
+  border-radius:12px;overflow:hidden;
+  border:1px solid rgba(107,182,255,.2);
+  background:rgba(4,8,16,.88);
+  backdrop-filter:blur(20px);
+  box-shadow:0 10px 40px rgba(0,0,0,.4),inset 0 1px 0 rgba(107,182,255,.1);
+  min-height:52px;
+}
+.caption-bar{width:4px;flex-shrink:0;background:linear-gradient(180deg,var(--acc),#2a5a8a);animation:borderFlow 3s ease-in-out infinite alternate;}
+@keyframes borderFlow{0%{opacity:.6;}100%{opacity:1;filter:brightness(1.3);}}
+.caption-who{flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;width:62px;border-right:1px solid rgba(255,255,255,.07);padding:8px;}
+.caption-who-dot{width:8px;height:8px;border-radius:999px;background:rgba(255,255,255,.18);transition:background .3s,box-shadow .3s;}
+.caption-who-dot.host{background:var(--acc);box-shadow:0 0 12px rgba(107,182,255,.55);}
+.caption-who-label{font-size:9px;font-weight:900;letter-spacing:.1em;text-transform:uppercase;color:rgba(200,223,240,.38);transition:color .3s;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:54px;text-align:center;}
+.caption-who-label.host{color:var(--acc);}
+.caption-text{flex:1;padding:10px 18px 10px 14px;display:flex;flex-direction:column;gap:5px;overflow-wrap:break-word;}
+.caption-line{line-height:1.45;font-weight:800;text-shadow:0 1px 3px rgba(0,0,0,.5);}
+.caption-line.c-current{font-size:clamp(15px,1.5vw,25px);opacity:1;}
+.caption-line.c-prev1{font-size:clamp(12px,1.2vw,20px);opacity:0.5;}
+.caption-line.c-prev2{font-size:clamp(10px,.98vw,16px);opacity:0.26;}
+.caption-line.c-interim{font-size:clamp(14px,1.4vw,24px);opacity:0.5;font-style:italic;}
+@keyframes captionIn{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:none;}}
+.caption-line.c-flash{animation:captionIn .28s ease forwards;}
+
+/* ── STAGE CONTROLS ── */
+.sc-btns{position:absolute;bottom:22px;right:22px;display:flex;gap:6px;z-index:8;}
+.sc-btn{
+  width:34px;height:34px;min-height:34px;padding:0;
+  display:grid;place-items:center;border-radius:8px;
+  border:1px solid rgba(255,255,255,.14);background:rgba(4,8,16,.62);backdrop-filter:blur(10px);
+  color:var(--muted);font-size:14px;cursor:pointer;transition:all .15s;
+}
+.sc-btn:hover{background:rgba(107,182,255,.18);color:var(--text);}
+.sc-btn.active{background:rgba(107,182,255,.22);border-color:var(--acc);color:var(--acc);}
+
+/* ── DOCK ── */
+.dock{
+  position:fixed;right:14px;top:14px;
+  width:min(420px,calc(100vw - 28px));max-height:calc(100vh - 28px);overflow:auto;
+  border:1px solid rgba(255,255,255,.1);border-radius:12px;
+  background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.015)),rgba(4,8,16,.95);
+  backdrop-filter:blur(18px);z-index:20;
+  box-shadow:0 28px 80px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.06);
+  scrollbar-width:thin;scrollbar-color:rgba(107,182,255,.18) transparent;
+}
+body.panel-hidden .dock{display:none;}
+.dock-head{
+  display:flex;align-items:center;gap:9px;
+  padding:12px 14px;border-bottom:1px solid var(--line);
+  background:linear-gradient(90deg,rgba(107,182,255,.14),transparent 55%),rgba(255,255,255,.03);
+}
+.dock-title{flex:1;font-size:14px;font-weight:900;font-family:var(--serif);}
+.dock-title span{display:block;color:var(--muted);font-size:10px;margin-top:2px;}
+.dock-body{padding:12px;display:grid;gap:11px;}
+.section{border:1px solid rgba(255,255,255,.09);border-radius:9px;background:linear-gradient(180deg,rgba(255,255,255,.045),rgba(255,255,255,.02));padding:12px;display:grid;gap:10px;}
+.section-title{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:900;}
+.step{width:22px;height:22px;display:grid;place-items:center;border-radius:999px;background:var(--acc);color:#010408;font-size:12px;font-weight:900;}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.wide{grid-column:1/-1;}
+.field{display:grid;gap:5px;}
+.log{color:var(--muted);font-size:11px;line-height:1.6;border:1px solid var(--line);border-radius:8px;padding:8px 10px;background:rgba(0,0,0,.22);max-height:90px;overflow:auto;white-space:pre-wrap;scrollbar-width:thin;}
+
+/* Stage selector */
+.stage-selector{display:grid;grid-template-columns:repeat(5,1fr);gap:5px;}
+.stage-sel-btn{
+  display:flex;flex-direction:column;align-items:center;gap:3px;
+  padding:8px 4px;border-radius:8px;border:1px solid var(--line);
+  background:rgba(255,255,255,.05);cursor:pointer;font-size:10px;font-weight:900;
+  color:var(--muted);transition:all .15s;
+}
+.stage-sel-btn:hover{background:rgba(107,182,255,.1);color:var(--text);}
+.stage-sel-btn.active{border-color:rgba(107,182,255,.6);background:rgba(107,182,255,.18);color:var(--text);}
+.stage-sel-btn .ico{font-size:16px;}
+
+/* Archive quick-add */
+.archive-form{
+  border:1px solid rgba(107,182,255,.2);border-radius:9px;
+  background:rgba(107,182,255,.06);padding:10px;display:grid;gap:8px;
+}
+.archive-form-title{font-size:11px;font-weight:900;color:var(--acc);letter-spacing:.06em;display:flex;align-items:center;gap:6px;}
+
+/* Open tab */
+.open-tab{
+  position:fixed;right:14px;bottom:14px;z-index:40;
+  display:none;align-items:center;gap:8px;
+  min-height:44px;padding:0 15px;
+  border:1px solid rgba(107,182,255,.3);border-radius:10px;
+  background:rgba(4,8,16,.9);backdrop-filter:blur(16px);
+  font-weight:900;font-size:13px;
+  box-shadow:0 14px 36px rgba(0,0,0,.46);
+}
+body.panel-hidden .open-tab{display:inline-flex;}
+.open-tab-dot{width:8px;height:8px;border-radius:999px;background:var(--acc);box-shadow:0 0 0 3px rgba(107,182,255,.18);}
+
+/* Status toast */
+.status-toast{
+  position:absolute;bottom:88px;left:50%;transform:translateX(-50%);
+  padding:6px 16px;border-radius:999px;
+  background:rgba(4,8,16,.9);border:1px solid rgba(107,182,255,.3);
+  color:var(--muted);font-size:11px;font-weight:900;
+  white-space:nowrap;pointer-events:none;z-index:20;
+  opacity:0;transition:opacity .25s;
+}
+.status-toast.show{opacity:1;}
+
+body.obs-mode .dock,body.obs-mode .open-tab,body.obs-mode .sc-btns{display:none!important;}
+
+@media(max-width:900px){
+  .comments{width:220px;right:12px;}
+  .keyword-card{left:12px;right:250px;width:auto;}
+  .caption-card{width:calc(100vw - 40px);}
+}
 </style>
 </head>
 <body>
-<div class="wrap">
-  <svg class="tree-svg" viewBox="0 0 120 130">
-    <path class="trunk" d="M 60 125 Q 58 100 60 75"/>
-    <path class="bough" d="M 60 95 Q 40 80 28 68"/>
-    <path class="bough" d="M 60 85 Q 80 72 92 60"/>
-    <path class="bough" d="M 60 75 Q 45 58 38 44"/>
-    <path class="bough" d="M 60 75 Q 74 55 80 40"/>
-    <circle class="leaf l1" cx="26" cy="64" r="11" transform-origin="26 64"/>
-    <circle class="leaf l2" cx="92" cy="56" r="11" transform-origin="92 56"/>
-    <circle class="leaf l3" cx="36" cy="40" r="13" transform-origin="36 40"/>
-    <circle class="leaf l4" cx="82" cy="36" r="13" transform-origin="82 36"/>
-    <circle class="leaf l5" cx="56" cy="26" r="14" transform-origin="56 26"/>
-    <circle class="leaf l6" cx="68" cy="16" r="10" transform-origin="68 16"/>
-  </svg>
+<main class="stage" id="stage">
 
-  <div>
-    <div class="rb">RAINY BRAIN</div>
-    <div class="title">RB-Tree Politics</div>
-    <div class="sub">政治の樹</div>
+  <!-- Brand -->
+  <div class="brand">
+    <div class="brand-mark">🏛️</div>
+    <div>
+      <strong>RB-Tree Politics</strong>
+      <span id="brandStageName">🌱 Seed</span>
+    </div>
   </div>
 
-  <div class="stages">
-    <span class="stage">🌱</span>
-    <span class="stage">🌿</span>
-    <span class="stage">🍃</span>
-    <span class="stage">🌳</span>
-    <span class="stage">🌲</span>
+  <!-- Stage badge -->
+  <div class="stage-badge">
+    <span class="stage-icon" id="stageBadgeIcon">🌱</span>
+    <div>
+      <div class="stage-name" id="stageBadgeName">Seed</div>
+      <div class="stage-en" id="stageBadgeEn">種を蒔く — まず知る</div>
+    </div>
+    <div class="on-air-dot"></div>
   </div>
 
-  <div class="loading">
-    配信画面を起動中
-    <div class="dot-loader"><span></span><span></span><span></span></div>
+  <!-- Timer -->
+  <div class="timer-wrap">
+    <div>
+      <div class="timer-time" id="timerTime">--:--</div>
+    </div>
+    <button class="timer-btn" id="stageTimerToggle" type="button">▶</button>
+    <button class="timer-btn" id="stageTimerReset"  type="button">↺</button>
   </div>
-</div>
+
+  <!-- Comments -->
+  <div class="comments" id="commentStream"></div>
+
+  <!-- Keyword card -->
+  <section class="keyword-card">
+    <div class="kicker" id="kicker">RB-TREE POLITICS</div>
+    <div class="keyword-main" id="keywordMain">今日のキーワード</div>
+    <div class="keyword-sub" id="keywordSub">ここで学ぶ政治用語を設定してください</div>
+  </section>
+
+  <!-- Archive link -->
+  <a class="archive-link" href="https://rainybrainch.github.io/rb-tree-archive/" target="_blank" rel="noopener">
+    🌲 RB-Tree Archive ↗
+  </a>
+
+  <!-- Status toast -->
+  <div class="status-toast" id="statusToast"></div>
+
+  <!-- Caption -->
+  <div class="caption" id="captionWrap">
+    <div class="caption-card">
+      <div class="caption-bar"></div>
+      <div class="caption-who">
+        <div class="caption-who-dot" id="captionDot"></div>
+        <div class="caption-who-label" id="captionLabel">音声</div>
+      </div>
+      <div class="caption-text" id="caption">
+        <span class="caption-line c-current">「マイク開始」で文字起こしが始まります</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stage controls -->
+  <div class="sc-btns">
+    <button class="sc-btn" id="stageFullscreenBtn" title="全画面（F）">⛶</button>
+  </div>
+
+</main>
+
+<!-- Dock -->
+<aside id="dock" class="dock">
+  <div class="dock-head">
+    <div class="dock-title">
+      RB-Tree Politics
+      <span>公開学習配信コントロール</span>
+    </div>
+    <button id="hideDock" type="button">閉じる</button>
+    <button id="micBtn" class="good" type="button">マイク開始</button>
+  </div>
+  <div class="dock-body">
+
+    <!-- Step 1 -->
+    <section class="section">
+      <div class="section-title"><span class="step">1</span>今日の学習設定</div>
+      <div class="field">
+        <label>今日のキーワード</label>
+        <input id="keywordInput" placeholder="例: 選挙制度、国会、政策決定" value="今日のキーワード">
+      </div>
+      <div class="field">
+        <label>説明（サブテキスト）</label>
+        <input id="subInput" placeholder="例: 有権者が代表者を選ぶ仕組み。民主主義の基盤。">
+      </div>
+      <div class="field">
+        <label>学習ステージ</label>
+        <div class="stage-selector" id="stageSelector">
+          <button class="stage-sel-btn active" data-stage="seed" data-icon="🌱" data-en="まず知る">
+            <span class="ico">🌱</span>Seed
+          </button>
+          <button class="stage-sel-btn" data-stage="branch" data-icon="🌿" data-en="繋げる">
+            <span class="ico">🌿</span>Branch
+          </button>
+          <button class="stage-sel-btn" data-stage="leaf" data-icon="🍃" data-en="記録する">
+            <span class="ico">🍃</span>Leaf
+          </button>
+          <button class="stage-sel-btn" data-stage="tree" data-icon="🌳" data-en="体系化">
+            <span class="ico">🌳</span>Tree
+          </button>
+          <button class="stage-sel-btn" data-stage="forest" data-icon="🌲" data-en="教材化">
+            <span class="ico">🌲</span>Forest
+          </button>
+        </div>
+      </div>
+      <div class="actions">
+        <button id="applyBtn" class="primary wide" type="button">ステージに反映</button>
+      </div>
+    </section>
+
+    <!-- Step 2 -->
+    <section class="section">
+      <div class="section-title"><span class="step">2</span>収録タイマー</div>
+      <div class="grid2">
+        <div class="field"><label>分</label><input id="timerMinutes" type="number" min="1" max="240" value="60"></div>
+        <div class="field">
+          <label>プリセット</label>
+          <select id="timerPreset">
+            <option value="60">60分</option><option value="30">30分</option>
+            <option value="90">90分</option><option value="120">120分</option>
+          </select>
+        </div>
+      </div>
+      <div class="actions">
+        <button id="timerSetBtn" type="button">反映</button>
+        <button id="timerStartBtn" class="good" type="button">開始</button>
+        <button id="timerResetBtn" type="button">リセット</button>
+      </div>
+    </section>
+
+    <!-- Step 3 -->
+    <section class="section">
+      <div class="section-title"><span class="step">3</span>文字起こし</div>
+      <div class="actions">
+        <button id="clearTranscriptBtn" type="button">字幕クリア</button>
+        <button id="commentBtn" class="warn" type="button">コメント1件</button>
+      </div>
+      <div class="field">
+        <label>手入力（Enter で反映）</label>
+        <input id="manualTranscript" placeholder="例: 選挙制度とはどういうものか？">
+      </div>
+      <div id="transcriptLog" class="log">まだ文字起こしはありません。</div>
+    </section>
+
+    <!-- Step 4: Archive -->
+    <section class="section">
+      <div class="section-title"><span class="step">4</span>Archive に記録</div>
+      <div class="archive-form">
+        <div class="archive-form-title">🌲 学びを RB-Tree Archive へ保存</div>
+        <div class="field">
+          <label>キーワード</label>
+          <input id="archiveKw" placeholder="例: 選挙制度">
+        </div>
+        <div class="field">
+          <label>学んだこと（自分の言葉で）</label>
+          <textarea id="archiveBody" rows="3" placeholder="選挙制度とは有権者が代表を選ぶ仕組み。比例代表・小選挙区などがある…"></textarea>
+        </div>
+        <div class="field">
+          <label>関連キーワード（カンマ区切り）</label>
+          <input id="archiveBranches" placeholder="例: 国会, 与野党, 投票率">
+        </div>
+        <div class="actions">
+          <button id="archiveSaveBtn" class="primary wide" type="button">🌱 Archive に追加</button>
+        </div>
+      </div>
+      <a href="https://rainybrainch.github.io/rb-tree-archive/" target="_blank" rel="noopener"
+         style="display:flex;align-items:center;justify-content:center;min-height:40px;
+                border:1px solid rgba(107,182,255,.35);border-radius:8px;
+                background:rgba(107,182,255,.1);color:var(--acc);
+                font-size:12px;font-weight:900;letter-spacing:.04em;text-decoration:none;">
+        🌲 Archive を開く ↗
+      </a>
+    </section>
+
+    <!-- コメント人格 -->
+    <details>
+      <summary style="cursor:pointer;padding:10px;color:var(--muted);font-size:12px;font-weight:900;border:1px solid rgba(255,255,255,.09);border-radius:9px;background:rgba(0,0,0,.14);">コメント人格設定</summary>
+      <div style="padding:10px;display:grid;gap:10px;border:1px solid rgba(255,255,255,.09);border-top:0;border-radius:0 0 9px 9px;background:rgba(0,0,0,.1);">
+        <div class="grid2">
+          <div class="field">
+            <label>コメント速度</label>
+            <select id="commentSpeed">
+              <option value="normal">ふつう</option>
+              <option value="slow">ゆっくり</option>
+              <option value="fast">多め</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>生成方式</label>
+            <select id="commentEngine">
+              <option value="template">テンプレート</option>
+              <option value="gemini">Gemini AI</option>
+            </select>
+          </div>
+        </div>
+        <div class="field">
+          <label>Gemini API キー</label>
+          <div style="display:flex;gap:7px;">
+            <input id="geminiKey" type="password" placeholder="AQ.Ab8... または AIzaSy..." style="flex:1">
+            <button id="geminiSaveBtn" class="primary" style="white-space:nowrap;min-height:40px;padding:0 12px;flex-shrink:0">反映</button>
+          </div>
+          <div id="geminiStatus" style="font-size:10px;color:var(--muted);margin-top:3px;">生成方式を「Gemini AI」にすると使用されます</div>
+        </div>
+        <div class="field">
+          <label>人格同期 URL（Google Sheets CSV）</label>
+          <input id="personaSheetUrl" placeholder="https://docs.google.com/spreadsheets/...">
+        </div>
+        <div class="actions">
+          <button id="syncPersonaBtn" class="primary" type="button">人格同期</button>
+          <a href="https://rainybrainch.github.io/comment-studio/ai-comment-personas.html" target="_blank"
+             style="display:flex;align-items:center;justify-content:center;min-height:44px;padding:7px 10px;
+                    border:1px solid rgba(107,182,255,.4);border-radius:8px;
+                    background:rgba(107,182,255,.12);color:var(--acc);
+                    font-size:12px;text-decoration:none;font-weight:900;">
+            🎭 Channel OS
+          </a>
+        </div>
+        <div id="personaStatus" style="font-size:11px;color:var(--muted);">未同期</div>
+      </div>
+    </details>
+
+  </div>
+</aside>
+
+<button class="open-tab" id="openDock" type="button">
+  <span class="open-tab-dot"></span>設定
+</button>
 
 <script>
-(function(){
-  try {
-    var k = 'all_domedia_comment_settings_v5';
-    var s = JSON.parse(localStorage.getItem(k) || '{}');
-    s.genre = 'economy';
-    localStorage.setItem(k, JSON.stringify(s));
-  } catch(_){}
-  setTimeout(function(){
-    location.replace('https://rainybrainch.github.io/comment-studio/ai-comment-system.html');
-  }, 3800);
+(() => {
+"use strict";
+
+const STORAGE_KEY       = "rbt_polit_studio_v1";
+const PERSONA_KEY       = "all_domedia_personas_v5";
+const SHARED_PERSONA_KEY= "rainybrain_personas_v1";
+const GEMINI_KEY_STORE  = "streaming_gemini_key_v1";
+const ARCHIVE_KEY       = "rbt_data_v1";
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+const $ = id => document.getElementById(id);
+
+const STAGES_META = {
+  seed:  {icon:"🌱",name:"Seed",  en:"種を蒔く — まず知る"},
+  branch:{icon:"🌿",name:"Branch",en:"枝を伸ばす — 繋げる"},
+  leaf:  {icon:"🍃",name:"Leaf",  en:"葉を広げる — 記録する"},
+  tree:  {icon:"🌳",name:"Tree",  en:"樹を育てる — 体系化"},
+  forest:{icon:"🌲",name:"Forest",en:"森を作る — 教材化"}
+};
+
+const state = {
+  keyword:"今日のキーワード", sub:"ここで学ぶ政治用語を設定してください",
+  currentStage:"seed",
+  commentEngine:"template", commentSpeed:"normal",
+  personaSheetUrl:"",
+  timer:{ durationSec:3600, remainingSec:3600, running:false, endAt:0 }
+};
+Object.assign(state, load());
+state.timer = normTimer(state.timer);
+
+let personas=loadPersonas(), recognition=null, listening=false;
+let audioCtx=null, meterTimer=null, micStream=null;
+let commentTimer=null, sheetSyncing=null;
+let transcriptBuf="", flushTimer=null, lastKey="";
+let restartTimer=null;
+let captionLines=[];
+
+init();
+
+function init(){
+  hydrate(); bind(); applyStage(); startClock(); scheduleComment(); syncPersonas(true);
+}
+
+function hydrate(){
+  $("keywordInput").value = state.keyword||"";
+  $("subInput").value     = state.sub||"";
+  $("commentSpeed").value = state.commentSpeed||"normal";
+  $("commentEngine").value= state.commentEngine||"template";
+  $("personaSheetUrl").value = state.personaSheetUrl||"";
+  $("geminiKey").value    = localStorage.getItem(GEMINI_KEY_STORE)||"";
+  $("timerMinutes").value = Math.max(1,Math.round(state.timer.durationSec/60));
+  document.querySelectorAll(".stage-sel-btn").forEach(b=>{
+    b.classList.toggle("active", b.dataset.stage===state.currentStage);
+  });
+  updateStageBadge(state.currentStage);
+}
+
+function bind(){
+  $("hideDock")?.addEventListener("click",()=>document.body.classList.add("panel-hidden"));
+  $("openDock")?.addEventListener("click",()=>document.body.classList.remove("panel-hidden"));
+  $("applyBtn")?.addEventListener("click",applyStage);
+  $("keywordInput")?.addEventListener("input",()=>{state.keyword=$("keywordInput").value;save();});
+  $("subInput")?.addEventListener("input",()=>{state.sub=$("subInput").value;save();});
+  $("stageFullscreenBtn")?.addEventListener("click",toggleFullscreen);
+  $("stageTimerToggle")?.addEventListener("click",toggleTimer);
+  $("stageTimerReset")?.addEventListener("click",resetTimer);
+  $("timerPreset")?.addEventListener("change",()=>{$("timerMinutes").value=$("timerPreset").value;setTimer();});
+  $("timerSetBtn")?.addEventListener("click",setTimer);
+  $("timerStartBtn")?.addEventListener("click",toggleTimer);
+  $("timerResetBtn")?.addEventListener("click",resetTimer);
+  $("micBtn")?.addEventListener("click",toggleMic);
+  $("clearTranscriptBtn")?.addEventListener("click",()=>{
+    captionLines=[];lastKey="";state.transcript=[];save();
+    $("transcriptLog").textContent="まだ文字起こしはありません。";
+    renderCaption();
+  });
+  $("commentBtn")?.addEventListener("click",()=>spawnComment());
+  $("manualTranscript")?.addEventListener("keydown",e=>{
+    if(e.key==="Enter"){const v=$("manualTranscript").value.trim();if(!v)return;$("manualTranscript").value="";pushTranscript(v);spawnComment();e.preventDefault();}
+  });
+  $("geminiSaveBtn")?.addEventListener("click",()=>{
+    const k=$("geminiKey")?.value.trim();
+    const st=$("geminiStatus");
+    if(!k){if(st){st.textContent="キーが入力されていません";st.style.color="var(--danger)";}return;}
+    localStorage.setItem(GEMINI_KEY_STORE,k);
+    state.commentEngine="gemini";
+    if($("commentEngine"))$("commentEngine").value="gemini";
+    save();scheduleComment();
+    if(st){st.textContent="✓ 保存済み・Gemini AI で動作中";st.style.color="var(--good)";}
+    setStatus("Gemini API キーを保存しました");
+  });
+  $("commentSpeed")?.addEventListener("change",()=>{state.commentSpeed=$("commentSpeed").value;save();scheduleComment();});
+  $("commentEngine")?.addEventListener("change",()=>{state.commentEngine=$("commentEngine").value;save();});
+  $("syncPersonaBtn")?.addEventListener("click",()=>syncPersonas(false));
+  $("archiveSaveBtn")?.addEventListener("click",saveToArchive);
+
+  document.querySelectorAll(".stage-sel-btn").forEach(btn=>{
+    btn.addEventListener("click",()=>{
+      document.querySelectorAll(".stage-sel-btn").forEach(b=>b.classList.remove("active"));
+      btn.classList.add("active");
+      state.currentStage=btn.dataset.stage;
+      save();
+      updateStageBadge(state.currentStage);
+    });
+  });
+
+  document.addEventListener("fullscreenchange",()=>{
+    const fs=!!document.fullscreenElement;
+    if($("stageFullscreenBtn"))$("stageFullscreenBtn").textContent=fs?"✕":"⛶";
+  });
+  document.addEventListener("keydown",e=>{
+    if(e.key==="f"||e.key==="F"){if(document.activeElement?.tagName!=="INPUT"&&document.activeElement?.tagName!=="TEXTAREA")toggleFullscreen();}
+    if(e.key==="Escape"&&!document.fullscreenElement)document.body.classList.remove("panel-hidden");
+  });
+}
+
+function applyStage(){
+  const kw=state.keyword=$("keywordInput").value||"今日のキーワード";
+  const sub=state.sub=$("subInput").value||"";
+  $("keywordMain").textContent=kw;
+  $("keywordSub").textContent=sub;
+  $("kicker").textContent="RB-TREE POLITICS";
+  save();
+}
+
+function updateStageBadge(stage){
+  const m=STAGES_META[stage]||STAGES_META.seed;
+  $("stageBadgeIcon").textContent=m.icon;
+  $("stageBadgeName").textContent=m.name;
+  $("stageBadgeEn").textContent=m.en;
+  $("brandStageName").textContent=m.icon+" "+m.name;
+}
+
+// ── Archive ──
+function saveToArchive(){
+  const kw=($("archiveKw")?.value||"").trim();
+  const body=($("archiveBody")?.value||"").trim();
+  if(!kw){setStatus("キーワードは必須です");return;}
+  const branches=($("archiveBranches")?.value||"").split(/[,、，]+/).map(s=>s.trim()).filter(Boolean);
+  const now=new Date().toISOString().slice(0,10);
+  const entry={
+    id:"rbt_"+Date.now()+"_"+Math.random().toString(36).slice(2,5),
+    category:"politics",stage:state.currentStage,
+    keyword:kw,body,branches,sources:[],
+    session:"RB-Tree Politics",sessionUrl:"",
+    createdAt:now,updatedAt:now
+  };
+  try{
+    const existing=JSON.parse(localStorage.getItem(ARCHIVE_KEY)||"[]");
+    existing.unshift(entry);
+    localStorage.setItem(ARCHIVE_KEY,JSON.stringify(existing));
+    $("archiveKw").value="";$("archiveBody").value="";$("archiveBranches").value="";
+    setStatus(`🌱「${kw}」を Archive に追加しました`);
+  }catch{setStatus("Archive への保存に失敗しました");}
+}
+
+// ── Timer ──
+function normTimer(t){
+  const dur=Math.max(60,parseInt(t?.durationSec||3600)||3600);
+  const end=parseInt(t?.endAt||0)||0;
+  const run=Boolean(t?.running&&end>Date.now());
+  const rem=run?Math.max(0,Math.ceil((end-Date.now())/1000)):Math.max(0,Math.min(dur,parseInt(t?.remainingSec||dur)||dur));
+  return{durationSec:dur,remainingSec:rem,running:run,endAt:run?end:0};
+}
+function setTimer(){
+  const m=Math.max(1,Math.min(240,parseInt($("timerMinutes").value||"60")||60));
+  state.timer={durationSec:m*60,remainingSec:m*60,running:false,endAt:0};save();updateClock();
+}
+function toggleTimer(){
+  state.timer=normTimer(state.timer);
+  if(state.timer.running){state.timer.running=false;state.timer.endAt=0;}
+  else{
+    if(state.timer.remainingSec<=0)state.timer.remainingSec=state.timer.durationSec;
+    state.timer.running=true;state.timer.endAt=Date.now()+state.timer.remainingSec*1000;
+  }
+  save();updateClock();
+}
+function resetTimer(){
+  state.timer=normTimer(state.timer);
+  state.timer.running=false;state.timer.endAt=0;state.timer.remainingSec=state.timer.durationSec;
+  save();updateClock();
+}
+function updateClock(){
+  state.timer=normTimer(state.timer);
+  if(state.timer.running&&state.timer.remainingSec<=0){state.timer.running=false;state.timer.endAt=0;}
+  $("timerTime").textContent=fmt(state.timer.remainingSec);
+  document.body.classList.toggle("recording",state.timer.running);
+  if($("timerStartBtn"))$("timerStartBtn").textContent=state.timer.running?"停止":"開始";
+  if($("stageTimerToggle")){
+    $("stageTimerToggle").textContent=state.timer.running?"Ⅱ":"▶";
+    $("stageTimerToggle").classList.toggle("running",state.timer.running);
+  }
+}
+function fmt(sec){const n=Math.max(0,parseInt(sec)||0),h=Math.floor(n/3600),m=Math.floor((n%3600)/60),s=n%60;return h>0?`${h}:${p(m)}:${p(s)}`:`${p(m)}:${p(s)}`;}
+function p(n){return String(n).padStart(2,"0");}
+function startClock(){updateClock();setInterval(updateClock,1000);}
+function toggleFullscreen(){document.fullscreenElement?document.exitFullscreen?.():$("stage").requestFullscreen?.();}
+
+// ── Caption ──
+function renderCaption(interim){
+  const el=$("caption");
+  if(!captionLines.length&&!interim){
+    el.innerHTML='<span class="caption-line c-current">「マイク開始」で文字起こしが始まります</span>';
+    return;
+  }
+  el.innerHTML="";
+  const show=captionLines.slice(-3);
+  const clsMap=["c-prev2","c-prev1","c-current"];
+  show.forEach((text,i)=>{
+    const offset=show.length-1-i;
+    const cls=clsMap[Math.min(i,2)];
+    const span=document.createElement("span");
+    span.className="caption-line "+cls;
+    if(offset===0&&!interim)span.classList.add("c-flash");
+    span.textContent=text;
+    el.appendChild(span);
+  });
+  if(interim){
+    const span=document.createElement("span");
+    span.className="caption-line c-interim";
+    span.textContent=interim;
+    el.appendChild(span);
+  }
+}
+
+function pushTranscript(text){
+  const clean=text.replace(/\s+/g," ").replace(/([。、！？!?])\s+/g,"$1").replace(/^(えー|えっと|あの|その|まあ)\s+/g,"").trim();
+  if(!clean)return;
+  const key=clean.replace(/[\s、。,.!！?？]/g,"");
+  if(!key||key===lastKey)return;
+  lastKey=key;
+  if(!state.transcript)state.transcript=[];
+  state.transcript.unshift({text:clean,at:Date.now()});
+  state.transcript=state.transcript.slice(0,40);save();
+  captionLines.push(clean);
+  if(captionLines.length>6)captionLines.shift();
+  renderCaption();
+  $("transcriptLog").textContent=state.transcript.slice(0,10).map(x=>"▸ "+x.text).join("\n");
+  if(!$("archiveKw")?.value&&state.keyword&&state.keyword!=="今日のキーワード"){
+    $("archiveKw").value=state.keyword;
+  }
+  if(clean.length>=14)setTimeout(spawnComment,900);
+}
+function queueTranscript(text){
+  transcriptBuf=[transcriptBuf,text].filter(Boolean).join(" ").replace(/\s+/g," ").trim();
+  clearTimeout(flushTimer);
+  flushTimer=setTimeout(()=>{const t=transcriptBuf;transcriptBuf="";if(t)pushTranscript(t);},820);
+}
+function recentText(){return(state.transcript||[]).slice(0,6).map(x=>x.text).reverse().join("\n").slice(-1200);}
+
+// ── Mic ──
+function toggleMic(){
+  if(!SR){setStatus("Chrome/Edgeの音声認識が必要です");return;}
+  if(listening){
+    clearTimeout(restartTimer);listening=false;try{recognition.stop();}catch{}stopMeter();
+    $("micBtn").textContent="マイク開始";$("micBtn").className="good";return;
+  }
+  recognition=new SR();
+  recognition.lang="ja-JP";recognition.continuous=true;recognition.interimResults=true;
+  recognition.onresult=e=>{
+    let fin="",int="";
+    for(let i=e.resultIndex;i<e.results.length;i++){
+      const t=e.results[i][0]?.transcript||"";
+      if(e.results[i].isFinal)fin+=t;else int+=t;
+    }
+    if(int)renderCaption(int);
+    if(fin.trim())queueTranscript(fin);
+  };
+  recognition.onerror=()=>{if(listening){clearTimeout(restartTimer);restartTimer=setTimeout(()=>{if(listening)try{recognition.start();}catch{}},1200);}};
+  recognition.onend=()=>{if(listening){clearTimeout(restartTimer);restartTimer=setTimeout(()=>{if(listening)try{recognition.start();}catch{}},700);}};
+  recognition.start();listening=true;
+  $("micBtn").textContent="マイク停止";$("micBtn").className="warn";
+  startMeter();
+}
+
+async function startMeter(){
+  try{
+    micStream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true}});
+    audioCtx=new AudioContext();
+    const an=audioCtx.createAnalyser();audioCtx.createMediaStreamSource(micStream).connect(an);
+    an.fftSize=64;const buf=new Uint8Array(an.frequencyBinCount);
+    meterTimer=setInterval(()=>{
+      an.getByteFrequencyData(buf);
+      const avg=buf.reduce((a,b)=>a+b,0)/buf.length/255;
+      const lvl=Math.min(1,avg*3.2);
+      const dot=$("captionDot"),lbl=$("captionLabel");
+      if(dot&&lvl>0.08){
+        dot.className="caption-who-dot host";
+        if(lbl){lbl.className="caption-who-label host";lbl.textContent=state.keyword?.slice(0,8)||"HOST";}
+      } else if(dot&&lvl<=0.08){
+        dot.className="caption-who-dot";
+        if(lbl){lbl.className="caption-who-label";lbl.textContent="音声";}
+      }
+    },80);
+  }catch{}
+}
+function stopMeter(){
+  clearInterval(meterTimer);
+  if(audioCtx){audioCtx.close().catch(()=>{});audioCtx=null;}
+  if(micStream){micStream.getTracks().forEach(t=>t.stop());micStream=null;}
+}
+
+// ── Comments ──
+function cleanName(raw){
+  const s=String(raw||"").trim();
+  if(s.includes(";"))return s.split(/\s/)[0].trim();
+  const slots=["好奇心旺盛","マイペース","熱血","冷静","慎重","楽観的","負けず嫌い","天然","職人気質","優しい","皮肉屋"];
+  for(const t of slots){const i=s.indexOf(" "+t);if(i>0)return s.slice(0,i).trim();}
+  return s;
+}
+
+function spawnComment(superChat=false){
+  const streamKey=localStorage.getItem(GEMINI_KEY_STORE)||"";
+  if(state.commentEngine==="gemini"&&streamKey){spawnGeminiComment(superChat,streamKey);return;}
+  const p=pickPersona(),text=buildComment(p);
+  addComment(text,p.name,p.color,superChat);
+}
+
+async function spawnGeminiComment(superChat,apiKey){
+  try{
+    const p=pickPersona(),recent=recentText();
+    const prompt=`あなたは「${p.name}」というライブ配信の視聴者です。
+口調: ${p.tone||p.roleType||"自然に反応する"}
+${p.catchphrase?`口癖: ${p.catchphrase}`:""}
+
+今の配信内容（政治学習配信）:
+今日のキーワード: 「${state.keyword}」/ ステージ: ${STAGES_META[state.currentStage]?.name}
+${recent||"政治学習配信中。"}
+
+この学習配信に対して視聴者として自然なコメントを1つだけ。
+35文字以内、日本語のみ、コメント文のみ出力。`;
+    const url=`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+    const res=await fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{temperature:0.9,maxOutputTokens:80}})});
+    if(!res.ok)throw new Error("API "+res.status);
+    const data=await res.json();
+    const text=(data.candidates?.[0]?.content?.parts?.[0]?.text||"").replace(/[\n\r「」『』]/g,"").trim().slice(0,35);
+    if(!text)throw new Error("empty");
+    addComment(text,p.name,p.color,superChat);
+  }catch{
+    const p=pickPersona(),text=buildComment(p);
+    addComment(text,p.name,p.color,superChat);
+  }
+}
+
+function addComment(text,name,color,superChat=false){
+  if(!text)return;
+  const node=document.createElement("article");
+  node.className=`comment${superChat?" super":""}`;
+  node.style.setProperty("--uc",color||"var(--acc)");
+  node.style.setProperty("--life",`${text.length>30?18:14}s`);
+  node.innerHTML=`<span class="user"></span><span class="tag"></span><span class="text"></span>`;
+  node.querySelector(".user").textContent="@"+cleanName(name);
+  node.querySelector(".tag").textContent=superChat?"Super":"AI";
+  node.querySelector(".text").textContent=text;
+  $("commentStream").append(node);
+  node.addEventListener("animationend",()=>node.remove());
+}
+
+function pickPersona(){
+  const list=personas.length?personas:defaultPersonas(),text=recentText();
+  return list.map(p=>({p,s:relevance(p,text)+Math.random()*.5})).sort((a,b)=>b.s-a.s)
+    .slice(0,Math.min(list.length,6))[Math.floor(Math.random()*Math.min(list.length,6))].p;
+}
+
+function relevance(p,text){
+  const hay=[p.name,p.roleType,p.reactionPattern,p.catchphrase,...(p.words||[]),...(p.interests||[])].join(" ");
+  let s=0;
+  text.split(/[\s、。,]+/).filter(w=>w.length>=2).forEach(w=>{if(hay.includes(w))s+=2;});
+  [[/政治|国会|政策|選挙/i,/政治|知識|分析/],[/民主主義|憲法|権力/i,/政治|懐疑|知識/],
+   [/草|面白|ネタ/i,/ネタ|共感/],[/初めて|わからない|入門/i,/初心者|質問/]]
+    .forEach(([a,b])=>{if(a.test(text)&&b.test(hay))s+=4;});
+  return s;
+}
+
+function buildComment(p){
+  if(p.catchphrase&&Math.random()<.42)return p.catchphrase.slice(0,35);
+  const text=recentText(),kw=text.split(/[\s、。,]+/).filter(w=>w.length>=2)[0]||(p.words||[])[0]||state.keyword||"政治";
+  const role=p.roleType||"共感勢";
+  const map={
+    "共感勢":[`${kw}、なるほどです`,`今の話わかります`,`${kw}ってそういうことか`,`今日初めて知りました`,"深い","このシリーズ好きです"],
+    "知識勢":[`${kw}の見方が面白い`,`もっと掘り下げてほしい`,`${kw}と選挙の関係が気になる`,`考察したくなる`,"この視点は新しい"],
+    "質問勢":[`${kw}ってどこが入口？`,`今のもう少し詳しく聞きたい`,`生活とどう繋がりますか？`,`投票にも関係しますか？`],
+    "懐疑勢":[`${kw}、本当にそれで合ってる？`,`別の見方もある気が`,`前提から確認したいです`,"慎重に見た方が良さそう"],
+    "応援勢":[`いい流れです`,`${kw}のとこ好きです`,`続けてください！`,`この調子でお願いします`],
+    "初心者勢":[`なるほどー！`,`${kw}って初めて聞きました`,`わかりやすいです`,`また来ます！`],
+    "ネタ勢":[`草`,`天才か`,`${kw}クセ強い`,`これは名言`]
+  };
+  return(map[role]||map["共感勢"])[Math.floor(Math.random()*(map[role]||map["共感勢"]).length)].slice(0,35);
+}
+
+function intervalRange(){
+  if(state.commentSpeed==="fast")return[3000,7000];
+  if(state.commentSpeed==="slow")return[10000,18000];
+  return[6000,12000];
+}
+function scheduleComment(){
+  clearTimeout(commentTimer);
+  const[mn,mx]=intervalRange();
+  commentTimer=setTimeout(()=>{spawnComment();scheduleComment();},mn+Math.random()*(mx-mn));
+}
+
+// ── Personas ──
+function defaultPersonas(){
+  return[
+    {name:"政策ウォッチャー",roleType:"知識勢",catchphrase:"その政策の影響は大きいな",color:"#6bb6ff",words:["政策","選挙","国会"]},
+    {name:"選挙研究者",roleType:"知識勢",catchphrase:"投票率の数字が気になる",color:"#57c87c",words:["選挙","投票","政党"]},
+    {name:"夜型ニュース好き",roleType:"共感勢",catchphrase:"このニュースずっと気になってた",color:"#c890d8",words:["政治","ニュース","時事"]},
+    {name:"中立派の市民",roleType:"懐疑勢",catchphrase:"本当にそれで良いのかな",color:"#f0c84c",words:["政治","疑問","中立"]},
+    {name:"民主主義の学徒",roleType:"応援勢",catchphrase:"こういう学習大事だと思う",color:"#ff8fa8",words:["民主主義","学習","政治"]},
+    {name:"初めての政治",roleType:"初心者勢",catchphrase:"初めて聞いた言葉です",color:"#4fd1c5",words:["政治","初心者","質問"]}
+  ];
+}
+
+function loadPersonas(){
+  const result=[];
+  try{
+    const p=JSON.parse(localStorage.getItem(PERSONA_KEY)||"[]");
+    result.push(...p.filter(x=>x&&x.name&&x.enabled!==false).map(x=>({...x,name:cleanName(x.name)})));
+  }catch{}
+  try{
+    const ids=new Set(result.map(x=>x.id||x.name));
+    const p=JSON.parse(localStorage.getItem(SHARED_PERSONA_KEY)||"[]");
+    result.push(...p.filter(x=>x&&x.name&&!ids.has(x.id||x.name)).map(x=>({...x,name:cleanName(x.name)})));
+  }catch{}
+  return result;
+}
+
+async function syncPersonas(silent){
+  if(sheetSyncing)return;sheetSyncing=true;
+  try{
+    const url=state.personaSheetUrl;
+    if(!url)throw new Error("no url");
+    const r=await fetch(url,{cache:"no-store"});
+    if(!r.ok)throw new Error("HTTP "+r.status);
+    const csv=await r.text();
+    personas=parsePersonas(csv);
+    if(!personas.length)throw new Error("empty");
+    setStatus(`人格 ${personas.length}件 同期済み`);
+  }catch{
+    personas=loadPersonas();
+    if(!personas.length)personas=defaultPersonas();
+    if(!silent)setStatus(`人格 ${personas.length}件（デフォルト）`);
+  }finally{sheetSyncing=null;if($("personaStatus"))$("personaStatus").textContent=`人格 ${personas.length}件`;}
+}
+
+function parsePersonas(csv){
+  const rows=parseCSV(csv);
+  return rows.map((r,i)=>{
+    const name=r[0];if(!name||name==="名前")return null;
+    return{id:"s"+i,name,roleType:r[2]||"",reactionPattern:r[3]||"",catchphrase:r[4]||"",
+           words:tags(r[6]),interests:tags(r[8]),color:["#6bb6ff","#f097c8","#8fa8ff","#9be870","#c890d8"][i%5]};
+  }).filter(Boolean);
+}
+function parseCSV(text){
+  const rows=[];let row=[],cell="",quote=false;
+  const src=String(text||""),d=src.includes("\t")?"\t":",";
+  for(let i=0;i<src.length;i++){
+    const ch=src[i],nx=src[i+1];
+    if(ch==='"'){if(quote&&nx==='"'){cell+='"';i++;}else quote=!quote;}
+    else if(ch===d&&!quote){row.push(cell.trim());cell="";}
+    else if((ch==="\n"||ch==="\r")&&!quote){
+      if(ch==="\r"&&nx==="\n")i++;row.push(cell.trim());
+      if(row.some(Boolean))rows.push(row);row=[];cell="";
+    }else cell+=ch;
+  }
+  row.push(cell.trim());if(row.some(Boolean))rows.push(row);return rows;
+}
+function tags(v){return String(v||"").split(/[;,、，・\s]+/).map(x=>x.trim()).filter(Boolean).slice(0,10);}
+
+// ── Storage / Status ──
+function load(){
+  try{return JSON.parse(localStorage.getItem(STORAGE_KEY)||"{}");}catch{return{};}
+}
+function save(){
+  try{localStorage.setItem(STORAGE_KEY,JSON.stringify(state));}catch{}
+}
+
+let toastTimer=null;
+function setStatus(msg){
+  const el=$("statusToast");if(!el)return;
+  el.textContent=msg;el.classList.add("show");
+  clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove("show"),3200);
+}
+
 })();
 </script>
 </body>
