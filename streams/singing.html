@@ -38,9 +38,6 @@ textarea{resize:vertical;}
 .logo-name{font-family:var(--serif);font-size:13px;font-weight:700;color:var(--acc);}
 .logo-sub{font-size:9px;color:var(--muted);letter-spacing:.12em;}
 
-.mode-toggle{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;}
-.mode-btn{padding:5px 14px;border:0;background:0;cursor:pointer;font-size:11px;font-weight:900;color:var(--muted);transition:all .15s;}
-.mode-btn.active{background:rgba(232,121,160,.18);color:var(--acc);}
 
 .header-btns{margin-left:auto;display:flex;gap:6px;align-items:center;}
 .btn-hd{padding:5px 12px;border-radius:7px;border:1px solid var(--line);background:rgba(255,255,255,.04);font-size:11px;font-weight:900;color:var(--muted);cursor:pointer;transition:all .15s;}
@@ -51,8 +48,6 @@ textarea{resize:vertical;}
 
 /* ── LAYOUT ── */
 .layout{display:grid;grid-template-columns:280px 1fr;height:calc(100vh - 52px);overflow:hidden;}
-.layout.single-mode{grid-template-columns:0 1fr;}
-.layout.single-mode .setlist-panel{display:none;}
 
 /* ── SETLIST PANEL ── */
 .setlist-panel{
@@ -105,26 +100,6 @@ textarea{resize:vertical;}
 /* ── CENTER ── */
 .center{overflow-y:auto;padding:20px 24px 40px;display:flex;flex-direction:column;gap:16px;}
 
-/* 単発モード曲入力 */
-.single-input-bar{
-  border:1px solid rgba(232,121,160,.25);border-radius:12px;
-  padding:14px 16px;background:rgba(232,121,160,.03);
-  display:flex;flex-direction:column;gap:10px;
-}
-.sib-label{font-size:9px;font-weight:900;letter-spacing:.14em;color:var(--acc);text-transform:uppercase;}
-.sib-row{display:flex;gap:8px;}
-.sib-input{
-  flex:1;padding:9px 12px;border-radius:8px;
-  border:1px solid rgba(232,121,160,.22);background:rgba(0,0,0,.35);
-  font-size:13px;color:var(--text);outline:none;transition:border-color .15s;
-}
-.sib-input:focus{border-color:rgba(232,121,160,.5);}
-.sib-set-btn{
-  padding:9px 16px;border-radius:8px;
-  background:rgba(232,121,160,.14);border:1px solid rgba(232,121,160,.32);
-  color:var(--acc);font-size:12px;font-weight:900;cursor:pointer;transition:all .15s;white-space:nowrap;
-}
-.sib-set-btn:hover{background:rgba(232,121,160,.24);}
 
 /* NOW PLAYING */
 .now-playing{
@@ -242,8 +217,7 @@ body.obs-mode{background:transparent!important;}
 body.obs-mode .header{background:rgba(13,8,16,.82);}
 body.obs-mode .setlist-panel{background:rgba(13,8,16,.7);}
 body.obs-mode .now-playing,
-body.obs-mode .lyrics-section,
-body.obs-mode .single-input-bar{background:rgba(13,8,16,.82)!important;backdrop-filter:blur(8px);}
+body.obs-mode .lyrics-section{background:rgba(13,8,16,.82)!important;backdrop-filter:blur(8px);}
 
 /* ── MINI MODE ── */
 body.mini .layout{display:none!important;}
@@ -397,11 +371,6 @@ body[data-lv] .lv-badge{display:block;}
     </div>
   </div>
 
-  <div class="mode-toggle">
-    <button class="mode-btn active" id="modeSetlist" onclick="setMode('setlist')">📋 セットリスト</button>
-    <button class="mode-btn"        id="modeSingle"  onclick="setMode('single')">🎵 単発</button>
-  </div>
-
   <!-- カウントダウンタイマー -->
   <div class="countdown-wrap">
     <input class="countdown-input" id="cdInput" type="text" value="4:00" placeholder="4:00" title="分:秒">
@@ -439,18 +408,6 @@ body[data-lv] .lv-badge{display:block;}
 
   <!-- CENTER -->
   <main class="center">
-
-    <!-- 単発モード入力 -->
-    <div class="single-input-bar" id="singleInputBar" style="display:none;">
-      <div class="sib-label">今歌う曲</div>
-      <div class="sib-row">
-        <input class="sib-input" id="singleTitle"  placeholder="曲名"
-          onkeydown="if(event.key==='Enter')document.getElementById('singleArtist').focus()">
-        <input class="sib-input" id="singleArtist" placeholder="アーティスト"
-          onkeydown="if(event.key==='Enter')setSingleSong()">
-        <button class="sib-set-btn" onclick="setSingleSong()">セット</button>
-      </div>
-    </div>
 
     <!-- NOW PLAYING -->
     <div class="now-playing" id="nowPlaying">
@@ -550,7 +507,6 @@ body[data-lv] .lv-badge{display:block;}
 const SL_KEY = 'singing_setlist';
 const LY_KEY = 'singing_lyrics';
 
-let mode        = 'setlist'; // 'setlist' | 'single'
 let setlist     = [];        // [{id, title, artist, status:'pending'|'current'|'done'}]
 let currentId   = null;
 let miniMode    = false;
@@ -573,22 +529,6 @@ window.addEventListener('DOMContentLoaded', () => {
   renderAll();
   startComments();
 });
-
-// ════════════════════════════════════
-//  Mode
-// ════════════════════════════════════
-function setMode(m) {
-  mode = m;
-  document.getElementById('modeSetlist').classList.toggle('active', m === 'setlist');
-  document.getElementById('modeSingle' ).classList.toggle('active', m === 'single');
-  document.getElementById('mainLayout').classList.toggle('single-mode', m === 'single');
-  document.getElementById('singleInputBar').style.display = m === 'single' ? 'flex' : 'none';
-  document.getElementById('singleInputBar').style.flexDirection = 'column';
-  if (m === 'single') {
-    document.getElementById('npActions').style.display = 'flex';
-    document.getElementById('npDot').style.display = '';
-  }
-}
 
 // ════════════════════════════════════
 //  Setlist
@@ -695,20 +635,6 @@ function moveDown(id) {
 }
 
 // ════════════════════════════════════
-//  Single mode
-// ════════════════════════════════════
-function setSingleSong() {
-  const title  = document.getElementById('singleTitle').value.trim();
-  const artist = document.getElementById('singleArtist').value.trim();
-  if (!title) return;
-  renderNowPlaying(title, artist);
-  renderMiniNow(title, artist);
-  document.getElementById('npActions').style.display = 'flex';
-  document.getElementById('npDot').style.display = '';
-  startIntensity();
-}
-
-// ════════════════════════════════════
 //  Render
 // ════════════════════════════════════
 function renderAll() {
@@ -746,7 +672,6 @@ function renderSetlist() {
 }
 
 function renderNowPlayingFromSetlist() {
-  if (mode === 'single') return;
   const current = setlist.find(s => s.status === 'current');
   if (current) {
     renderNowPlaying(current.title, current.artist);
@@ -775,9 +700,7 @@ function renderNowPlaying(title, artist) {
 }
 
 function renderMiniView() {
-  const current = mode === 'setlist'
-    ? setlist.find(s => s.status === 'current')
-    : null;
+  const current = setlist.find(s => s.status === 'current');
 
   const title  = current?.title  || document.getElementById('npTitle')?.textContent  || '—';
   const artist = current?.artist || document.getElementById('npArtist')?.textContent || '';
@@ -786,7 +709,7 @@ function renderMiniView() {
   // Next song
   const next = setlist.find(s => s.status === 'pending');
   const nextWrap = document.getElementById('miniNextWrap');
-  if (next && mode === 'setlist') {
+  if (next) {
     nextWrap.style.display = '';
     document.getElementById('miniNextSong').textContent = `${next.title}${next.artist ? ' / ' + next.artist : ''}`;
   } else {
