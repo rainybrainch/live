@@ -437,6 +437,7 @@ body.obs-mode .dock,body.obs-mode .open-tab,body.obs-mode .sc-btns{display:none!
       <span>公開学習配信コントロール</span>
     </div>
     <button id="hideDock" type="button">閉じる</button>
+    <button id="dockFullscreenBtn" type="button" onclick="toggleFullscreen()" title="全画面（F）">⛶ 全画面</button>
     <button id="micBtn" class="good" type="button">マイク開始</button>
   </div>
   <div class="dock-body">
@@ -752,6 +753,8 @@ function bind(){
   document.addEventListener("fullscreenchange",()=>{
     const fs=!!document.fullscreenElement;
     if($("stageFullscreenBtn"))$("stageFullscreenBtn").textContent=fs?"✕":"⛶";
+    const db=$("dockFullscreenBtn");
+    if(db){db.textContent=fs?"✕ 全画面解除":"⛶ 全画面";db.className=fs?"warn":"";}
   });
   document.addEventListener("keydown",e=>{
     if(e.key==="f"||e.key==="F"){if(document.activeElement?.tagName!=="INPUT"&&document.activeElement?.tagName!=="TEXTAREA")toggleFullscreen();}
