@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>RB-Tree Economics</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;700&family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/gh/rainybrainch/rb-tree-archive@master/seeds/seeds-data.js"></script>
 <style>
 :root {
   --bg:      #060a04;
@@ -280,8 +281,15 @@ body.panel-hidden .open-tab{display:inline-flex;}
 body.obs-mode .dock,body.obs-mode .open-tab,body.obs-mode .sc-btns{display:none!important;}
 
 /* ── SEED PICKER ── */
-.seed-level-hd{font-size:8px;font-weight:900;letter-spacing:.12em;color:var(--faint);margin:8px 0 4px;text-transform:uppercase;}
-.seed-pick-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;}
+.seed-level-hd{
+  font-size:8px;font-weight:900;letter-spacing:.12em;color:var(--faint);
+  margin:8px 0 4px;text-transform:uppercase;
+  display:flex;align-items:center;gap:6px;cursor:pointer;
+}
+.seed-level-hd::after{content:"▾";font-size:10px;margin-left:auto;transition:transform .15s;}
+.seed-level-hd.collapsed::after{transform:rotate(-90deg);}
+.seed-pick-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin-bottom:4px;}
+.seed-pick-grid.hidden{display:none;}
 .seed-pick-btn{
   display:flex;flex-direction:column;align-items:center;gap:2px;
   padding:6px 2px;border-radius:7px;border:1px solid var(--line);
@@ -300,6 +308,49 @@ body.obs-mode .dock,body.obs-mode .open-tab,body.obs-mode .sc-btns{display:none!
   transition:background .15s;
 }
 .seed-archive-link:hover{background:rgba(201,168,76,.2);}
+
+/* ── SEED REF CARD ── */
+.seed-ref{
+  border:1px solid rgba(201,168,76,.2);border-radius:9px;
+  background:rgba(201,168,76,.04);display:none;
+}
+.seed-ref.show{display:block;}
+.src-hd{
+  display:flex;align-items:center;gap:8px;
+  padding:9px 12px;border-bottom:1px solid rgba(201,168,76,.12);
+  background:rgba(201,168,76,.06);border-radius:9px 9px 0 0;
+}
+.src-badge{font-size:10px;font-weight:900;color:var(--acc);letter-spacing:.08em;}
+.src-level{font-size:9px;color:var(--muted);padding:2px 7px;border:1px solid var(--line);border-radius:999px;}
+.src-open{margin-left:auto;font-size:10px;font-weight:900;color:var(--acc);text-decoration:none;padding:3px 8px;border:1px solid rgba(201,168,76,.3);border-radius:5px;background:rgba(201,168,76,.1);transition:background .12s;}
+.src-open:hover{background:rgba(201,168,76,.22);}
+.src-body{padding:10px 12px;display:grid;gap:8px;}
+.src-def{font-family:var(--serif);font-size:13px;font-weight:700;color:var(--text);line-height:1.5;padding:8px 10px;background:rgba(0,0,0,.18);border-radius:6px;border-left:3px solid var(--acc);}
+.src-sec{display:grid;gap:4px;}
+.src-lbl{font-size:8px;font-weight:900;letter-spacing:.14em;color:var(--faint);text-transform:uppercase;}
+.src-qs{display:grid;gap:3px;}
+.src-q{font-size:11px;color:var(--muted);padding:4px 8px;border-radius:5px;background:rgba(0,0,0,.15);border-left:2px solid rgba(201,168,76,.25);}
+.src-kws{display:flex;flex-wrap:wrap;gap:4px;}
+.src-kw{font-size:10px;font-weight:700;padding:2px 8px;border-radius:999px;border:1px solid rgba(201,168,76,.22);background:rgba(201,168,76,.07);color:var(--acc);}
+.src-stops{display:grid;gap:3px;}
+.src-stop{font-size:11px;color:var(--muted);display:flex;align-items:baseline;gap:5px;}
+.src-stop::before{content:"⏸";font-size:9px;flex-shrink:0;}
+.src-flow{font-size:11px;color:var(--muted);padding:6px 10px;background:rgba(0,0,0,.18);border-radius:6px;word-break:break-all;line-height:1.7;}
+.src-stop-item{display:grid;gap:3px;margin-bottom:6px;}
+.src-stop-pt{font-size:10px;font-weight:900;color:var(--muted);display:flex;align-items:center;gap:5px;}
+.src-note{width:100%;border:1px solid var(--line);border-radius:5px;background:rgba(0,0,0,.2);padding:5px 8px;font-size:11px;line-height:1.55;color:var(--text);outline:none;resize:none;transition:border-color .15s;}
+.src-note:focus{border-color:rgba(201,168,76,.38);}
+.src-note::placeholder{color:var(--faint);}
+.src-leaf{width:100%;border:1px solid var(--line);border-radius:5px;background:rgba(0,0,0,.2);padding:6px 9px;font-size:12px;line-height:1.65;color:var(--text);outline:none;resize:none;min-height:60px;transition:border-color .15s;}
+.src-leaf:focus{border-color:rgba(201,168,76,.38);}
+.src-leaf::placeholder{color:var(--faint);}
+.src-save-btn{
+  width:100%;padding:9px;border-radius:7px;
+  border:1px solid rgba(201,168,76,.45);background:rgba(201,168,76,.15);
+  font-size:12px;font-weight:900;cursor:pointer;
+  transition:background .15s;margin-top:4px;
+}
+.src-save-btn:hover{background:rgba(201,168,76,.25);}
 
 @media(max-width:900px){
   .comments{width:220px;right:12px;}
@@ -396,7 +447,8 @@ body.obs-mode .dock,body.obs-mode .open-tab,body.obs-mode .sc-btns{display:none!
       <div class="field">
         <label>今日のSeed <span id="seedLevelTag" style="font-size:9px;padding:1px 7px;border-radius:999px;border:1px solid rgba(255,255,255,.1);margin-left:4px;color:var(--muted);">未選択</span></label>
         <div id="seedPicker"></div>
-        <a id="seedDetailLink" class="seed-archive-link" href="https://rainybrainch.github.io/rb-tree-archive/economics.html" target="_blank" rel="noopener" style="margin-top:6px;display:none;">🌲 今日のSeedを開く ↗</a>
+        <!-- Seed reference card (shows when seed selected) -->
+        <div class="seed-ref" id="seedRef"></div>
       </div>
       <div class="field">
         <label>今日のキーワード</label>
@@ -706,7 +758,10 @@ function renderSeedPicker(){
   let html="";
   levels.forEach(lv=>{
     const seeds=SEEDS_DATA.filter(s=>s.level===lv);
-    html+=`<div class="seed-level-hd">${lv}</div><div class="seed-pick-grid">`;
+    const hasActive=seeds.some(s=>s.num===state.selectedSeed);
+    const col=(!hasActive&&lv!=="ROOT")?"collapsed":"";
+    html+=`<div class="seed-level-hd ${col}" data-lv="${lv}">${lv}</div>`;
+    html+=`<div class="seed-pick-grid ${col?"hidden":""}">`;
     seeds.forEach(s=>{
       const active=state.selectedSeed===s.num?"active":"";
       html+=`<button class="seed-pick-btn ${active}" data-num="${s.num}" type="button"><span class="seed-pick-num">${String(s.num).padStart(2,"0")}</span>${s.name}</button>`;
@@ -717,11 +772,18 @@ function renderSeedPicker(){
   container.querySelectorAll(".seed-pick-btn").forEach(btn=>{
     btn.addEventListener("click",()=>selectSeed(Number(btn.dataset.num)));
   });
+  container.querySelectorAll(".seed-level-hd").forEach(hd=>{
+    hd.addEventListener("click",()=>{
+      hd.classList.toggle("collapsed");
+      const grid=hd.nextElementSibling;
+      if(grid) grid.classList.toggle("hidden");
+    });
+  });
   updateSeedUI();
 }
 
 function selectSeed(num){
-  state.selectedSeed= state.selectedSeed===num ? null : num;
+  state.selectedSeed=state.selectedSeed===num?null:num;
   save();
   renderSeedPicker();
   if(state.selectedSeed){
@@ -729,23 +791,125 @@ function selectSeed(num){
     if(s){
       $("keywordInput").value=s.kw; state.keyword=s.kw;
       $("subInput").value=s.sub;   state.sub=s.sub;
-      save();
+      applyStage(); save();
     }
+  } else {
+    updateSeedUI();
   }
 }
 
 function updateSeedUI(){
-  const s=state.selectedSeed?SEEDS_DATA.find(x=>x.num===state.selectedSeed):null;
+  const seedNum=state.selectedSeed;
+  const s=seedNum?SEEDS_DATA.find(x=>x.num===seedNum):null;
   const tag=$("seedLevelTag");
-  const link=$("seedDetailLink");
   const chip=$("archiveChip");
+  const ref=$("seedRef");
   if(tag) tag.textContent=s?`${String(s.num).padStart(2,"0")} ${s.name} — ${s.level}`:"未選択";
-  if(link){
-    if(s){link.href=ARCHIVE_BASE+s.url;link.style.display="flex";}
-    else{link.href=ARCHIVE_BASE+"economics.html";link.style.display="none";}
-  }
   if(chip) chip.href=s?ARCHIVE_BASE+s.url:ARCHIVE_BASE+"economics.html";
+  if(!ref) return;
+  if(!s){ ref.classList.remove("show"); ref.innerHTML=""; return; }
+
+  const sk="E"+String(s.num).padStart(3,"0");
+  const db=window.SEED_DB&&window.SEED_DB[sk];
+  const noteKey=`rbt_stream_notes_${sk}`;
+  let notes={};
+  try{ notes=JSON.parse(localStorage.getItem(noteKey)||"{}"); }catch{}
+
+  let html=`<div class="src-hd">
+    <span class="src-badge">${sk}</span>
+    <span class="src-level">${s.level}</span>
+    <a class="src-open" href="${ARCHIVE_BASE+s.url}" target="_blank" rel="noopener">Archive詳細 ↗</a>
+  </div><div class="src-body">`;
+
+  if(db?.tagline){
+    html+=`<div class="src-def">${xss(db.tagline)}</div>`;
+  }
+  if(db?.rootQuestions?.length){
+    html+=`<div class="src-sec"><div class="src-lbl">Root Question</div><div class="src-qs">`;
+    db.rootQuestions.slice(0,3).forEach(q=>{ html+=`<div class="src-q">${xss(q)}</div>`; });
+    html+=`</div></div>`;
+  }
+  if(db?.glossTerms?.length){
+    html+=`<div class="src-sec"><div class="src-lbl">キーワード</div><div class="src-kws">`;
+    db.glossTerms.slice(0,7).forEach(t=>{
+      const w=typeof t==="string"?t:t.word;
+      html+=`<span class="src-kw">${xss(w)}</span>`;
+    });
+    html+=`</div></div>`;
+  }
+  if(db?.stopPoints?.length){
+    html+=`<div class="src-sec"><div class="src-lbl">⏸ Stop Log — 配信中に記録</div>`;
+    db.stopPoints.slice(0,5).forEach((pt,i)=>{
+      html+=`<div class="src-stop-item">
+        <div class="src-stop-pt">Stop ${i+1}：${xss(pt)}</div>
+        <textarea class="src-note" rows="1" placeholder="気づき・疑問…" oninput="saveNote('${sk}',${i},this.value)" onfocus="this.rows=2" onblur="this.rows=1">${xss(notes[i]||"")}</textarea>
+      </div>`;
+    });
+    html+=`</div>`;
+  }
+  html+=`<div class="src-sec"><div class="src-lbl">🍃 Leaf — 自分の言葉でまとめる</div>
+    <textarea class="src-leaf" rows="3" placeholder="引用禁止。自分の理解を書く…" oninput="saveLeaf('${sk}',this.value)">${xss(notes._leaf||"")}</textarea>
+  </div>`;
+  if(db?.tree1){
+    const flow=db.tree1.replace(/\n/g," → ");
+    html+=`<div class="src-sec"><div class="src-lbl">🌳 因果フロー</div><div class="src-flow">${xss(flow)}</div></div>`;
+  }
+  html+=`<button class="src-save-btn" onclick="saveSeedToArchive('${sk}')">🌱 Archive に保存 → ロードマップに反映</button></div>`;
+
+  ref.innerHTML=html;
+  ref.classList.add("show");
 }
+
+function saveNote(sk,i,val){
+  const noteKey=`rbt_stream_notes_${sk}`;
+  let notes={};
+  try{ notes=JSON.parse(localStorage.getItem(noteKey)||"{}"); }catch{}
+  notes[i]=val;
+  try{ localStorage.setItem(noteKey,JSON.stringify(notes)); }catch{}
+}
+
+function saveLeaf(sk,val){
+  const noteKey=`rbt_stream_notes_${sk}`;
+  let notes={};
+  try{ notes=JSON.parse(localStorage.getItem(noteKey)||"{}"); }catch{}
+  notes._leaf=val;
+  try{ localStorage.setItem(noteKey,JSON.stringify(notes)); }catch{}
+}
+
+function saveSeedToArchive(sk){
+  const noteKey=`rbt_stream_notes_${sk}`;
+  let notes={};
+  try{ notes=JSON.parse(localStorage.getItem(noteKey)||"{}"); }catch{}
+  const db=window.SEED_DB&&window.SEED_DB[sk];
+  const seedNum=parseInt(sk.replace("E",""),10);
+  const s=SEEDS_DATA.find(x=>x.num===seedNum);
+  if(!s){setStatus("Seed データが見つかりません");return;}
+  const stopText=Object.entries(notes).filter(([k])=>k!=="leaf"&&k!=="l_leaf"&&k!=="_leaf").map(([i,v])=>{
+    const pt=db?.stopPoints?.[i]||`Stop ${parseInt(i)+1}`;
+    return v?`[${pt}]\n${v}`:"";
+  }).filter(Boolean).join("\n\n");
+  const body=[notes._leaf,stopText].filter(Boolean).join("\n---\n")||`${sk} ${s.name}の配信メモ`;
+  const branches=(db?.glossTerms||[]).map(t=>typeof t==="string"?t:t.word).slice(0,8);
+  if(!branches.includes(s.kw)) branches.unshift(s.kw);
+  const entry={
+    id:`rbt_${sk}_stream_${Date.now()}`,
+    category:"economics",stage:state.currentStage,
+    keyword:s.kw, body, branches, sources:[],
+    session:`RB-Tree Economics 配信 — ${s.name}`,
+    sessionUrl:"",
+    createdAt:new Date().toISOString().slice(0,10),
+    updatedAt:new Date().toISOString().slice(0,10)
+  };
+  try{
+    const arr=JSON.parse(localStorage.getItem(ARCHIVE_KEY)||"[]");
+    const idx=arr.findIndex(x=>x.id?.startsWith(`rbt_${sk}_stream_`));
+    if(idx>=0) arr[idx]=entry; else arr.unshift(entry);
+    localStorage.setItem(ARCHIVE_KEY,JSON.stringify(arr));
+    setStatus(`🌱「${s.name}」をArchiveに保存しました`);
+  }catch{ setStatus("Archive保存に失敗しました"); }
+}
+
+function xss(s){ return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
 
 function applyStage(){
   const kw=state.keyword=$("keywordInput").value||"今日のキーワード";
