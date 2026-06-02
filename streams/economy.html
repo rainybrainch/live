@@ -174,7 +174,8 @@ body.recording .timer-time{color:var(--acc);text-shadow:0 0 18px rgba(201,168,76
 /* ── CAPTION (lower-third) ── */
 .caption{
   position:absolute;left:0;right:0;bottom:0;z-index:6;
-  padding:0 24px 16px;
+  /* キャラゾーン（左右約250px）を避ける */
+  padding:0 clamp(24px, 22vw, 280px) 16px;
   display:flex;justify-content:center;align-items:flex-end;
   pointer-events:none;
 }
@@ -184,7 +185,7 @@ body.recording .timer-time{color:var(--acc);text-shadow:0 0 18px rgba(201,168,76
   z-index:-1;
 }
 .caption-card{
-  width:min(960px,calc(100vw - 300px));
+  width:100%;
   display:flex;align-items:stretch;
   border-radius:12px;overflow:hidden;
   border:1px solid rgba(201,168,76,.2);
@@ -247,8 +248,7 @@ body.recording .timer-time{color:var(--acc);text-shadow:0 0 18px rgba(201,168,76
 .section-title{cursor:pointer;display:flex;align-items:center;gap:8px;font-size:13px;font-weight:900;padding-right:4px;}
 .section-toggle{margin-left:auto;font-size:11px;color:var(--muted);transition:transform .2s;flex-shrink:0;line-height:1;}
 .section.collapsed .section-toggle{transform:rotate(-90deg);}
-.section-body{transition:max-height .25s ease,opacity .2s;overflow:hidden;}
-.section.collapsed .section-body{max-height:0!important;opacity:0;}
+.section.collapsed .section-body{display:none;}
 body.panel-hidden .dock{display:none;}
 .dock-head{
   display:flex;align-items:center;gap:9px;
@@ -755,14 +755,11 @@ function bind(){
     title.appendChild(tog);
     const body=document.createElement("div");
     body.className="section-body";
-    body.style.maxHeight="2000px"; body.style.opacity="1";
     while(title.nextSibling) body.appendChild(title.nextSibling);
     sec.appendChild(body);
     title.addEventListener("click",e=>{
-      if(e.target.closest("button,input,select,textarea")) return;
-      const collapsed=sec.classList.toggle("collapsed");
-      body.style.maxHeight=collapsed?"0":"2000px";
-      body.style.opacity=collapsed?"0":"1";
+      if(e.target.closest("button,input,select,textarea,a,label")) return;
+      sec.classList.toggle("collapsed");
     });
   });
 
