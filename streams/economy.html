@@ -452,7 +452,7 @@ body.obs-mode .dock,body.obs-mode .open-tab,body.obs-mode .sc-btns{display:none!
       <span>公開学習配信コントロール</span>
     </div>
     <button id="hideDock" type="button">閉じる</button>
-    <button id="dockFullscreenBtn" type="button" onclick="toggleFullscreen()" title="全画面（F）">⛶ 全画面</button>
+    <button id="dockFullscreenBtn" type="button" title="全画面（F）">⛶ 全画面</button>
     <button id="micBtn" class="good" type="button">マイク開始</button>
   </div>
   <div class="dock-body">
@@ -723,6 +723,7 @@ function bind(){
   $("keywordInput")?.addEventListener("input",()=>{state.keyword=$("keywordInput").value;save();});
   $("subInput")?.addEventListener("input",()=>{state.sub=$("subInput").value;save();});
   $("stageFullscreenBtn")?.addEventListener("click",toggleFullscreen);
+  $("dockFullscreenBtn")?.addEventListener("click",toggleFullscreen);
   $("stageTimerToggle")?.addEventListener("click",toggleTimer);
   $("stageTimerReset")?.addEventListener("click",resetTimer);
   $("timerPreset")?.addEventListener("change",()=>{$("timerMinutes").value=$("timerPreset").value;setTimer();});
