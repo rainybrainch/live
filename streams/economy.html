@@ -102,7 +102,7 @@ body.recording .timer-time{color:var(--acc);text-shadow:0 0 18px rgba(201,168,76
 
 /* ── KEYWORD CARD (top-left) ── */
 .keyword-card{
-  position:absolute;left:26px;top:80px;width:min(400px,38vw);
+  position:absolute;left:26px;top:22px;width:min(400px,38vw);
   padding:14px 18px;
   border-left:4px solid var(--acc);
   border-top:1px solid rgba(255,255,255,.1);
@@ -145,12 +145,15 @@ body.recording .timer-time{color:var(--acc);text-shadow:0 0 18px rgba(201,168,76
 }
 .archive-link:hover{background:rgba(201,168,76,.2);}
 
-/* ── COMMENTS (right) ── */
+/* ── COMMENTS (both sides) ── */
 .comments{
   position:absolute;
-  right:28px;top:80px;bottom:120px;
-  width:min(320px,22vw);
+  right:28px;top:280px;bottom:130px;
+  width:min(280px,20vw);
   overflow:hidden;pointer-events:none;z-index:2;
+}
+.comments-left{
+  right:auto;left:28px;
 }
 .comment{
   --uc:var(--acc);
@@ -221,13 +224,31 @@ body.recording .timer-time{color:var(--acc);text-shadow:0 0 18px rgba(201,168,76
 .dock{
   position:fixed;left:50%;top:14px;transform:translateX(-50%);
   width:min(480px,calc(100vw - 28px));max-height:calc(100vh - 28px);overflow:auto;
-  user-select:none;
+  user-select:none;min-width:240px;min-height:80px;
   border:1px solid rgba(255,255,255,.1);border-radius:12px;
   background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.015)),rgba(6,10,4,.95);
   backdrop-filter:blur(18px);z-index:20;
   box-shadow:0 28px 80px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.06);
   scrollbar-width:thin;scrollbar-color:rgba(201,168,76,.18) transparent;
 }
+/* リサイズハンドル */
+.dock-resize{
+  height:14px;cursor:ns-resize;
+  display:flex;align-items:center;justify-content:center;
+  background:rgba(255,255,255,.02);border-top:1px solid rgba(255,255,255,.06);
+  position:relative;
+}
+.dock-resize::before{content:"";width:32px;height:3px;border-radius:999px;background:rgba(255,255,255,.2);}
+.dock-resize-corner{
+  position:absolute;right:0;top:0;bottom:0;
+  width:18px;cursor:ew-resize;
+}
+/* セクション折りたたみ */
+.section-title{cursor:pointer;display:flex;align-items:center;gap:8px;font-size:13px;font-weight:900;padding-right:4px;}
+.section-toggle{margin-left:auto;font-size:11px;color:var(--muted);transition:transform .2s;flex-shrink:0;line-height:1;}
+.section.collapsed .section-toggle{transform:rotate(-90deg);}
+.section-body{transition:max-height .25s ease,opacity .2s;overflow:hidden;}
+.section.collapsed .section-body{max-height:0!important;opacity:0;}
 body.panel-hidden .dock{display:none;}
 .dock-head{
   display:flex;align-items:center;gap:9px;
@@ -376,15 +397,6 @@ body.obs-mode .dock,body.obs-mode .open-tab,body.obs-mode .sc-btns{display:none!
 <body>
 <main class="stage" id="stage">
 
-  <!-- Brand -->
-  <div class="brand">
-    <div class="brand-mark">🌳</div>
-    <div>
-      <strong>RB-Tree Economics</strong>
-      <span id="brandStageName">🌱 Seed</span>
-    </div>
-  </div>
-
   <!-- Stage badge (center top) -->
   <div class="stage-badge">
     <span class="stage-icon" id="stageBadgeIcon">🌱</span>
@@ -404,8 +416,10 @@ body.obs-mode .dock,body.obs-mode .open-tab,body.obs-mode .sc-btns{display:none!
     <button class="timer-btn" id="stageTimerReset"  type="button">↺</button>
   </div>
 
-  <!-- Comments -->
+  <!-- Comments (right) -->
   <div class="comments" id="commentStream"></div>
+  <!-- Comments (left) -->
+  <div class="comments comments-left" id="commentStreamLeft"></div>
 
   <!-- Keyword card -->
   <section class="keyword-card">
@@ -614,6 +628,10 @@ body.obs-mode .dock,body.obs-mode .open-tab,body.obs-mode .sc-btns{display:none!
     </details>
 
   </div>
+  <!-- リサイズハンドル（高さ） -->
+  <div class="dock-resize" id="dockResizeH">
+    <div class="dock-resize-corner" id="dockResizeW"></div>
+  </div>
 </aside>
 
 <button class="open-tab" id="openDock" type="button">
@@ -727,7 +745,64 @@ function bind(){
   $("subInput")?.addEventListener("input",()=>{state.sub=$("subInput").value;save();});
   $("stageFullscreenBtn")?.addEventListener("click",toggleFullscreen);
   $("dockFullscreenBtn")?.addEventListener("click",toggleFullscreen);
-  // ── Dock drag ──
+
+  // ── セクション折りたたみ（JS で自動構造化） ──
+  document.querySelectorAll(".section").forEach(sec=>{
+    const title=sec.querySelector(".section-title");
+    if(!title) return;
+    const tog=document.createElement("span");
+    tog.className="section-toggle"; tog.textContent="▼";
+    title.appendChild(tog);
+    const body=document.createElement("div");
+    body.className="section-body";
+    body.style.maxHeight="2000px"; body.style.opacity="1";
+    while(title.nextSibling) body.appendChild(title.nextSibling);
+    sec.appendChild(body);
+    title.addEventListener("click",e=>{
+      if(e.target.closest("button,input,select,textarea")) return;
+      const collapsed=sec.classList.toggle("collapsed");
+      body.style.maxHeight=collapsed?"0":"2000px";
+      body.style.opacity=collapsed?"0":"1";
+    });
+  });
+
+  // ── Dock リサイズ ──
+  (function(){
+    const dock=$("dock");
+    if(!dock) return;
+    // 高さリサイズ
+    const rh=$("dockResizeH");
+    if(rh){
+      let ry=0, rh0=0;
+      rh.addEventListener("mousedown",e=>{
+        ry=e.clientY; rh0=dock.offsetHeight; e.preventDefault();
+        const onMove=e2=>{
+          const h=Math.max(120,Math.min(window.innerHeight-20,rh0+(e2.clientY-ry)));
+          dock.style.maxHeight=h+"px";
+        };
+        const onUp=()=>{document.removeEventListener("mousemove",onMove);document.removeEventListener("mouseup",onUp);};
+        document.addEventListener("mousemove",onMove);
+        document.addEventListener("mouseup",onUp);
+      });
+    }
+    // 幅リサイズ（右端）
+    const rw=$("dockResizeW");
+    if(rw){
+      let rx=0, rw0=0;
+      rw.addEventListener("mousedown",e=>{
+        rx=e.clientX; rw0=dock.offsetWidth; e.stopPropagation(); e.preventDefault();
+        const onMove=e2=>{
+          const w=Math.max(240,Math.min(window.innerWidth-20,rw0+(e2.clientX-rx)));
+          dock.style.width=w+"px";
+        };
+        const onUp=()=>{document.removeEventListener("mousemove",onMove);document.removeEventListener("mouseup",onUp);};
+        document.addEventListener("mousemove",onMove);
+        document.addEventListener("mouseup",onUp);
+      });
+    }
+  })();
+
+  // ── Dock ドラッグ ──
   (function(){
     const dock=$("dock"), head=$("dock")?.querySelector(".dock-head");
     if(!dock||!head) return;
@@ -736,22 +811,19 @@ function bind(){
       if(e.target.closest("button")) return;
       dragging=true;
       const r=dock.getBoundingClientRect();
-      // 初回ドラッグ時: transform を解除して left/top を実座標に固定
       dock.style.transform="none";
-      dock.style.left=r.left+"px";
-      dock.style.top =r.top +"px";
+      dock.style.left=r.left+"px"; dock.style.top=r.top+"px";
       ox=e.clientX-r.left; oy=e.clientY-r.top;
       e.preventDefault();
     });
     document.addEventListener("mousemove",e=>{
       if(!dragging) return;
-      const maxX=window.innerWidth -dock.offsetWidth;
+      const maxX=window.innerWidth-dock.offsetWidth;
       const maxY=window.innerHeight-dock.offsetHeight;
       dock.style.left=Math.max(0,Math.min(maxX,e.clientX-ox))+"px";
-      dock.style.top =Math.max(0,Math.min(maxY,e.clientY-oy))+"px";
+      dock.style.top=Math.max(0,Math.min(maxY,e.clientY-oy))+"px";
     });
     document.addEventListener("mouseup",()=>{dragging=false;});
-    // タッチ対応
     head.addEventListener("touchstart",e=>{
       if(e.target.closest("button")) return;
       const t=e.touches[0], r=dock.getBoundingClientRect();
@@ -762,10 +834,8 @@ function bind(){
     document.addEventListener("touchmove",e=>{
       if(!head.matches(":active")) return;
       const t=e.touches[0];
-      const maxX=window.innerWidth -dock.offsetWidth;
-      const maxY=window.innerHeight-dock.offsetHeight;
-      dock.style.left=Math.max(0,Math.min(maxX,t.clientX-ox))+"px";
-      dock.style.top =Math.max(0,Math.min(maxY,t.clientY-oy))+"px";
+      dock.style.left=Math.max(0,Math.min(window.innerWidth-dock.offsetWidth,t.clientX-ox))+"px";
+      dock.style.top=Math.max(0,Math.min(window.innerHeight-dock.offsetHeight,t.clientY-oy))+"px";
     },{passive:true});
   })();
   $("stageTimerToggle")?.addEventListener("click",toggleTimer);
@@ -1250,7 +1320,8 @@ function addComment(text,name,color,superChat=false){
   node.querySelector(".user").textContent="@"+cleanName(name);
   node.querySelector(".tag").textContent=superChat?"Super":"AI";
   node.querySelector(".text").textContent=text;
-  $("commentStream").append(node);
+  const stream=Math.random()<0.5?$("commentStream"):($("commentStreamLeft")||$("commentStream"));
+  stream.append(node);
   node.addEventListener("animationend",()=>node.remove());
 }
 
