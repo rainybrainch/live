@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RB-Tree Politics — 政治の樹</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root { --c: #6bb6ff; --c2: #2a5a8a; }
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{height:100%;background:#04080f;color:#9ac8f0;font-family:"Noto Serif JP",serif;overflow:hidden;}
+body{display:grid;place-items:center;}
+
+.wrap{text-align:center;display:flex;flex-direction:column;align-items:center;gap:20px;}
+
+.tree-svg{width:120px;height:130px;}
+.trunk{fill:none;stroke:#1a3050;stroke-width:5;stroke-linecap:round;}
+.bough{fill:none;stroke:#2a4870;stroke-width:3;stroke-linecap:round;}
+.leaf{fill:var(--c);opacity:0;}
+.leaf.l1{animation:grow 2.4s ease forwards .4s;}
+.leaf.l2{animation:grow 2.4s ease forwards .7s;}
+.leaf.l3{animation:grow 2.4s ease forwards 1.0s;}
+.leaf.l4{animation:grow 2.4s ease forwards 1.3s;}
+.leaf.l5{animation:grow 2.4s ease forwards 1.6s;}
+.leaf.l6{animation:grow 2.4s ease forwards 1.9s;}
+@keyframes grow{0%{opacity:0;transform:scale(.2);}60%{opacity:1;}100%{opacity:.88;transform:scale(1);}}
+
+.rb{font-size:10px;letter-spacing:.22em;color:rgba(107,182,255,.48);font-family:system-ui,sans-serif;font-weight:700;}
+.title{font-size:22px;font-weight:700;letter-spacing:.06em;color:var(--c);line-height:1.2;}
+.sub{font-size:11px;letter-spacing:.18em;color:rgba(107,182,255,.5);text-transform:uppercase;font-family:system-ui,sans-serif;}
+
+.stages{display:flex;gap:10px;margin-top:4px;}
+.stage{font-size:12px;opacity:0;animation:fadeIn .6s ease forwards;}
+.stage:nth-child(1){animation-delay:2.2s;}
+.stage:nth-child(2){animation-delay:2.5s;}
+.stage:nth-child(3){animation-delay:2.8s;}
+.stage:nth-child(4){animation-delay:3.1s;}
+.stage:nth-child(5){animation-delay:3.4s;}
+@keyframes fadeIn{to{opacity:.65;}}
+
+.loading{
+  display:flex;align-items:center;gap:8px;
+  font-size:11px;letter-spacing:.1em;color:rgba(107,182,255,.4);
+  font-family:system-ui,sans-serif;
+  opacity:0;animation:fadeIn .5s ease forwards 3.6s;
+}
+.dot-loader{display:flex;gap:4px;}
+.dot-loader span{width:4px;height:4px;border-radius:999px;background:var(--c);opacity:.3;animation:blink 1s ease-in-out infinite;}
+.dot-loader span:nth-child(2){animation-delay:.2s;}
+.dot-loader span:nth-child(3){animation-delay:.4s;}
+@keyframes blink{0%,100%{opacity:.3;}50%{opacity:.9;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <svg class="tree-svg" viewBox="0 0 120 130">
+    <path class="trunk" d="M 60 125 Q 58 100 60 75"/>
+    <path class="bough" d="M 60 95 Q 40 80 28 68"/>
+    <path class="bough" d="M 60 85 Q 80 72 92 60"/>
+    <path class="bough" d="M 60 75 Q 45 58 38 44"/>
+    <path class="bough" d="M 60 75 Q 74 55 80 40"/>
+    <circle class="leaf l1" cx="26" cy="64" r="11" transform-origin="26 64"/>
+    <circle class="leaf l2" cx="92" cy="56" r="11" transform-origin="92 56"/>
+    <circle class="leaf l3" cx="36" cy="40" r="13" transform-origin="36 40"/>
+    <circle class="leaf l4" cx="82" cy="36" r="13" transform-origin="82 36"/>
+    <circle class="leaf l5" cx="56" cy="26" r="14" transform-origin="56 26"/>
+    <circle class="leaf l6" cx="68" cy="16" r="10" transform-origin="68 16"/>
+  </svg>
+
+  <div>
+    <div class="rb">RAINY BRAIN</div>
+    <div class="title">RB-Tree Politics</div>
+    <div class="sub">政治の樹</div>
+  </div>
+
+  <div class="stages">
+    <span class="stage">🌱</span>
+    <span class="stage">🌿</span>
+    <span class="stage">🍃</span>
+    <span class="stage">🌳</span>
+    <span class="stage">🌲</span>
+  </div>
+
+  <div class="loading">
+    配信画面を起動中
+    <div class="dot-loader"><span></span><span></span><span></span></div>
+  </div>
+</div>
+
+<script>
+(function(){
+  try {
+    var k = 'all_domedia_comment_settings_v5';
+    var s = JSON.parse(localStorage.getItem(k) || '{}');
+    s.genre = 'economy';
+    localStorage.setItem(k, JSON.stringify(s));
+  } catch(_){}
+  setTimeout(function(){
+    location.replace('https://rainybrainch.github.io/comment-studio/ai-comment-system.html');
+  }, 3800);
+})();
+</script>
+</body>
+</html>
