@@ -253,9 +253,10 @@ body.recording .timer-time{color:var(--acc);text-shadow:0 0 18px rgba(201,168,76
 }
 /* セクション折りたたみ */
 .section-title{cursor:pointer;display:flex;align-items:center;gap:8px;font-size:13px;font-weight:900;padding-right:4px;}
-.section-toggle{margin-left:auto;font-size:11px;color:var(--muted);transition:transform .2s;flex-shrink:0;line-height:1;}
+.section-toggle{margin-left:auto;font-size:11px;color:var(--muted);transition:transform .2s;flex-shrink:0;line-height:1;pointer-events:none;}
 .section.collapsed .section-toggle{transform:rotate(-90deg);}
-.section.collapsed .section-body{display:none;}
+/* DOM操作不要 — 直接子要素のうちタイトル以外を隠す */
+.section.collapsed > *:not(.section-title){display:none;}
 body.panel-hidden .dock{display:none;}
 .dock-head{
   display:flex;align-items:center;gap:9px;
@@ -753,17 +754,13 @@ function bind(){
   $("stageFullscreenBtn")?.addEventListener("click",toggleFullscreen);
   $("dockFullscreenBtn")?.addEventListener("click",toggleFullscreen);
 
-  // ── セクション折りたたみ（JS で自動構造化） ──
+  // ── セクション折りたたみ（DOM操作なし・クラストグルのみ） ──
   document.querySelectorAll(".section").forEach(sec=>{
     const title=sec.querySelector(".section-title");
     if(!title) return;
     const tog=document.createElement("span");
     tog.className="section-toggle"; tog.textContent="▼";
     title.appendChild(tog);
-    const body=document.createElement("div");
-    body.className="section-body";
-    while(title.nextSibling) body.appendChild(title.nextSibling);
-    sec.appendChild(body);
     title.addEventListener("click",e=>{
       if(e.target.closest("button,input,select,textarea,a,label")) return;
       sec.classList.toggle("collapsed");
