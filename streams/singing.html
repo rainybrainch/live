@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>歌ってみた配信 — 服牢</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;700&family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:    #0d0810;
+  --bg2:   #140c18;
+  --line:  rgba(232,121,160,.15);
+  --text:  #f5e6ef;
+  --muted: rgba(245,230,239,.52);
+  --faint: rgba(245,230,239,.22);
+  --acc:   #e879a0;
+  --acc2:  #b8527a;
+  --done:  #57c87c;
+  --font:  "Noto Sans JP", sans-serif;
+  --serif: "Noto Serif JP", serif;
+  color-scheme: dark;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;font-family:var(--font);color:var(--text);background:var(--bg);}
+button,input,textarea{font:inherit;color:inherit;}
+textarea{resize:vertical;}
+
+/* ── HEADER ── */
+.header{
+  position:sticky;top:0;z-index:30;
+  display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  padding:0 18px;min-height:52px;
+  background:rgba(13,8,16,.97);backdrop-filter:blur(14px);
+  border-bottom:1px solid var(--line);
+}
+.logo{display:flex;align-items:center;gap:8px;white-space:nowrap;flex-shrink:0;}
+.logo-mark{font-size:20px;}
+.logo-name{font-family:var(--serif);font-size:13px;font-weight:700;color:var(--acc);}
+.logo-sub{font-size:9px;color:var(--muted);letter-spacing:.12em;}
+
+.mode-toggle{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;}
+.mode-btn{padding:5px 14px;border:0;background:0;cursor:pointer;font-size:11px;font-weight:900;color:var(--muted);transition:all .15s;}
+.mode-btn.active{background:rgba(232,121,160,.18);color:var(--acc);}
+
+.header-btns{margin-left:auto;display:flex;gap:6px;align-items:center;}
+.btn-hd{padding:5px 12px;border-radius:7px;border:1px solid var(--line);background:rgba(255,255,255,.04);font-size:11px;font-weight:900;color:var(--muted);cursor:pointer;transition:all .15s;}
+.btn-hd:hover{border-color:rgba(232,121,160,.3);color:var(--acc);}
+.btn-hd.active{border-color:rgba(232,121,160,.4);background:rgba(232,121,160,.1);color:var(--acc);}
+.h-back{font-size:11px;color:var(--muted);text-decoration:none;white-space:nowrap;transition:color .15s;}
+.h-back:hover{color:var(--text);}
+
+/* ── LAYOUT ── */
+.layout{display:grid;grid-template-columns:280px 1fr;height:calc(100vh - 52px);overflow:hidden;}
+.layout.single-mode{grid-template-columns:0 1fr;}
+.layout.single-mode .setlist-panel{display:none;}
+
+/* ── SETLIST PANEL ── */
+.setlist-panel{
+  border-right:1px solid var(--line);background:var(--bg2);
+  overflow-y:auto;padding:16px 13px;display:flex;flex-direction:column;gap:14px;
+}
+.sp-label{font-size:9px;font-weight:900;letter-spacing:.18em;color:var(--muted);text-transform:uppercase;padding-bottom:6px;border-bottom:1px solid var(--line);}
+
+/* 曲追加フォーム（サイドバー） */
+.song-add-form{display:flex;flex-direction:column;gap:7px;}
+.sa-input{
+  width:100%;padding:7px 10px;border-radius:7px;
+  border:1px solid var(--line);background:rgba(0,0,0,.3);
+  font-size:12px;color:var(--text);outline:none;transition:border-color .15s;
+}
+.sa-input:focus{border-color:rgba(232,121,160,.4);}
+.sa-add-btn{
+  width:100%;padding:8px;border-radius:7px;
+  background:rgba(232,121,160,.14);border:1px solid rgba(232,121,160,.3);
+  color:var(--acc);font-size:12px;font-weight:900;cursor:pointer;transition:all .15s;
+}
+.sa-add-btn:hover{background:rgba(232,121,160,.24);}
+
+/* セットリスト一覧 */
+.setlist{display:flex;flex-direction:column;gap:5px;}
+.song-item{
+  padding:9px 10px;border-radius:8px;border:1px solid var(--line);
+  background:rgba(255,255,255,.02);cursor:pointer;transition:all .2s;
+  display:flex;align-items:flex-start;gap:8px;
+}
+.song-item:hover{background:rgba(232,121,160,.06);border-color:rgba(232,121,160,.2);}
+.song-item.active{background:rgba(232,121,160,.12);border-color:rgba(232,121,160,.4);}
+.song-item.done{opacity:.45;}
+.song-item.done .si-title{text-decoration:line-through;}
+.si-num{
+  font-family:var(--serif);font-size:11px;font-weight:700;color:var(--muted);
+  flex-shrink:0;min-width:18px;margin-top:1px;
+}
+.song-item.active .si-num{color:var(--acc);}
+.si-body{flex:1;min-width:0;}
+.si-title{font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.si-artist{font-size:10px;color:var(--muted);margin-top:1px;}
+.si-status{font-size:10px;flex-shrink:0;margin-top:2px;}
+.si-actions{display:flex;gap:3px;flex-shrink:0;}
+.si-btn{background:0;border:0;padding:2px 5px;font-size:10px;color:var(--muted);cursor:pointer;opacity:.5;transition:opacity .15s;}
+.si-btn:hover{opacity:1;}
+
+.sp-stats{font-size:10px;color:var(--muted);text-align:center;padding:6px 0;border-top:1px solid var(--line);}
+
+/* ── CENTER ── */
+.center{overflow-y:auto;padding:20px 24px 40px;display:flex;flex-direction:column;gap:16px;}
+
+/* 単発モード曲入力 */
+.single-input-bar{
+  border:1px solid rgba(232,121,160,.25);border-radius:12px;
+  padding:14px 16px;background:rgba(232,121,160,.03);
+  display:flex;flex-direction:column;gap:10px;
+}
+.sib-label{font-size:9px;font-weight:900;letter-spacing:.14em;color:var(--acc);text-transform:uppercase;}
+.sib-row{display:flex;gap:8px;}
+.sib-input{
+  flex:1;padding:9px 12px;border-radius:8px;
+  border:1px solid rgba(232,121,160,.22);background:rgba(0,0,0,.35);
+  font-size:13px;color:var(--text);outline:none;transition:border-color .15s;
+}
+.sib-input:focus{border-color:rgba(232,121,160,.5);}
+.sib-set-btn{
+  padding:9px 16px;border-radius:8px;
+  background:rgba(232,121,160,.14);border:1px solid rgba(232,121,160,.32);
+  color:var(--acc);font-size:12px;font-weight:900;cursor:pointer;transition:all .15s;white-space:nowrap;
+}
+.sib-set-btn:hover{background:rgba(232,121,160,.24);}
+
+/* NOW PLAYING */
+.now-playing{
+  border:1px solid rgba(232,121,160,.3);border-radius:14px;
+  padding:20px 22px;background:rgba(232,121,160,.05);
+  display:flex;flex-direction:column;gap:8px;
+}
+.np-label{font-size:9px;font-weight:900;letter-spacing:.18em;color:var(--acc);text-transform:uppercase;display:flex;align-items:center;gap:6px;}
+.np-dot{width:7px;height:7px;border-radius:50%;background:var(--acc);animation:npulse 1.5s ease-in-out infinite;}
+@keyframes npulse{0%,100%{opacity:1}50%{opacity:.3}}
+.np-title{font-family:var(--serif);font-size:clamp(20px,3vw,32px);font-weight:700;line-height:1.2;}
+.np-artist{font-size:13px;color:var(--muted);}
+.np-empty{font-size:13px;color:var(--faint);font-style:italic;}
+.np-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px;}
+.np-btn{
+  padding:5px 12px;border-radius:6px;border:1px solid var(--line);
+  background:rgba(255,255,255,.03);font-size:11px;font-weight:900;
+  color:var(--muted);cursor:pointer;transition:all .15s;
+}
+.np-btn:hover{border-color:rgba(232,121,160,.3);color:var(--acc);}
+.np-btn.done-btn:hover{border-color:rgba(87,200,124,.3);color:var(--done);}
+
+/* LYRICS */
+.lyrics-section{border:1px solid var(--line);border-radius:12px;overflow:hidden;flex:1;}
+.lyrics-head{
+  padding:11px 16px;background:rgba(255,255,255,.025);border-bottom:1px solid var(--line);
+  display:flex;align-items:center;gap:10px;
+}
+.lyrics-lbl{font-size:10px;font-weight:900;letter-spacing:.12em;color:var(--muted);text-transform:uppercase;}
+.lyrics-toggle{
+  margin-left:auto;padding:3px 10px;border-radius:6px;
+  background:0;border:1px solid var(--line);font-size:10px;color:var(--muted);cursor:pointer;transition:all .15s;
+}
+.lyrics-toggle:hover{border-color:rgba(232,121,160,.3);color:var(--acc);}
+
+.lyrics-display{
+  padding:20px 22px;font-size:15px;line-height:2.2;
+  min-height:200px;white-space:pre-wrap;
+  font-family:var(--serif);color:var(--text);
+  overflow-y:auto;max-height:420px;
+}
+.lyrics-display.empty{color:var(--faint);font-style:italic;font-size:13px;font-family:var(--font);}
+
+.lyrics-edit{
+  width:100%;padding:16px 22px;
+  border:0;border-top:1px solid var(--line);
+  background:rgba(0,0,0,.3);font-size:13px;color:var(--text);
+  outline:none;min-height:180px;line-height:1.8;font-family:var(--serif);
+}
+.lyrics-edit:focus{background:rgba(0,0,0,.4);}
+
+/* ── OBS MODE ── */
+body.obs-mode{background:transparent!important;}
+body.obs-mode .header{background:rgba(13,8,16,.82);}
+body.obs-mode .setlist-panel{background:rgba(13,8,16,.7);}
+body.obs-mode .now-playing,
+body.obs-mode .lyrics-section,
+body.obs-mode .single-input-bar{background:rgba(13,8,16,.82)!important;backdrop-filter:blur(8px);}
+
+/* ── MINI MODE ── */
+body.mini .layout{display:none!important;}
+body.mini .mini-view{display:flex!important;}
+.mini-view{
+  display:none;flex-direction:column;gap:10px;
+  height:calc(100vh - 52px);overflow:hidden;
+  padding:12px 14px;max-width:300px;margin:0 auto;
+}
+.mini-now{
+  border:1px solid rgba(232,121,160,.3);border-radius:10px;
+  padding:14px;background:rgba(232,121,160,.06);
+  display:flex;flex-direction:column;gap:6px;flex-shrink:0;
+}
+.mini-now-lbl{font-size:9px;font-weight:900;letter-spacing:.12em;color:var(--acc);text-transform:uppercase;display:flex;align-items:center;gap:5px;}
+.mini-now-dot{width:6px;height:6px;border-radius:50%;background:var(--acc);animation:npulse 1.5s ease-in-out infinite;}
+.mini-now-title{font-family:var(--serif);font-size:16px;font-weight:700;line-height:1.3;}
+.mini-now-artist{font-size:11px;color:var(--muted);}
+.mini-lyrics{
+  flex:1;min-height:0;overflow-y:auto;
+  font-family:var(--serif);font-size:13px;line-height:2;
+  white-space:pre-wrap;color:var(--text);padding:4px 0;
+}
+.mini-next{
+  border:1px solid var(--line);border-radius:8px;padding:10px 12px;
+  flex-shrink:0;
+}
+.mini-next-lbl{font-size:9px;font-weight:900;letter-spacing:.1em;color:var(--muted);text-transform:uppercase;margin-bottom:5px;}
+.mini-next-song{font-size:11px;color:var(--muted);}
+.mini-footer{display:flex;gap:5px;flex-shrink:0;}
+.mini-foot-btn{
+  flex:1;padding:8px;border-radius:7px;
+  border:1px solid rgba(232,121,160,.25);background:rgba(232,121,160,.08);
+  color:var(--acc);font-size:11px;font-weight:900;cursor:pointer;transition:all .15s;
+}
+.mini-foot-btn:hover{background:rgba(232,121,160,.18);}
+.mini-foot-btn.done{border-color:rgba(87,200,124,.25);background:rgba(87,200,124,.08);color:var(--done);}
+
+/* ── COMMENTS ── */
+.comments-wrap{
+  position:fixed;right:16px;bottom:20px;
+  width:240px;z-index:50;
+  display:flex;flex-direction:column;gap:6px;
+  pointer-events:none;
+}
+body.mini .comments-wrap,
+body.obs-mode .comments-wrap{right:10px;width:200px;}
+.comment-item{
+  display:flex;align-items:flex-start;gap:7px;
+  padding:8px 11px;border-radius:10px;
+  background:rgba(13,8,16,.82);backdrop-filter:blur(8px);
+  border:1px solid rgba(232,121,160,.2);
+  animation:slideIn .3s ease;
+  opacity:1;transition:opacity .5s;
+}
+@keyframes slideIn{from{transform:translateX(20px);opacity:0}to{transform:translateX(0);opacity:1}}
+.comment-item.fade{opacity:0;}
+.ci-icon{font-size:16px;flex-shrink:0;line-height:1.3;}
+.ci-body{flex:1;min-width:0;}
+.ci-name{font-size:9px;font-weight:900;color:var(--acc);letter-spacing:.04em;margin-bottom:2px;}
+.ci-text{font-size:12px;color:var(--text);line-height:1.5;}
+.comment-ctrl{
+  position:fixed;right:16px;bottom:0px;
+  display:flex;gap:5px;z-index:51;padding-bottom:4px;
+}
+.cc-btn{
+  padding:4px 10px;border-radius:6px;
+  border:1px solid rgba(232,121,160,.2);background:rgba(13,8,16,.8);
+  font-size:10px;color:var(--muted);cursor:pointer;transition:all .15s;
+}
+.cc-btn:hover{border-color:rgba(232,121,160,.4);color:var(--acc);}
+.cc-btn.active{border-color:rgba(232,121,160,.5);background:rgba(232,121,160,.1);color:var(--acc);}
+
+/* Toast */
+.toast{position:fixed;bottom:20px;right:20px;z-index:999;padding:8px 16px;border-radius:8px;background:#1a0814;border:1px solid rgba(232,121,160,.4);color:var(--acc);font-size:12px;font-weight:700;opacity:0;transition:opacity .25s;pointer-events:none;max-width:280px;}
+.toast.show{opacity:1;}
+
+@media(max-width:680px){.layout{grid-template-columns:1fr;height:auto;}.setlist-panel{display:none;}}
+</style>
+</head>
+<body>
+
+<div class="toast" id="toast"></div>
+
+<!-- ── COMMENTS ── -->
+<div class="comments-wrap" id="commentsWrap"></div>
+<div class="comment-ctrl">
+  <button class="cc-btn active" id="ccBtn" onclick="toggleComments()">💬 コメント ON</button>
+</div>
+
+<!-- ── HEADER ── -->
+<header class="header">
+  <div class="logo">
+    <span class="logo-mark">🎤</span>
+    <div>
+      <div class="logo-name">歌ってみた配信</div>
+      <div class="logo-sub">服牢</div>
+    </div>
+  </div>
+
+  <div class="mode-toggle">
+    <button class="mode-btn active" id="modeSetlist" onclick="setMode('setlist')">📋 セットリスト</button>
+    <button class="mode-btn"        id="modeSingle"  onclick="setMode('single')">🎵 単発</button>
+  </div>
+
+  <div class="header-btns">
+    <button class="btn-hd" id="btnMini" onclick="toggleMini()">⬜ ミニ</button>
+    <button class="btn-hd" id="btnObs"  onclick="toggleObs()">📺 OBS</button>
+    <a class="h-back btn-hd" href="index.html">← TOP</a>
+  </div>
+</header>
+
+<!-- ── LAYOUT ── -->
+<div class="layout" id="mainLayout">
+
+  <!-- セットリストパネル -->
+  <aside class="setlist-panel">
+    <div class="sp-label">セットリスト</div>
+
+    <div class="song-add-form">
+      <input class="sa-input" id="addTitle"  placeholder="曲名 *"
+        onkeydown="if(event.key==='Enter')document.getElementById('addArtist').focus()">
+      <input class="sa-input" id="addArtist" placeholder="アーティスト（任意）"
+        onkeydown="if(event.key==='Enter')addSong()">
+      <button class="sa-add-btn" onclick="addSong()">＋ セットリストに追加</button>
+    </div>
+
+    <div class="setlist" id="setlistEl"></div>
+
+    <div class="sp-stats" id="spStats"></div>
+  </aside>
+
+  <!-- CENTER -->
+  <main class="center">
+
+    <!-- 単発モード入力 -->
+    <div class="single-input-bar" id="singleInputBar" style="display:none;">
+      <div class="sib-label">今歌う曲</div>
+      <div class="sib-row">
+        <input class="sib-input" id="singleTitle"  placeholder="曲名"
+          onkeydown="if(event.key==='Enter')document.getElementById('singleArtist').focus()">
+        <input class="sib-input" id="singleArtist" placeholder="アーティスト"
+          onkeydown="if(event.key==='Enter')setSingleSong()">
+        <button class="sib-set-btn" onclick="setSingleSong()">セット</button>
+      </div>
+    </div>
+
+    <!-- NOW PLAYING -->
+    <div class="now-playing" id="nowPlaying">
+      <div class="np-label">
+        <span class="np-dot" id="npDot" style="display:none;"></span>
+        NOW PLAYING
+      </div>
+      <div class="np-title"  id="npTitle">—</div>
+      <div class="np-artist" id="npArtist"></div>
+      <div class="np-actions" id="npActions" style="display:none;">
+        <button class="np-btn done-btn" onclick="markCurrentDone()">✅ 歌い終わり</button>
+        <button class="np-btn" onclick="nextSong()">⏭ 次の曲へ</button>
+        <button class="np-btn" onclick="clearCurrent()">✕ クリア</button>
+      </div>
+    </div>
+
+    <!-- LYRICS -->
+    <div class="lyrics-section">
+      <div class="lyrics-head">
+        <span class="lyrics-lbl">歌詞</span>
+        <span style="font-size:10px;color:var(--faint);">編集モードで貼り付け → 表示モードで見やすく</span>
+        <button class="lyrics-toggle" id="lyricsToggleBtn" onclick="toggleLyricsEdit()">✏ 編集</button>
+      </div>
+      <div class="lyrics-display" id="lyricsDisplay">
+        <span class="empty">ここに歌詞が表示されます</span>
+      </div>
+      <textarea class="lyrics-edit" id="lyricsEdit"
+        placeholder="ここに歌詞を貼り付けてください…"
+        style="display:none;"
+        oninput="updateLyricsDisplay()"></textarea>
+    </div>
+
+  </main>
+</div>
+
+<!-- ── MINI VIEW ── -->
+<div class="mini-view" id="miniView">
+
+  <div class="mini-now">
+    <div class="mini-now-lbl">
+      <span class="mini-now-dot"></span>
+      NOW PLAYING
+    </div>
+    <div class="mini-now-title"  id="miniNpTitle">—</div>
+    <div class="mini-now-artist" id="miniNpArtist"></div>
+  </div>
+
+  <div class="mini-lyrics" id="miniLyrics"></div>
+
+  <div class="mini-next" id="miniNextWrap" style="display:none;">
+    <div class="mini-next-lbl">NEXT</div>
+    <div class="mini-next-song" id="miniNextSong"></div>
+  </div>
+
+  <div class="mini-footer">
+    <button class="mini-foot-btn done" onclick="markCurrentDone()">✅ 歌い終わり</button>
+    <button class="mini-foot-btn" onclick="nextSong()">⏭ 次へ</button>
+  </div>
+
+</div>
+
+<script>
+// ════════════════════════════════════
+//  State
+// ════════════════════════════════════
+const SL_KEY = 'singing_setlist';
+const LY_KEY = 'singing_lyrics';
+
+let mode        = 'setlist'; // 'setlist' | 'single'
+let setlist     = [];        // [{id, title, artist, status:'pending'|'current'|'done'}]
+let currentId   = null;
+let miniMode    = false;
+let obsMode     = false;
+let lyricsEditMode = false;
+
+// ════════════════════════════════════
+//  Init
+// ════════════════════════════════════
+window.addEventListener('DOMContentLoaded', () => {
+  loadSetlist();
+  loadLyrics();
+  renderAll();
+  startComments();
+});
+
+// ════════════════════════════════════
+//  Mode
+// ════════════════════════════════════
+function setMode(m) {
+  mode = m;
+  document.getElementById('modeSetlist').classList.toggle('active', m === 'setlist');
+  document.getElementById('modeSingle' ).classList.toggle('active', m === 'single');
+  document.getElementById('mainLayout').classList.toggle('single-mode', m === 'single');
+  document.getElementById('singleInputBar').style.display = m === 'single' ? 'flex' : 'none';
+  document.getElementById('singleInputBar').style.flexDirection = 'column';
+  if (m === 'single') {
+    document.getElementById('npActions').style.display = 'flex';
+    document.getElementById('npDot').style.display = '';
+  }
+}
+
+// ════════════════════════════════════
+//  Setlist
+// ════════════════════════════════════
+function loadSetlist() {
+  try { setlist = JSON.parse(localStorage.getItem(SL_KEY) || '[]'); } catch { setlist = []; }
+  currentId = setlist.find(s => s.status === 'current')?.id || null;
+}
+
+function saveSetlist() {
+  localStorage.setItem(SL_KEY, JSON.stringify(setlist));
+}
+
+function addSong() {
+  const title  = document.getElementById('addTitle').value.trim();
+  if (!title) return;
+  const artist = document.getElementById('addArtist').value.trim();
+  const song = {
+    id: Date.now().toString(),
+    title, artist,
+    status: 'pending'
+  };
+  setlist.push(song);
+  saveSetlist();
+  document.getElementById('addTitle').value  = '';
+  document.getElementById('addArtist').value = '';
+  renderAll();
+  showToast(`「${title}」を追加しました`);
+}
+
+function removeSong(id) {
+  setlist = setlist.filter(s => s.id !== id);
+  if (currentId === id) { currentId = null; }
+  saveSetlist();
+  renderAll();
+}
+
+function setCurrent(id) {
+  setlist.forEach(s => { if (s.status === 'current') s.status = 'pending'; });
+  const song = setlist.find(s => s.id === id);
+  if (!song) return;
+  song.status = 'current';
+  currentId   = id;
+  saveSetlist();
+  renderAll();
+}
+
+function markCurrentDone() {
+  if (!currentId) return;
+  const song = setlist.find(s => s.id === currentId);
+  if (song) song.status = 'done';
+  currentId = null;
+  saveSetlist();
+  renderAll();
+  showToast('✅ 歌い終わりました');
+}
+
+function nextSong() {
+  // 現在をdoneにして次のpendingをcurrentに
+  if (currentId) {
+    const cur = setlist.find(s => s.id === currentId);
+    if (cur) cur.status = 'done';
+  }
+  const next = setlist.find(s => s.status === 'pending');
+  if (next) {
+    next.status = 'current';
+    currentId   = next.id;
+    showToast(`▶ 「${next.title}」へ`);
+  } else {
+    currentId = null;
+    showToast('セットリスト終了');
+  }
+  saveSetlist();
+  renderAll();
+}
+
+function clearCurrent() {
+  if (currentId) {
+    const song = setlist.find(s => s.id === currentId);
+    if (song) song.status = 'pending';
+    currentId = null;
+    saveSetlist();
+    renderAll();
+  }
+}
+
+function moveUp(id) {
+  const idx = setlist.findIndex(s => s.id === id);
+  if (idx <= 0) return;
+  [setlist[idx-1], setlist[idx]] = [setlist[idx], setlist[idx-1]];
+  saveSetlist(); renderAll();
+}
+
+function moveDown(id) {
+  const idx = setlist.findIndex(s => s.id === id);
+  if (idx < 0 || idx >= setlist.length - 1) return;
+  [setlist[idx], setlist[idx+1]] = [setlist[idx+1], setlist[idx]];
+  saveSetlist(); renderAll();
+}
+
+// ════════════════════════════════════
+//  Single mode
+// ════════════════════════════════════
+function setSingleSong() {
+  const title  = document.getElementById('singleTitle').value.trim();
+  const artist = document.getElementById('singleArtist').value.trim();
+  if (!title) return;
+  renderNowPlaying(title, artist);
+  renderMiniNow(title, artist);
+  document.getElementById('npActions').style.display = 'flex';
+  document.getElementById('npDot').style.display = '';
+}
+
+// ════════════════════════════════════
+//  Render
+// ════════════════════════════════════
+function renderAll() {
+  renderSetlist();
+  renderNowPlayingFromSetlist();
+  renderMiniView();
+  renderStats();
+}
+
+function renderSetlist() {
+  const el = document.getElementById('setlistEl');
+  if (!el) return;
+  el.innerHTML = '';
+  if (setlist.length === 0) {
+    el.innerHTML = `<div style="font-size:11px;color:var(--faint);padding:8px 2px;">曲を追加してください</div>`;
+    return;
+  }
+  setlist.forEach((s, i) => {
+    const statusIcon = s.status === 'current' ? '🎵' : s.status === 'done' ? '✅' : '○';
+    const item = document.createElement('div');
+    item.className = `song-item${s.status === 'current' ? ' active' : ''}${s.status === 'done' ? ' done' : ''}`;
+    item.innerHTML = `
+      <div class="si-num">${i + 1}</div>
+      <div class="si-body" onclick="setCurrent('${s.id}')">
+        <div class="si-title">${escHtml(s.title)}</div>
+        ${s.artist ? `<div class="si-artist">${escHtml(s.artist)}</div>` : ''}
+      </div>
+      <div class="si-actions">
+        <button class="si-btn" onclick="moveUp('${s.id}')" title="上へ">↑</button>
+        <button class="si-btn" onclick="moveDown('${s.id}')" title="下へ">↓</button>
+        <button class="si-btn" onclick="removeSong('${s.id}')" title="削除">✕</button>
+      </div>`;
+    el.appendChild(item);
+  });
+}
+
+function renderNowPlayingFromSetlist() {
+  if (mode === 'single') return;
+  const current = setlist.find(s => s.status === 'current');
+  if (current) {
+    renderNowPlaying(current.title, current.artist);
+    document.getElementById('npActions').style.display = 'flex';
+    document.getElementById('npDot').style.display = '';
+  } else {
+    renderNowPlaying(null, null);
+    document.getElementById('npActions').style.display = 'none';
+    document.getElementById('npDot').style.display = 'none';
+  }
+}
+
+function renderNowPlaying(title, artist) {
+  const titleEl  = document.getElementById('npTitle');
+  const artistEl = document.getElementById('npArtist');
+  if (title) {
+    titleEl.textContent  = title;
+    artistEl.textContent = artist || '';
+    artistEl.style.display = artist ? '' : 'none';
+  } else {
+    titleEl.innerHTML = '<span style="color:var(--faint);font-style:italic;font-size:16px;">曲を選んでください</span>';
+    artistEl.textContent = '';
+  }
+}
+
+function renderMiniView() {
+  const current = mode === 'setlist'
+    ? setlist.find(s => s.status === 'current')
+    : null;
+
+  const title  = current?.title  || document.getElementById('npTitle')?.textContent  || '—';
+  const artist = current?.artist || document.getElementById('npArtist')?.textContent || '';
+  renderMiniNow(title, artist);
+
+  // Next song
+  const next = setlist.find(s => s.status === 'pending');
+  const nextWrap = document.getElementById('miniNextWrap');
+  if (next && mode === 'setlist') {
+    nextWrap.style.display = '';
+    document.getElementById('miniNextSong').textContent = `${next.title}${next.artist ? ' / ' + next.artist : ''}`;
+  } else {
+    nextWrap.style.display = 'none';
+  }
+
+  // Lyrics
+  const lyrics = document.getElementById('lyricsEdit')?.value || '';
+  const miniLy = document.getElementById('miniLyrics');
+  if (miniLy) miniLy.textContent = lyrics;
+}
+
+function renderMiniNow(title, artist) {
+  const t = document.getElementById('miniNpTitle');
+  const a = document.getElementById('miniNpArtist');
+  if (t) t.textContent = title || '—';
+  if (a) a.textContent = artist || '';
+}
+
+function renderStats() {
+  const total   = setlist.length;
+  const done    = setlist.filter(s => s.status === 'done').length;
+  const pending = setlist.filter(s => s.status === 'pending').length;
+  const el = document.getElementById('spStats');
+  if (el && total > 0) {
+    el.textContent = `✅ ${done} / ${total} 曲完了 · 残り ${pending} 曲`;
+  } else if (el) {
+    el.textContent = '';
+  }
+}
+
+// ════════════════════════════════════
+//  Lyrics
+// ════════════════════════════════════
+function loadLyrics() {
+  const saved = localStorage.getItem(LY_KEY) || '';
+  const edit  = document.getElementById('lyricsEdit');
+  if (edit) edit.value = saved;
+  updateLyricsDisplay();
+}
+
+function updateLyricsDisplay() {
+  const val  = document.getElementById('lyricsEdit').value;
+  const disp = document.getElementById('lyricsDisplay');
+  const miniLy = document.getElementById('miniLyrics');
+  if (val.trim()) {
+    disp.classList.remove('empty');
+    disp.textContent = val;
+  } else {
+    disp.classList.add('empty');
+    disp.innerHTML = '<span class="empty">ここに歌詞が表示されます</span>';
+  }
+  if (miniLy) miniLy.textContent = val;
+  localStorage.setItem(LY_KEY, val);
+}
+
+function toggleLyricsEdit() {
+  lyricsEditMode = !lyricsEditMode;
+  document.getElementById('lyricsDisplay').style.display = lyricsEditMode ? 'none' : '';
+  document.getElementById('lyricsEdit'   ).style.display = lyricsEditMode ? '' : 'none';
+  document.getElementById('lyricsToggleBtn').textContent = lyricsEditMode ? '👁 表示' : '✏ 編集';
+  if (lyricsEditMode) document.getElementById('lyricsEdit').focus();
+}
+
+// ════════════════════════════════════
+//  Mini / OBS
+// ════════════════════════════════════
+function toggleMini() {
+  miniMode = !miniMode;
+  document.body.classList.toggle('mini', miniMode);
+  const btn = document.getElementById('btnMini');
+  btn.textContent = miniMode ? '⛶ フル' : '⬜ ミニ';
+  btn.classList.toggle('active', miniMode);
+  if (miniMode) renderMiniView();
+}
+
+function toggleObs() {
+  obsMode = !obsMode;
+  document.body.classList.toggle('obs-mode', obsMode);
+  const btn = document.getElementById('btnObs');
+  btn.textContent = obsMode ? '📺 OBS解除' : '📺 OBS';
+  btn.classList.toggle('active', obsMode);
+}
+
+// ════════════════════════════════════
+//  Comments
+// ════════════════════════════════════
+const COMMENT_POOL = [
+  {icon:'🔥', name:'ガオル',      texts:['神すぎる！！！','声やばすぎ……','天才かよ','最強すぎて草','ずっと聴いてられる！！']},
+  {icon:'🌙', name:'ルナ',        texts:['エモい…🥺','好きすぎる…','泣いちゃう','声がきれいすぎ','推し確定しました']},
+  {icon:'✨', name:'ロマンLove',  texts:['もっと聴きたい！！！','ヤバすぎ優勝','神曲選択すぎる','高音えぐすぎ','リピートしてる']},
+  {icon:'💪', name:'がおるがおーる',texts:['うおおおおおお！！','最高かよ！！','震えてる','声が強すぎる','才能の塊']},
+  {icon:'🎵', name:'徹夜ラジオさん',texts:['好きな曲きた！','この曲大好き～！','センスの塊','また歌ってほしい！','鳥肌たった']},
+  {icon:'🌧️', name:'Rain My Brain',texts:['沁みる…','静かに泣いてる','この声好きすぎる','余韻が抜けない','天才']},
+  {icon:'🎤', name:'ピラピラ美ボディ',texts:['声が綺麗すぎて蒸発しそう','優勝！！','この選曲好きすぎる','リアルタイムで聴けて幸せ','エモすぎて言葉が出てこない']},
+  {icon:'🌸', name:'癒しんす',    texts:['ほっこりする～','やさしい声癒される','最高な時間','ずっとこのまま聴いてたい','幸せ…']},
+  {icon:'🦁', name:'ぽけぽけ大好きん',texts:['すごすぎ！！','声量えぐい！','大好き～！！','もう一回！！','泣きそう…']},
+  {icon:'📻', name:'深夜ラジオ民', texts:['この雰囲気最高すぎる','深夜に聴きたい声','眠れなくなっちゃう','沼った','ずっと歌って？？']},
+];
+
+let commentsActive  = true;
+let commentInterval = null;
+const MAX_COMMENTS  = 5;
+
+function startComments() {
+  if (commentInterval) clearInterval(commentInterval);
+  commentInterval = setInterval(spawnComment, randomBetween(2500, 5000));
+}
+
+function stopComments() {
+  if (commentInterval) { clearInterval(commentInterval); commentInterval = null; }
+}
+
+function toggleComments() {
+  commentsActive = !commentsActive;
+  const btn = document.getElementById('ccBtn');
+  btn.textContent = commentsActive ? '💬 コメント ON' : '💬 コメント OFF';
+  btn.classList.toggle('active', commentsActive);
+  if (commentsActive) startComments(); else stopComments();
+}
+
+function spawnComment() {
+  if (!commentsActive) return;
+  const wrap = document.getElementById('commentsWrap');
+  if (!wrap) return;
+
+  const persona = COMMENT_POOL[Math.floor(Math.random() * COMMENT_POOL.length)];
+  const text    = persona.texts[Math.floor(Math.random() * persona.texts.length)];
+
+  const el = document.createElement('div');
+  el.className = 'comment-item';
+  el.innerHTML = `
+    <span class="ci-icon">${persona.icon}</span>
+    <div class="ci-body">
+      <div class="ci-name">${persona.name}</div>
+      <div class="ci-text">${text}</div>
+    </div>`;
+  wrap.appendChild(el);
+
+  // 最大件数を超えたら古いものを削除
+  const items = wrap.querySelectorAll('.comment-item');
+  if (items.length > MAX_COMMENTS) {
+    const oldest = items[0];
+    oldest.classList.add('fade');
+    setTimeout(() => oldest.remove(), 500);
+  }
+
+  // 一定時間後に消える
+  const lifetime = randomBetween(7000, 12000);
+  setTimeout(() => {
+    el.classList.add('fade');
+    setTimeout(() => el.remove(), 500);
+  }, lifetime);
+
+  // 次のコメントまでの間隔をランダムに再設定
+  if (commentInterval) {
+    clearInterval(commentInterval);
+    commentInterval = setInterval(spawnComment, randomBetween(2500, 5000));
+  }
+}
+
+function randomBetween(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+// ════════════════════════════════════
+//  Utils
+// ════════════════════════════════════
+function escHtml(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2500);
+}
+</script>
+</body>
+</html>
