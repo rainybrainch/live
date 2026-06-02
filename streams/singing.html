@@ -879,7 +879,7 @@ function stopCountdown() {
   const disp = document.getElementById('cdDisplay');
   if (disp) { disp.classList.remove('running','urgent'); }
   cdRemaining = 0;
-  syncCommentFrequency();
+  cdBoostLv = 0;
 }
 
 function updateCdDisplay() {
@@ -891,22 +891,12 @@ function updateCdDisplay() {
   disp.classList.toggle('urgent',  cdRunning && ratio <= 0.25);
 }
 
+let cdBoostLv = 0;
+
 function syncCommentFrequency() {
-  // カウントダウンが進むほど（残り時間が減るほど）コメントが増える
-  if (!cdRunning || cdTotal <= 0) return;
-  const ratio = cdRemaining / cdTotal; // 1.0(開始) → 0(終了)
-  // ratio が下がるとコメント間隔も下がる（頻度↑）
-  // lv はエフェクト用なので別途 cdLv を使う（コメント頻度計算のみ）
-  // getCommentInterval() は lv を参照するが、ここでは cdLv で上書き
-  // ratio 1.0→lv0, 0.75→lv1, 0.5→lv2, 0.25→lv3, 0→lv4
-  const cdLv = Math.min(4, Math.floor((1 - ratio) * 5));
-  if (commentInterval && commentsActive) {
-    clearInterval(commentInterval);
-    const bases = [5000, 3700, 2600, 1700, 1000];
-    const vars  = [1000,  750,  600,  500,  400];
-    const interval = bases[cdLv] + randomBetween(-vars[cdLv], vars[cdLv]);
-    commentInterval = setInterval(spawnComment, interval);
-  }
+  if (!cdRunning || cdTotal <= 0) { cdBoostLv = 0; return; }
+  const ratio = cdRemaining / cdTotal;
+  cdBoostLv = Math.min(4, Math.floor((1 - ratio) * 5));
 }
 
 // ════════════════════════════════════
@@ -1046,10 +1036,9 @@ function spawnComment() {
 }
 
 function getCommentInterval() {
-  // lv 0=4000-6000ms / lv1=3000-4500 / lv2=2000-3200 / lv3=1200-2200 / lv4=600-1400
   const bases = [5000, 3700, 2600, 1700, 1000];
   const vars  = [1000,  750,  600,  500,  400];
-  const l = Math.max(0, Math.min(4, lv));
+  const l = Math.max(0, Math.min(4, Math.max(lv, cdBoostLv)));
   return bases[l] + randomBetween(-vars[l], vars[l]);
 }
 
