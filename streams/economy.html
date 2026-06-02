@@ -673,6 +673,15 @@ init();
 
 function init(){
   hydrate(); bind(); renderSeedPicker(); applyStage(); startClock(); scheduleComment(); syncPersonas(true);
+  // Auto-select seed from URL param: economy.html?seed=6
+  const urlSeed=parseInt(new URLSearchParams(location.search).get("seed")||"0");
+  if(urlSeed&&!state.selectedSeed){
+    setTimeout(()=>{
+      selectSeed(urlSeed);
+      // Scroll dock into view if hidden
+      document.body.classList.remove("panel-hidden");
+    },200);
+  }
 }
 
 function hydrate(){
@@ -815,11 +824,14 @@ function updateSeedUI(){
   let notes={};
   try{ notes=JSON.parse(localStorage.getItem(noteKey)||"{}"); }catch{}
 
-  let html=`<div class="src-hd">
+  const isCollapsed = state[`ref_collapsed_${sk}`]||false;
+  let html=`<div class="src-hd" onclick="toggleRef('${sk}')" style="cursor:pointer;">
     <span class="src-badge">${sk}</span>
     <span class="src-level">${s.level}</span>
-    <a class="src-open" href="${ARCHIVE_BASE+s.url}" target="_blank" rel="noopener">Archive詳細 ↗</a>
-  </div><div class="src-body">`;
+    <span style="font-size:10px;color:var(--muted);margin-left:6px;">${s.name}</span>
+    <a class="src-open" href="${ARCHIVE_BASE+s.url}" target="_blank" rel="noopener" onclick="event.stopPropagation()">詳細 ↗</a>
+    <span style="color:var(--faint);font-size:12px;margin-left:4px;">${isCollapsed?"▶":"▼"}</span>
+  </div><div class="src-body" id="src-body-${sk}" style="${isCollapsed?"display:none":""}">`;
 
   if(db?.tagline){
     html+=`<div class="src-def">${xss(db.tagline)}</div>`;
@@ -907,6 +919,19 @@ function saveSeedToArchive(sk){
     localStorage.setItem(ARCHIVE_KEY,JSON.stringify(arr));
     setStatus(`🌱「${s.name}」をArchiveに保存しました`);
   }catch{ setStatus("Archive保存に失敗しました"); }
+}
+
+function toggleRef(sk){
+  const body=document.getElementById("src-body-"+sk);
+  const isNowHidden=body?.style.display==="none";
+  if(body) body.style.display=isNowHidden?"":"none";
+  state["ref_collapsed_"+sk]=!isNowHidden;
+  const hd=body?.previousElementSibling;
+  if(hd){
+    const spans=hd.querySelectorAll("span");
+    const chev=spans[spans.length-1];
+    if(chev) chev.textContent=isNowHidden?"▼":"▶";
+  }
 }
 
 function xss(s){ return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
