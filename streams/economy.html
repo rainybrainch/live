@@ -642,6 +642,19 @@ body.recording .clock-now{color:var(--acc);}
 /* archive-autofill flash */
 @keyframes fillFlash{0%{background:rgba(201,168,76,.25);}100%{background:transparent;}}
 .fill-flash{animation:fillFlash .6s ease-out;}
+/* -- ITER10: card-hide + archive-recent + comment-progress -- */
+.keyword-card{transition:opacity .35s ease,transform .35s ease;}
+body.card-hidden .keyword-card{opacity:0;transform:translateY(-12px);pointer-events:none;}
+.comment-progress-track{height:3px;background:rgba(255,255,255,.07);overflow:hidden;}
+.comment-progress-fill{height:100%;background:var(--acc);width:0%;transition:width .25s linear;}
+body.timer-warning .comment-progress-fill{background:#ff6b7a;}
+.archive-recent{margin-top:8px;border:1px solid var(--line);border-radius:8px;overflow:hidden;}
+.archive-recent-hd{font-size:9px;font-weight:900;letter-spacing:.12em;color:var(--faint);padding:5px 10px;background:rgba(0,0,0,.2);text-transform:uppercase;}
+.arc-item{display:flex;justify-content:space-between;align-items:center;padding:5px 10px;border-top:1px solid rgba(255,255,255,.05);gap:8px;transition:background .12s;}
+.arc-item:hover{background:rgba(255,255,255,.04);}
+.arc-kw{font-size:11px;font-weight:900;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.arc-stage{font-size:9px;color:var(--faint);white-space:nowrap;}
+.arc-empty{font-size:11px;color:var(--faint);padding:8px 10px;text-align:center;}
 </style>
 </head>
 <body>
@@ -752,6 +765,7 @@ body.recording .clock-now{color:var(--acc);}
     </div>
   </div><!-- /dock-sticky-top -->
   </div>
+  <div class="comment-progress-track"><div class="comment-progress-fill" id="commentProgressFill"></div></div>
   <div class="dock-body">
 
     <!-- Step 1: キーワード + ステージ -->
@@ -874,6 +888,10 @@ body.recording .clock-now{color:var(--acc);}
                 font-size:12px;font-weight:900;letter-spacing:.04em;text-decoration:none;">
         🌲 Archive を開く ↗
       </a>
+      <div class="archive-recent">
+        <div class="archive-recent-hd">最近の記録</div>
+        <div id="archiveRecentList"><div class="arc-empty">まだ記録がありません</div></div>
+      </div>
     </section>
 
     <!-- コメント履歴 -->
@@ -1021,7 +1039,14 @@ init();
 
 function init(){
   hydrate(); bind(); renderSeedPicker(); applyStage(); startClock(); scheduleComment(); syncPersonas(true);
+  renderRecentArchive();
   if(typeof Notification!=="undefined"&&Notification.permission==="default")Notification.requestPermission().catch(()=>{});
+  setInterval(()=>{
+    const pf=$('commentProgressFill');
+    if(!pf||!_cSchedDelay)return;
+    const pct=commentsEnabled?Math.min(100,(Date.now()-_cSchedAt)/_cSchedDelay*100):0;
+    pf.style.width=pct+'%';
+  },200);
   try{
     const _dp=JSON.parse(localStorage.getItem('rbt_dock_pos')||'{}');
     const _ds=JSON.parse(localStorage.getItem('rbt_dock_size')||'{}');
@@ -1306,6 +1331,11 @@ function bind(){
         $("dockOpacityBtn")?.classList.toggle("active",_od.classList.contains("translucent"));
         setStatus(_od.classList.contains("translucent")?"◐ 半透明モード":"● 通常モード");
         e.preventDefault();return;}
+      if(e.key==="v"||e.key==="V"){
+        document.body.classList.toggle("card-hidden");
+        setStatus(document.body.classList.contains("card-hidden")?
+          "🃏 キーワードカード 非表示":"🃏 キーワードカード 表示");
+        e.preventDefault();return;}
       if(e.key==="n"||e.key==="N"){nextSeed();e.preventDefault();return;}
       if(e.key==="p"||e.key==="P"){prevSeed();e.preventDefault();return;}
     }
@@ -1454,6 +1484,20 @@ function updateSeedProgress(){
   const _f=$("seedProgressFill"),_l=$("seedProgressLabel");
   if(_f)_f.style.width=_pct+"%";
   if(_l)_l.textContent=`${_done} / ${_tot} 完了`;
+}
+
+
+function renderRecentArchive(){
+  const el=$("archiveRecentList");if(!el)return;
+  try{
+    const arr=JSON.parse(localStorage.getItem(ARCHIVE_KEY)||"[]").slice(0,5);
+    if(!arr.length){el.innerHTML='<div class="arc-empty">まだ記録がありません</div>';return;}
+    const icons={seed:"🌱",branch:"🌿",leaf:"🍃",tree:"🌳",forest:"🌲"};
+    el.innerHTML=arr.map(e=>'<div class="arc-item">'+
+      '<span class="arc-kw">'+xss(e.keyword||"—")+'</span>'+
+      '<span class="arc-stage">'+(icons[e.stage]||"")+' '+xss(e.createdAt||"")+'</span>'+
+      '</div>').join("");
+  }catch{el.innerHTML="";}
 }
 
 function nextSeed(){
@@ -1740,6 +1784,7 @@ function saveToArchive(){
     existing.unshift(entry);
     localStorage.setItem(ARCHIVE_KEY,JSON.stringify(existing));
     $("archiveKw").value="";$("archiveBody").value="";$("archiveBranches").value="";
+    renderRecentArchive();
     setStatus(`🌱「${kw}」を Archive に追加 ✓`);
   }catch{setStatus("Archive への保存に失敗しました");}
 }
@@ -2060,11 +2105,14 @@ function updateDockMeta(){
   el.innerHTML='💬 '+commentCount+'件　🎤 '+(listening?'<span class="on">● 収録中</span>':'停止中')+_elStr;
 }
 
+let _cSchedAt=0,_cSchedDelay=0;
 function scheduleComment(){
   clearTimeout(commentTimer);
-  if(!commentsEnabled)return;
+  if(!commentsEnabled){const pf=$("commentProgressFill");if(pf)pf.style.width="0%";return;}
   const[mn,mx]=intervalRange();
-  commentTimer=setTimeout(()=>{spawnComment();scheduleComment();},mn+Math.random()*(mx-mn));
+  const _d=mn+Math.random()*(mx-mn);
+  _cSchedAt=Date.now();_cSchedDelay=_d;
+  commentTimer=setTimeout(()=>{spawnComment();scheduleComment();},_d);
 }
 
 // ── Personas ──
@@ -2188,6 +2236,7 @@ window.addEventListener("storage",e=>{
       <kbd>I</kbd><span>配信サマリーを表示</span>
       <kbd>S</kbd><span>セッションをMarkdownでダウンロード</span>
       <kbd>O</kbd><span>Dock 半透明モード切替</span>
+      <kbd>V</kbd><span>キーワードカード 表示/非表示</span>
       <kbd>N</kbd><span>次のSeedに進む</span>
       <kbd>P</kbd><span>前のSeedに戻る</span>
       <kbd>? /</kbd><span>このヘルプを開閉</span>
