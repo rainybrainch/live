@@ -570,6 +570,19 @@ body[data-stage=forest]{--stage-color:#4dab78;--stage-color-a:rgba(77,171,120,.3
 .dock.translucent .dock-head{background:rgba(0,0,0,.12)!important;}
 .dock.translucent .dock-action-bar{background:rgba(0,0,0,.06)!important;}
 #dockOpacityBtn.active{color:var(--acc);border-color:rgba(201,168,76,.5);background:rgba(201,168,76,.1);}
+/* -- REORGANIZE: comment-bar + action-timer -- */
+.dock-comment-bar{display:flex;gap:6px;align-items:center;padding:4px 12px 8px;border-bottom:1px solid rgba(255,255,255,.06);}
+.action-timer{display:flex;align-items:center;gap:4px;flex-shrink:0;}
+.action-timer-time{font-size:16px;font-weight:900;font-variant-numeric:tabular-nums;min-width:52px;text-align:center;letter-spacing:.05em;transition:color .3s;}
+body.recording .action-timer-time{color:var(--acc);text-shadow:0 0 14px rgba(201,168,76,.3);}
+body.timer-warning .action-timer-time{color:#ff6b7a!important;}
+.timer-icon-btn{width:30px;height:30px;min-height:30px;padding:0;display:grid;place-items:center;border-radius:8px;font-size:13px;flex-shrink:0;transition:all .15s;}
+.timer-icon-btn.running{background:rgba(201,168,76,.18);border-color:rgba(201,168,76,.45);color:var(--acc);}
+.burst-mini{display:flex;gap:3px;margin-left:auto;}
+.mini-btn{padding:2px 8px;min-height:30px;font-size:11px;font-weight:900;border-radius:6px;flex-shrink:0;}
+/* section:nth-child colors for new order */
+.section:nth-child(2){border-left-color:#5aafcf;}
+.section:nth-child(2) .step{background:#5aafcf;color:#001a22;}
 </style>
 </head>
 <body>
@@ -652,14 +665,25 @@ body[data-stage=forest]{--stage-color:#4dab78;--stage-color-a:rgba(77,171,120,.3
     <button class="dock-icon-btn" id="hideDock" type="button" title="閉じる（D）">✕</button>
   </div>
   <div class="dock-action-bar">
-    <button id="micBtn" class="mic-main-btn good" type="button" title="マイク ON/OFF — M キー"><span class="mic-live-dot"></span>🎤 マイク開始</button>
-    <div class="comment-ctrl-row">
-      <button class="cc-btn" id="ccBtn" onclick="toggleComments()">💬 ON</button>
-      <div class="spd-trio">
-        <button class="spd-btn" data-speed="slow" onclick="setCommentSpeed('slow')">🐢</button>
-        <button class="spd-btn active" data-speed="normal" onclick="setCommentSpeed('normal')">▷</button>
-        <button class="spd-btn" data-speed="fast" onclick="setCommentSpeed('fast')">🔥</button>
-      </div>
+    <button id="micBtn" class="mic-main-btn good" type="button" title="マイク ON/OFF — M キー"><span class="mic-live-dot"></span>🎤 マイク</button>
+    <div class="action-timer">
+      <span class="action-timer-time" id="actionTimerTime">--:--</span>
+      <button class="timer-icon-btn" id="actionTimerToggle" type="button" title="開始/停止 (Space)">▶</button>
+      <button class="timer-icon-btn" id="actionTimerReset" type="button" title="リセット">↺</button>
+    </div>
+  </div>
+  <div class="dock-comment-bar">
+    <button class="cc-btn" id="ccBtn" onclick="toggleComments()">💬 ON</button>
+    <div class="spd-trio">
+      <button class="spd-btn" data-speed="slow" onclick="setCommentSpeed('slow')">🐢</button>
+      <button class="spd-btn active" data-speed="normal" onclick="setCommentSpeed('normal')">▷</button>
+      <button class="spd-btn" data-speed="fast" onclick="setCommentSpeed('fast')">🔥</button>
+    </div>
+    <div class="burst-mini">
+      <button id="commentBtn" class="mini-btn" type="button" title="コメント1件 (C)">×1</button>
+      <button id="burstBtn3" class="mini-btn warn" type="button" title="×3件">×3</button>
+      <button id="burstBtn5" class="mini-btn warn" type="button" title="×5件">×5</button>
+      <button id="superChatBtn" class="mini-btn primary" type="button" title="📛 SC">💛</button>
     </div>
   </div>
   <div class="dock-body">
@@ -706,11 +730,11 @@ body[data-stage=forest]{--stage-color:#4dab78;--stage-color-a:rgba(77,171,120,.3
       </div>
     </section>
 
-    <!-- Step 2: タイマー -->
-    <section class="section">
-      <div class="section-title"><span class="step">2</span>収録タイマー</div>
+    <!-- Step 2: タイマー設定・字幕 -->
+    <section class="section collapsed">
+      <div class="section-title"><span class="step">2</span>タイマー設定・字幕</div>
       <div class="grid2">
-        <div class="field"><label>分</label><input id="timerMinutes" type="number" min="1" max="240" value="60"></div>
+        <div class="field"><label>タイマー（分）</label><input id="timerMinutes" type="number" min="1" max="240" value="60"></div>
         <div class="field">
           <label>プリセット</label>
           <select id="timerPreset">
@@ -724,36 +748,30 @@ body[data-stage=forest]{--stage-color:#4dab78;--stage-color-a:rgba(77,171,120,.3
         <button id="timerStartBtn" class="good" type="button" title="Space キー">開始</button>
         <button id="timerResetBtn" type="button">リセット</button>
       </div>
-    </section>
-
-    <!-- Step 3: 文字起こし -->
-    <section class="section">
-      <div class="section-title"><span class="step">3</span>文字起こし<span class="section-stat" id="transcriptStat">0件</span></div>
-      <div class="actions" style="grid-template-columns:1fr 1fr 1fr 1fr;">
-        <button id="clearTranscriptBtn" type="button">字幕クリア</button>
-        <button id="commentBtn" class="warn" type="button" title="C キー">コメント1件</button>
-        <button id="copySessionBtn" type="button" title="📋 セッションをコピー">📋 コピー</button>
-        <button id="downloadBtn" class="primary" type="button" title="Markdownで保存（S）">💾 保存</button>
-      </div>
-      <div class="burst-row">
-        <button id="burstBtn3" class="warn" type="button" title="コメント3件を連続生成">💬×3</button>
-        <button id="burstBtn5" class="warn" type="button" title="コメント5件を連続生成">💬×5</button>
-        <button id="superChatBtn" class="primary" type="button" title="スーパーチャット（金色コメント）">💛 SC</button>
-      </div>
-      <div class="field">
-        <label>手入力（Enter で反映 / T キー / ↑↓ 履歴）</label>
-        <input id="manualTranscript" placeholder="例: 金利とは何か？">
-      </div>
       <div class="slider-row">
         <label>字幕サイズ</label>
         <input type="range" id="captionSizeRange" min="60" max="180" value="100" step="5">
         <span class="sv" id="captionSizeVal">100%</span>
       </div>
+    </section>
+
+    <!-- Step 3: 文字起こし -->
+    <section class="section">
+      <div class="section-title"><span class="step">3</span>文字起こし<span class="section-stat" id="transcriptStat">0件</span></div>
+      <div class="field">
+        <label>手入力（T キー / ↑↓ 履歴）</label>
+        <input id="manualTranscript" placeholder="例: 金利とは何か？">
+      </div>
+      <div class="actions">
+        <button id="clearTranscriptBtn" type="button">字幕クリア</button>
+        <button id="copySessionBtn" type="button" title="📋 セッションをコピー">📋 コピー</button>
+        <button id="downloadBtn" class="primary" type="button" title="保存 (S)">💾 保存</button>
+      </div>
       <div id="transcriptLog" class="log">まだ文字起こしはありません。</div>
     </section>
 
     <!-- Step 4: Archive に追加 -->
-    <section class="section">
+    <section class="section collapsed">
       <div class="section-title"><span class="step">4</span>Archive に記録</div>
       <div class="archive-form">
         <div class="archive-form-title">🌲 学びを RB-Tree Archive へ保存</div>
@@ -789,7 +807,7 @@ body[data-stage=forest]{--stage-color:#4dab78;--stage-color-a:rgba(77,171,120,.3
     </details>
 
     <!-- クイックメモ -->
-    <section class="section" style="border-left-color:#9b8ecf;">
+    <section class="section collapsed" style="border-left-color:#9b8ecf;">
       <div class="section-title"><span class="step" style="background:#9b8ecf;color:#0a0020;">5</span>クイックメモ</div>
       <textarea class="quick-notes-textarea" id="quickNotes" placeholder="配信中のメモ・気づき・次回のトピック…"></textarea>
     </section>
@@ -1057,6 +1075,8 @@ function bind(){
   })();
   $("stageTimerToggle")?.addEventListener("click",toggleTimer);
   $("stageTimerReset")?.addEventListener("click",resetTimer);
+  $("actionTimerToggle")?.addEventListener("click",toggleTimer);
+  $("actionTimerReset")?.addEventListener("click",resetTimer);
   $("timerPreset")?.addEventListener("change",()=>{$("timerMinutes").value=$("timerPreset").value;setTimer();});
   $("timerSetBtn")?.addEventListener("click",setTimer);
   $("timerStartBtn")?.addEventListener("click",toggleTimer);
@@ -1562,6 +1582,8 @@ function updateClock(){
   if(state.timer.remainingSec>0)state._timerNotified=false;
   updateDockMeta();
   if($("timerStartBtn"))$("timerStartBtn").textContent=state.timer.running?"停止":"開始";
+  const _att2=$("actionTimerTime");if(_att2)_att2.textContent=fmt(state.timer.remainingSec);
+  const _atg=$("actionTimerToggle");if(_atg){_atg.textContent=state.timer.running?"Ⅱ":"▶";_atg.classList.toggle("running",state.timer.running);}
   if($("stageTimerToggle")){
     $("stageTimerToggle").textContent=state.timer.running?"Ⅱ":"▶";
     $("stageTimerToggle").classList.toggle("running",state.timer.running);
