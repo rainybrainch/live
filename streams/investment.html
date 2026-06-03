@@ -588,11 +588,52 @@ body.timer-warning .action-timer-time{color:#ff6b7a!important;}
 .seed-pick-btn.done{border-color:rgba(126,200,122,.35);}
 .seed-pick-btn.done::after{content:'✓';position:absolute;top:2px;right:2px;font-size:7px;color:var(--good);font-weight:900;line-height:1;}
 #engineToggleBtn.gemini{border-color:rgba(100,210,255,.4);background:rgba(100,210,255,.08);color:#64d2ff;}
+/* -- ITER7: summary overlay + stage ambient -- */
+.stage-bg-overlay{position:absolute;inset:0;pointer-events:none;z-index:0;transition:background 1.2s ease;}
+.session-summary-overlay{position:fixed;inset:0;background:rgba(0,0,0,.78);backdrop-filter:blur(10px);z-index:180;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s;}
+.session-summary-overlay.show{opacity:1;pointer-events:auto;}
+.ss-panel{background:rgba(6,10,4,.97);border:1px solid rgba(201,168,76,.32);border-radius:16px;padding:24px 28px;min-width:290px;max-width:420px;box-shadow:0 28px 80px rgba(0,0,0,.65);}
+.ss-title{font-size:14px;font-weight:900;color:var(--acc);margin-bottom:16px;letter-spacing:.06em;display:flex;align-items:center;gap:8px;}
+.ss-grid{display:grid;grid-template-columns:auto 1fr;gap:9px 14px;align-items:baseline;margin-bottom:18px;}
+.ss-lbl{color:var(--muted);font-size:11px;white-space:nowrap;}
+.ss-val{font-size:14px;font-weight:900;color:var(--text);font-variant-numeric:tabular-nums;}
+.ss-close{width:100%;padding:8px;border-radius:8px;border:1px solid var(--line);background:rgba(255,255,255,.06);font-size:11px;font-weight:900;cursor:pointer;color:var(--muted);transition:background .12s;}
+.ss-close:hover{background:rgba(255,255,255,.12);color:var(--text);}
+/* -- ALL FIXES -- */
+.dock-sticky-top{
+  position:sticky;top:0;z-index:11;
+  background:rgba(6,10,4,.97);
+  backdrop-filter:blur(20px) saturate(160%);
+  border-bottom:1px solid rgba(255,255,255,.08);
+}
+.dock-resize{
+  height:22px!important;cursor:ns-resize;
+  display:flex;align-items:center;justify-content:center;
+  background:rgba(255,255,255,.025);border-top:1px solid rgba(255,255,255,.08);
+  position:relative;transition:background .15s;
+}
+.dock-resize:hover{background:rgba(255,255,255,.07);}
+.dock-resize::before{content:'';width:48px;height:5px;border-radius:999px;background:rgba(255,255,255,.25);transition:all .15s;}
+.dock-resize:hover::before{width:72px;background:rgba(255,255,255,.45);}
+.dock-resize-corner{position:absolute;right:0;top:0;bottom:0;width:26px;cursor:ew-resize;display:flex;align-items:center;justify-content:center;}
+.dock-resize-corner::after{content:'⠿';font-size:16px;color:rgba(255,255,255,.18);}
+.dock-resize-corner:hover::after{color:rgba(255,255,255,.45);}
+.dock-body label{font-size:12px!important;letter-spacing:.03em;}
+.section-title{font-size:13px!important;}
+.dock-body input:not([type=range]),.dock-body select{font-size:13px!important;padding:9px 11px!important;}
+.dock-body textarea{font-size:12px!important;}
+.dock-body .actions button,.dock-body .field button{font-size:12px!important;}
+.archive-form-title{font-size:12px!important;}
+.field{gap:5px!important;}
+.dock-body{gap:10px!important;padding:12px!important;}
+.keyword-sub-desc{color:rgba(240,232,200,.55);font-size:clamp(10px,.9vw,13px);line-height:1.5;margin-top:4px;}
 </style>
 </head>
 <body>
 <main class="stage" id="stage">
 
+  <!-- Stage ambient background -->
+  <div class="stage-bg-overlay" id="stageBgOverlay"></div>
   <!-- Stage flash -->
   <div class="stage-flash" id="stageFlash"></div>
 
@@ -662,6 +703,7 @@ body.timer-warning .action-timer-time{color:#ff6b7a!important;}
 
 <!-- Dock -->
 <aside id="dock" class="dock">
+  <div class="dock-sticky-top" id="dockStickyTop">
   <div class="dock-head">
     <div class="dock-title" style="flex:1;min-width:0;"><strong>RB-Tree投資</strong><div class="dock-meta" id="dockMeta">💬 0件　🎤 停止中</div></div>
     <button class="dock-icon-btn" id="dockFullscreenBtn" type="button" title="全画面（F）">⛶</button>
@@ -691,6 +733,7 @@ body.timer-warning .action-timer-time{color:#ff6b7a!important;}
       <button id="burstBtn5" class="mini-btn warn" type="button" title="×5件">×5</button>
       <button id="superChatBtn" class="mini-btn primary" type="button" title="📛 SC">💛</button>
     </div>
+  </div><!-- /dock-sticky-top -->
   </div>
   <div class="dock-body">
 
@@ -974,6 +1017,7 @@ function init(){
 function hydrate(){
   $("keywordInput").value = state.keyword||"";
   $("subInput").value     = state.sub||"";
+  if(state.seedDesc&&$("keywordSub"))$("keywordSub").textContent=state.seedDesc;
   const _ag=$("agendaText"); if(_ag){_ag.textContent=state.sub||"—";if($("agendaWrap"))$("agendaWrap").style.display=state.sub?"":"none";}
   $("commentSpeed").value = state.commentSpeed||"normal";
   $("commentEngine").value= state.commentEngine||"template";
@@ -1214,6 +1258,8 @@ function bind(){
       if(e.key==="4"){selectStageByKey("tree");e.preventDefault();return;}
       if(e.key==="5"){selectStageByKey("forest");e.preventDefault();return;}
       if(e.key==="t"||e.key==="T"){$("manualTranscript")?.focus();e.preventDefault();return;}
+      if(e.key==="r"||e.key==="R"){restartMic();e.preventDefault();return;}
+      if(e.key==="i"||e.key==="I"){toggleSummary();e.preventDefault();return;}
       if(e.key==="s"||e.key==="S"){downloadSession();e.preventDefault();return;}
       if(e.key==="o"||e.key==="O"){
         const _od=$("dock");_od.classList.toggle("translucent");
@@ -1224,6 +1270,7 @@ function bind(){
       if(e.key==="p"||e.key==="P"){prevSeed();e.preventDefault();return;}
     }
     if(e.key==="Escape"){
+      if(document.getElementById("sessionSummary")?.classList.contains("show")){toggleSummary();return;}
       if(document.getElementById("kbHelp")?.classList.contains("show")){toggleKbHelp();return;}
       if(!document.fullscreenElement)document.body.classList.remove("panel-hidden");
     }
@@ -1320,6 +1367,32 @@ function downloadSession(){
   setStatus("💾 セッションを保存しました (" + a.download + ")");
 }
 
+
+function restartMic(){
+  if(listening){
+    try{recognition.stop();}catch{}
+    setTimeout(()=>{if(listening)try{recognition.start();}catch{}},400);
+    setStatus("🔄 音声認識 リスタート");
+  } else { toggleMic(); }
+}
+
+function toggleSummary(){
+  const el=$("sessionSummary");if(!el)return;
+  const show=!el.classList.contains("show");
+  if(show){
+    const _e=sessionStartMs?fmt(Math.floor((Date.now()-sessionStartMs)/1000)):"--:--";
+    const _sn=state.selectedSeed,_sd=_sn?SEEDS_DATA.find(s=>s.num===_sn):null;
+    const _sm=STAGES_META[state.currentStage];
+    const _elEl=$("ss-elapsed");if(_elEl)_elEl.textContent=_e;
+    const _cmEl=$("ss-comments");if(_cmEl)_cmEl.textContent=commentCount+"件";
+    const _trEl=$("ss-transcript");if(_trEl)_trEl.textContent=(state.transcript||[]).length+"件";
+    const _seEl=$("ss-seed");if(_seEl)_seEl.textContent=_sd?String(_sd.num).padStart(2,"0")+" "+_sd.name:"未選択";
+    const _stEl=$("ss-stage");if(_stEl)_stEl.textContent=(_sm?.icon||"")+" "+(_sm?.name||"");
+    const _dnEl=$("ss-done");if(_dnEl)_dnEl.textContent=completedSeeds.size+"個";
+  }
+  el.classList.toggle("show",show);
+}
+
 function nextSeed(){
   const nums=SEEDS_DATA.map(s=>s.num).sort((a,b)=>a-b);
   const cur=state.selectedSeed||0;
@@ -1398,7 +1471,8 @@ function selectSeed(num){
     const s=SEEDS_DATA.find(x=>x.num===state.selectedSeed);
     if(s){
       $("keywordInput").value=s.kw; state.keyword=s.kw;
-      $("subInput").value=s.sub;   state.sub=s.sub;
+      state.seedDesc=s.sub;
+      // Keep subInput (agenda) as-is - user sets their own question
       applyStage(); save();
     }
   } else {
@@ -1542,10 +1616,14 @@ function applyStage(){
   const kw=state.keyword=$("keywordInput").value||"今日のキーワード";
   const sub=state.sub=$("subInput").value||"";
   $("keywordMain").textContent=kw;
-  $("keywordSub").textContent=sub;
+  // keyword-sub shows seed description; agenda shows user's custom question
+  const _desc=state.seedDesc||sub;
+  $("keywordSub").textContent=_desc;
   const _km=$("keywordMain");_km.classList.remove("kw-flash");void _km.offsetWidth;_km.classList.add("kw-flash");
   const agEl=$("agendaText");
-  if(agEl){agEl.textContent=sub||"—";$("agendaWrap").style.display=sub?"":"none";}
+  // Show agenda only if user entered something different from seed desc
+  const _showAg=sub&&sub!==(state.seedDesc||"");
+  if(agEl){agEl.textContent=sub||"—";$("agendaWrap").style.display=_showAg?"":"none";}
   if(kw&&kw!=="今日のキーワード"&&$("archiveKw")&&!$("archiveKw").value)$("archiveKw").value=kw;
   $("kicker").textContent="RB-TREE INVESTMENT";
   save();
@@ -1553,6 +1631,15 @@ function applyStage(){
 
 function updateStageBadge(stage){
   document.body.dataset.stage=stage;
+  const _am=$("stageBgOverlay");
+  if(_am){
+    const _ac={
+      seed:"rgba(126,200,122,.1)",branch:"rgba(90,175,207,.1)",
+      leaf:"rgba(168,230,160,.09)",tree:"rgba(201,168,76,.11)",forest:"rgba(77,171,120,.1)"
+    }[stage]||"rgba(201,168,76,.1)";
+    _am.style.background=`radial-gradient(ellipse at 18% 78%,${_ac},transparent 42%),`+
+      `radial-gradient(ellipse at 82% 22%,${_ac},transparent 38%)`;
+  }
   const m=STAGES_META[stage]||STAGES_META.seed;
   $("stageBadgeIcon").textContent=m.icon;
   $("stageBadgeName").textContent=m.name;
@@ -1971,6 +2058,9 @@ function setStatus(t){
   if(bar){bar.textContent=t;clearTimeout(bar._t);bar._t=setTimeout(()=>{bar.textContent="準備完了";},4000);}
 }
 
+// Expose to global scope for onclick attributes
+Object.assign(window,{toggleComments,setCommentSpeed,toggleKbHelp,toggleSummary,flashStage,selectStageByKey,burstComments});
+
 window.addEventListener("storage",e=>{
   if(e.key===PERSONA_KEY){
     try{
@@ -2006,6 +2096,8 @@ window.addEventListener("storage",e=>{
       <kbd>4</kbd><span>Stage: Tree — 体系化</span>
       <kbd>5</kbd><span>Stage: Forest — 教材化</span>
       <kbd>Enter</kbd><span>ステージ反映（キーワード/議题 入力中）</span>
+      <kbd>R</kbd><span>音声認識 強制リスタート</span>
+      <kbd>I</kbd><span>配信サマリーを表示</span>
       <kbd>S</kbd><span>セッションをMarkdownでダウンロード</span>
       <kbd>O</kbd><span>Dock 半透明モード切替</span>
       <kbd>N</kbd><span>次のSeedに進む</span>
@@ -2013,6 +2105,22 @@ window.addEventListener("storage",e=>{
       <kbd>? /</kbd><span>このヘルプを開閉</span>
       <kbd>Esc</kbd><span>ヘルプ / パネル 閉じる</span>
     </div>
+  </div>
+</div>
+
+<!-- Session Summary Overlay -->
+<div id="sessionSummary" class="session-summary-overlay">
+  <div class="ss-panel">
+    <div class="ss-title">📊 配信サマリー</div>
+    <div class="ss-grid">
+      <span class="ss-lbl">⏱ 配信時間</span><span class="ss-val" id="ss-elapsed">--:--</span>
+      <span class="ss-lbl">💬 コメント</span><span class="ss-val" id="ss-comments">0件</span>
+      <span class="ss-lbl">📝 文字起こし</span><span class="ss-val" id="ss-transcript">0件</span>
+      <span class="ss-lbl">🌱 Seed</span><span class="ss-val" id="ss-seed">未選択</span>
+      <span class="ss-lbl">🎭 ステージ</span><span class="ss-val" id="ss-stage">Seed</span>
+      <span class="ss-lbl">✓ 完了Seed</span><span class="ss-val" id="ss-done">0個</span>
+    </div>
+    <button class="ss-close" onclick="toggleSummary()">閉じる（I キー）</button>
   </div>
 </div>
 </body>
