@@ -528,10 +528,20 @@ body.timer-warning .timer-time{color:#ff6b7a!important;animation:timerPulse 1.1s
 body.timer-warning .timer-wrap{border-color:rgba(255,107,122,.45);box-shadow:0 0 18px rgba(255,107,122,.15)!important;}
 body.timer-warning .on-air-dot{background:#ff6b7a;}
 .dm-session{color:var(--faint);font-size:9px;margin-left:3px;font-weight:700;font-variant-numeric:tabular-nums;}
+/* -- ITER2: stage-flash + burst-row -- */
+.stage-flash{position:absolute;inset:0;z-index:15;display:flex;align-items:center;justify-content:center;pointer-events:none;opacity:0;}
+.stage-flash.show{animation:sfAnim .9s cubic-bezier(.22,1,.36,1) forwards;}
+@keyframes sfAnim{0%{opacity:0;}15%{opacity:1;}75%{opacity:.9;}100%{opacity:0;}}
+.stage-flash-inner{font-family:var(--serif);font-size:clamp(52px,9vw,100px);font-weight:700;color:var(--acc);letter-spacing:.04em;animation:sfScale .9s cubic-bezier(.22,1,.36,1) forwards;text-shadow:0 0 60px rgba(201,168,76,.55),0 6px 30px rgba(0,0,0,.85);}
+@keyframes sfScale{0%{transform:scale(1.5);opacity:0;}18%{opacity:1;transform:scale(1.02);}80%{opacity:.8;}100%{opacity:0;transform:scale(.92);}}
+.burst-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;}
 </style>
 </head>
 <body>
 <main class="stage" id="stage">
+
+  <!-- Stage flash -->
+  <div class="stage-flash" id="stageFlash"></div>
 
   <!-- Stage badge (center top) -->
   <div class="stage-badge">
@@ -688,8 +698,13 @@ body.timer-warning .on-air-dot{background:#ff6b7a;}
         <button id="commentBtn" class="warn" type="button" title="C キー">コメント1件</button>
         <button id="copySessionBtn" type="button" title="📋 セッションを一括コピー">📋 コピー</button>
       </div>
+      <div class="burst-row">
+        <button id="burstBtn3" class="warn" type="button" title="コメント3件を連続生成">💬×3</button>
+        <button id="burstBtn5" class="warn" type="button" title="コメント5件を連続生成">💬×5</button>
+        <button id="superChatBtn" class="primary" type="button" title="スーパーチャット（金色コメント）">💛 SC</button>
+      </div>
       <div class="field">
-        <label>手入力（Enter で反映 / T キー）</label>
+        <label>手入力（Enter で反映 / T キー / ↑↓ 履歴）</label>
         <input id="manualTranscript" placeholder="例: 金利とは何か？">
       </div>
       <div id="transcriptLog" class="log">まだ文字起こしはありません。</div>
@@ -859,6 +874,7 @@ state.timer = normTimer(state.timer);
 let personas=loadPersonas(), recognition=null, listening=false;
 let audioCtx=null, meterTimer=null, micStream=null;
 let commentsEnabled=true,commentCount=0,sessionStartedAt=null;
+let inputHistory=[],historyIdx=-1;
 let commentTimer=null, sheetSyncing=null;
 let transcriptBuf="", flushTimer=null, lastKey="";
 let restartTimer=null;
@@ -1007,7 +1023,15 @@ function bind(){
   });
   $("commentBtn")?.addEventListener("click",()=>spawnComment());
   $("manualTranscript")?.addEventListener("keydown",e=>{
-    if(e.key==="Enter"){const v=$("manualTranscript").value.trim();if(!v)return;$("manualTranscript").value="";pushTranscript(v);spawnComment();e.preventDefault();}
+    if(e.key==="Enter"){const v=$("manualTranscript").value.trim();if(!v)return;
+      inputHistory.unshift(v);if(inputHistory.length>20)inputHistory.pop();historyIdx=-1;
+      $("manualTranscript").value="";pushTranscript(v);spawnComment();e.preventDefault();}
+    if(e.key==="ArrowUp"&&inputHistory.length){
+      historyIdx=Math.min(historyIdx+1,inputHistory.length-1);
+      $("manualTranscript").value=inputHistory[historyIdx];e.preventDefault();}
+    if(e.key==="ArrowDown"&&historyIdx>=0){
+      historyIdx--;$("manualTranscript").value=historyIdx>=0?inputHistory[historyIdx]:"";
+      e.preventDefault();}
   });
   $("geminiSaveBtn")?.addEventListener("click",()=>{
     const k=$("geminiKey")?.value.trim();
@@ -1025,6 +1049,9 @@ function bind(){
   $("syncPersonaBtn")?.addEventListener("click",()=>syncPersonas(false));
   $("archiveSaveBtn")?.addEventListener("click",saveToArchive);
   $("copySessionBtn")?.addEventListener("click",copySession);
+  $("burstBtn3")?.addEventListener("click",()=>burstComments(3));
+  $("burstBtn5")?.addEventListener("click",()=>burstComments(5));
+  $("superChatBtn")?.addEventListener("click",()=>spawnComment(true));
   $("quickNotes")?.addEventListener("input",()=>{
     try{localStorage.setItem("rbt_quick_notes_v1",$("quickNotes").value);}catch{}
   });
@@ -1037,6 +1064,7 @@ function bind(){
       state.currentStage=btn.dataset.stage;
       save();
       updateStageBadge(state.currentStage);
+      flashStage(state.currentStage);
     });
   });
 
@@ -1084,6 +1112,7 @@ function selectStageByKey(stage){
   state.currentStage=stage;save();updateStageBadge(stage);
   const keys={seed:"1",branch:"2",leaf:"3",tree:"4",forest:"5"};
   setStatus(STAGES_META[stage].icon+" "+STAGES_META[stage].name+" ["+keys[stage]+"]");
+  flashStage(stage);
 }
 
 
@@ -1110,6 +1139,19 @@ function copySession(){
   navigator.clipboard.writeText(lines.join("\n"))
     .then(()=>setStatus("📋 セッションをコピーしました"))
     .catch(()=>setStatus("コピーに失敗しました（HTTPS必須）"));
+}
+
+
+function burstComments(n){
+  for(let i=0;i<n;i++)setTimeout(()=>spawnComment(),i*650);
+  setStatus("💬 ×"+n+" バーストコメント生成中…");
+}
+
+function flashStage(stage){
+  const m=STAGES_META[stage];if(!m)return;
+  const el=$("stageFlash");if(!el)return;
+  el.innerHTML=`<div class="stage-flash-inner">${m.icon} ${m.name}</div>`;
+  el.classList.remove("show");void el.offsetWidth;el.classList.add("show");
 }
 
 // ── Seed Picker ──
