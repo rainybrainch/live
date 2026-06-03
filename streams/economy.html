@@ -634,6 +634,14 @@ body.timer-warning .action-timer-time{color:#ff6b7a!important;}
 .comment-who-flash{position:absolute;top:86px;left:50%;transform:translateX(-50%);padding:4px 14px;border-radius:999px;background:rgba(6,10,4,.82);border:1px solid rgba(255,255,255,.15);font-size:11px;font-weight:900;color:var(--muted);opacity:0;transition:opacity .25s;pointer-events:none;z-index:12;white-space:nowrap;letter-spacing:.04em;}
 .comment-who-flash.show{opacity:1;}
 .mic-device-note{font-size:10px;color:var(--faint);margin-top:3px;line-height:1.4;}
+/* -- ITER9: clock + archive autofill + comment clear -- */
+.clock-now{font-size:10px;color:var(--muted);font-weight:700;font-variant-numeric:tabular-nums;text-align:center;margin-top:2px;letter-spacing:.08em;transition:color .3s;}
+body.recording .clock-now{color:var(--acc);}
+.comment-log-summary .clr-btn{margin-left:auto;padding:1px 8px;border-radius:5px;font-size:9px;font-weight:900;cursor:pointer;border:1px solid var(--line);background:rgba(255,255,255,.04);color:var(--faint);transition:all .12s;min-height:20px;}
+.comment-log-summary .clr-btn:hover{background:rgba(224,120,112,.15);border-color:rgba(224,120,112,.4);color:#e07870;}
+/* archive-autofill flash */
+@keyframes fillFlash{0%{background:rgba(201,168,76,.25);}100%{background:transparent;}}
+.fill-flash{animation:fillFlash .6s ease-out;}
 </style>
 </head>
 <body>
@@ -659,6 +667,7 @@ body.timer-warning .action-timer-time{color:#ff6b7a!important;}
   <div class="timer-wrap">
     <div>
       <div class="timer-time" id="timerTime">--:--</div>
+      <div class="clock-now" id="clockNow">--:--</div>
     </div>
     <button class="timer-btn" id="stageTimerToggle" type="button">▶</button>
     <button class="timer-btn" id="stageTimerReset"  type="button">↺</button>
@@ -869,7 +878,7 @@ body.timer-warning .action-timer-time{color:#ff6b7a!important;}
 
     <!-- コメント履歴 -->
     <details>
-      <summary class="comment-log-summary">💬 コメント履歴 <span id="commentLogCount">(0件)</span></summary>
+      <summary class="comment-log-summary">💬 コメント履歴 <span id="commentLogCount">(0件)</span><button class="clr-btn" id="clearCommentLogBtn" type="button" title="履歴をクリア">クリア</button></summary>
       <div id="commentLog" class="log" style="max-height:150px;border-radius:0 0 9px 9px;border-top:0;">コメント待機中...</div>
     </details>
 
@@ -1226,6 +1235,13 @@ function bind(){
     setStatus("🎲 ランダムSeed: "+s.name);
   });
   $("downloadBtn")?.addEventListener("click",downloadSession);
+  $("clearCommentLogBtn")?.addEventListener("click",e=>{
+    e.stopPropagation();
+    const _cl=$("commentLog");if(_cl)_cl.innerHTML="コメント待機中...";
+    commentCount=0;updateDockMeta();
+    const _cc=$("commentLogCount");if(_cc)_cc.textContent="(0件)";
+    setStatus("🗑 コメント履歴をクリア");
+  });
   $("dockOpacityBtn")?.addEventListener("click",()=>{
     const _od=$("dock");_od.classList.toggle("translucent");
     $("dockOpacityBtn").classList.toggle("active",_od.classList.contains("translucent"));
@@ -1522,6 +1538,15 @@ function selectSeed(num){
       state.seedDesc=s.sub;
       // Keep subInput (agenda) as-is - user sets their own question
       applyStage(); save();
+      // Auto-fill archive from seed data
+      const _sk="E"+String(s.num).padStart(3,"0");
+      const _db=window.SEED_DB&&window.SEED_DB[_sk];
+      const _akw=$("archiveKw"),_abr=$("archiveBranches");
+      if(_akw&&!_akw.value){_akw.value=s.kw;_akw.classList.add("fill-flash");setTimeout(()=>_akw.classList.remove("fill-flash"),700);}
+      if(_abr&&!_abr.value){
+        const _terms=_db?.glossTerms?.slice(0,6).map(t=>typeof t==="string"?t:t.word)||[];
+        if(_terms.length){_abr.value=_terms.join(", ");_abr.classList.add("fill-flash");setTimeout(()=>_abr.classList.remove("fill-flash"),700);}
+      }
     }
   } else {
     updateSeedUI();
@@ -1715,7 +1740,7 @@ function saveToArchive(){
     existing.unshift(entry);
     localStorage.setItem(ARCHIVE_KEY,JSON.stringify(existing));
     $("archiveKw").value="";$("archiveBody").value="";$("archiveBranches").value="";
-    setStatus(`🌱「${kw}」を Archive に追加しました`);
+    setStatus(`🌱「${kw}」を Archive に追加 ✓`);
   }catch{setStatus("Archive への保存に失敗しました");}
 }
 
@@ -1772,7 +1797,10 @@ function updateClock(){
 }
 function fmt(sec){const n=Math.max(0,parseInt(sec)||0),h=Math.floor(n/3600),m=Math.floor((n%3600)/60),s=n%60;return h>0?`${h}:${p(m)}:${p(s)}`:`${p(m)}:${p(s)}`;}
 function p(n){return String(n).padStart(2,"0");}
-function startClock(){updateClock();setInterval(updateClock,1000);}
+function startClock(){
+  function _tick(){updateClock();const _n=new Date(),_c=$("clockNow");if(_c)_c.textContent=String(_n.getHours()).padStart(2,"0")+":"+String(_n.getMinutes()).padStart(2,"0");}
+  _tick();setInterval(_tick,1000);
+}
 function toggleFullscreen(){
   if(document.fullscreenElement){
     document.exitFullscreen?.();
