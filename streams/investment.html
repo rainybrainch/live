@@ -498,6 +498,30 @@ kbd{display:inline-flex;align-items:center;justify-content:center;min-width:28px
 body.listening .dock-status-bar .dsb-dot{background:var(--good);box-shadow:0 0 8px rgba(126,200,122,.55);}
 .kb-num{font-size:8px;color:rgba(255,255,255,.22);font-weight:900;display:block;line-height:1;margin-top:2px;}
 .stage-sel-btn.active .kb-num{color:rgba(201,168,76,.55);}
+/* -- SESSION IMPROVEMENTS -- */
+.transcript-entry{display:grid;grid-template-columns:30px 1fr;gap:0 5px;padding:2px 0;}
+.transcript-entry:not(:last-child){border-bottom:1px solid rgba(255,255,255,.04);}
+.transcript-entry .ts{font-size:9px;color:var(--faint);font-weight:700;padding-top:2px;font-variant-numeric:tabular-nums;line-height:1.5;}
+.transcript-entry .tx{font-size:11px;color:var(--text);line-height:1.5;overflow-wrap:anywhere;}
+@keyframes kwFlash{from{opacity:.35;transform:translateY(-6px);}to{opacity:1;transform:none;}}
+.kw-flash{animation:kwFlash .38s cubic-bezier(.22,1,.36,1) forwards;}
+.comment-log-item{display:grid;grid-template-columns:auto 1fr auto;gap:1px 5px;padding:3px 0;align-items:baseline;}
+.comment-log-item:not(:last-child){border-bottom:1px solid rgba(255,255,255,.04);}
+.cl-name{font-size:9px;color:var(--acc);font-weight:900;white-space:nowrap;}
+.cl-text{font-size:10px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.cl-ts{font-size:9px;color:var(--faint);font-variant-numeric:tabular-nums;white-space:nowrap;}
+.comment-log-summary{cursor:pointer;padding:9px 10px;font-size:12px;font-weight:900;color:var(--muted);list-style:none;border:1px solid rgba(255,255,255,.08);border-radius:9px;background:rgba(0,0,0,.14);display:flex;align-items:center;gap:6px;transition:background .12s;}
+.comment-log-summary:hover{background:rgba(255,255,255,.04);}
+.comment-log-summary::marker,.comment-log-summary::-webkit-details-marker{display:none;}
+details[open] .comment-log-summary{border-radius:9px 9px 0 0;border-bottom:0;}
+.comment-log-summary::after{content:'▾';margin-left:auto;font-size:11px;transition:transform .2s;}
+details[open] .comment-log-summary::after{transform:rotate(-180deg);}
+.quick-notes-textarea{width:100%;min-height:72px;max-height:200px;resize:vertical;font-size:11px;line-height:1.65;border:1px solid var(--line);border-radius:8px;background:rgba(0,0,0,.25);padding:8px 10px;outline:none;color:var(--text);}
+.quick-notes-textarea:focus{border-color:rgba(201,168,76,.38);box-shadow:0 0 0 3px rgba(201,168,76,.07);}
+.quick-notes-textarea::placeholder{color:var(--faint);}
+.section-stat{font-size:9px;color:var(--faint);font-weight:700;margin-left:auto;padding-right:2px;}
+.open-tab-timer{font-size:10px;font-variant-numeric:tabular-nums;margin-left:5px;opacity:.65;letter-spacing:0;}
+body.recording .open-tab-timer{color:var(--acc);opacity:1;}
 </style>
 </head>
 <body>
@@ -652,13 +676,14 @@ body.listening .dock-status-bar .dsb-dot{background:var(--good);box-shadow:0 0 8
 
     <!-- Step 3: 文字起こし -->
     <section class="section">
-      <div class="section-title"><span class="step">3</span>文字起こし</div>
-      <div class="actions">
+      <div class="section-title"><span class="step">3</span>文字起こし<span class="section-stat" id="transcriptStat">0件</span></div>
+      <div class="actions" style="grid-template-columns:1fr 1fr 1fr;">
         <button id="clearTranscriptBtn" type="button">字幕クリア</button>
         <button id="commentBtn" class="warn" type="button" title="C キー">コメント1件</button>
+        <button id="copySessionBtn" type="button" title="📋 セッションを一括コピー">📋 コピー</button>
       </div>
       <div class="field">
-        <label>手入力（Enter で反映）</label>
+        <label>手入力（Enter で反映 / T キー）</label>
         <input id="manualTranscript" placeholder="例: 金利とは何か？">
       </div>
       <div id="transcriptLog" class="log">まだ文字起こしはありません。</div>
@@ -692,6 +717,18 @@ body.listening .dock-status-bar .dsb-dot{background:var(--good);box-shadow:0 0 8
                 font-size:12px;font-weight:900;letter-spacing:.04em;text-decoration:none;">
         📈 Archive を開く ↗
       </a>
+    </section>
+
+    <!-- コメント履歴 -->
+    <details>
+      <summary class="comment-log-summary">💬 コメント履歴 <span id="commentLogCount">(0件)</span></summary>
+      <div id="commentLog" class="log" style="max-height:150px;border-radius:0 0 9px 9px;border-top:0;">コメント待機中...</div>
+    </details>
+
+    <!-- クイックメモ -->
+    <section class="section" style="border-left-color:#9b8ecf;">
+      <div class="section-title"><span class="step" style="background:#9b8ecf;color:#0a0020;">5</span>クイックメモ</div>
+      <textarea class="quick-notes-textarea" id="quickNotes" placeholder="配信中のメモ・気づき・次回のトピック…"></textarea>
     </section>
 
     <!-- コメント人格 -->
@@ -748,8 +785,8 @@ body.listening .dock-status-bar .dsb-dot{background:var(--good);box-shadow:0 0 8
   </div>
 </aside>
 
-<button class="open-tab" id="openDock" type="button">
-  <span class="open-tab-dot"></span>設定
+<button class="open-tab" id="openDock" type="button" title="パネルを開く（D）">
+  <span class="open-tab-dot"></span>設定<span class="open-tab-timer" id="openTabTimer"></span>
 </button>
 
 <script>
@@ -845,6 +882,7 @@ function hydrate(){
   $("personaSheetUrl").value = state.personaSheetUrl||"";
   $("geminiKey").value    = localStorage.getItem(GEMINI_KEY_STORE)||"";
   $("timerMinutes").value = Math.max(1,Math.round(state.timer.durationSec/60));
+  try{const _qn=localStorage.getItem("rbt_quick_notes_v1");if(_qn&&$("quickNotes"))$("quickNotes").value=_qn;}catch{}
   // Restore stage
   document.querySelectorAll(".stage-sel-btn").forEach(b=>{
     b.classList.toggle("active", b.dataset.stage===state.currentStage);
@@ -957,6 +995,7 @@ function bind(){
   $("clearTranscriptBtn")?.addEventListener("click",()=>{
     captionLines=[];lastKey="";state.transcript=[];save();
     $("transcriptLog").textContent="まだ文字起こしはありません。";
+    const _cs=$("transcriptStat");if(_cs)_cs.textContent="0件";
     renderCaption();
   });
   $("commentBtn")?.addEventListener("click",()=>spawnComment());
@@ -978,6 +1017,10 @@ function bind(){
   $("commentEngine")?.addEventListener("change",()=>{state.commentEngine=$("commentEngine").value;save();});
   $("syncPersonaBtn")?.addEventListener("click",()=>syncPersonas(false));
   $("archiveSaveBtn")?.addEventListener("click",saveToArchive);
+  $("copySessionBtn")?.addEventListener("click",copySession);
+  $("quickNotes")?.addEventListener("input",()=>{
+    try{localStorage.setItem("rbt_quick_notes_v1",$("quickNotes").value);}catch{}
+  });
 
   // Stage selector
   document.querySelectorAll(".stage-sel-btn").forEach(btn=>{
@@ -1011,14 +1054,14 @@ function bind(){
       if(e.key==="3"){selectStageByKey("leaf");e.preventDefault();return;}
       if(e.key==="4"){selectStageByKey("tree");e.preventDefault();return;}
       if(e.key==="5"){selectStageByKey("forest");e.preventDefault();return;}
+      if(e.key==="t"||e.key==="T"){$("manualTranscript")?.focus();e.preventDefault();return;}
     }
     if(e.key==="Escape"){
       if(document.getElementById("kbHelp")?.classList.contains("show")){toggleKbHelp();return;}
       if(!document.fullscreenElement)document.body.classList.remove("panel-hidden");
     }
-    if(inInput&&e.key==="Enter"&&(ae.id==="keywordInput"||ae.id==="subInput")){
-      applyStage();e.preventDefault();
-    }
+    if(inInput&&e.key==="Enter"&&(ae.id==="keywordInput"||ae.id==="subInput")){applyStage();e.preventDefault();}
+    if(inInput&&e.key==="Enter"&&(ae.id==="archiveKw"||ae.id==="archiveBranches")){$("archiveSaveBtn")?.click();e.preventDefault();}
   });
 }
 
@@ -1034,6 +1077,32 @@ function selectStageByKey(stage){
   state.currentStage=stage;save();updateStageBadge(stage);
   const keys={seed:"1",branch:"2",leaf:"3",tree:"4",forest:"5"};
   setStatus(STAGES_META[stage].icon+" "+STAGES_META[stage].name+" ["+keys[stage]+"]");
+}
+
+
+function copySession(){
+  const date=new Date().toLocaleDateString("ja-JP");
+  const stage=STAGES_META[state.currentStage];
+  const entries=(state.transcript||[]).slice().reverse().map(x=>{
+    const t=new Date(x.at),ts=String(t.getHours()).padStart(2,"0")+":"+String(t.getMinutes()).padStart(2,"0");
+    return`[${ts}] ${x.text}`;
+  }).join("\n");
+  const notes=$("quickNotes")?.value||"";
+  const archBody=$("archiveBody")?.value||"";
+  const lines=[
+    `# RB-Tree 配信メモ ${date}`,
+    `キーワード: ${state.keyword}`,
+    state.sub?`議題: ${state.sub}`:"",
+    `ステージ: ${stage?.name} — ${stage?.en}`,
+    "",
+    "## 文字起こし",
+    entries||"（なし）",
+    notes?"\n## メモ\n"+notes:"",
+    archBody?"\n## Archive 本文\n"+archBody:"",
+  ].filter(x=>x!=="");
+  navigator.clipboard.writeText(lines.join("\n"))
+    .then(()=>setStatus("📋 セッションをコピーしました"))
+    .catch(()=>setStatus("コピーに失敗しました（HTTPS必須）"));
 }
 
 // ── Seed Picker ──
@@ -1218,8 +1287,10 @@ function applyStage(){
   const sub=state.sub=$("subInput").value||"";
   $("keywordMain").textContent=kw;
   $("keywordSub").textContent=sub;
+  const _km=$("keywordMain");_km.classList.remove("kw-flash");void _km.offsetWidth;_km.classList.add("kw-flash");
   const agEl=$("agendaText");
   if(agEl){agEl.textContent=sub||"—";$("agendaWrap").style.display=sub?"":"none";}
+  if(kw&&kw!=="今日のキーワード"&&$("archiveKw")&&!$("archiveKw").value)$("archiveKw").value=kw;
   $("kicker").textContent="RB-TREE INVESTMENT";
   save();
 }
@@ -1285,6 +1356,7 @@ function updateClock(){
   state.timer=normTimer(state.timer);
   if(state.timer.running&&state.timer.remainingSec<=0){state.timer.running=false;state.timer.endAt=0;}
   $("timerTime").textContent=fmt(state.timer.remainingSec);
+  const _ott=$("openTabTimer");if(_ott)_ott.textContent=(state.timer.running&&state.timer.remainingSec>0)?" "+fmt(state.timer.remainingSec):"";
   $("timerDisplay")?.classList.toggle("running",state.timer.running);
   document.body.classList.toggle("recording",state.timer.running);
   if($("timerStartBtn"))$("timerStartBtn").textContent=state.timer.running?"停止":"開始";
@@ -1344,7 +1416,12 @@ function pushTranscript(text){
   captionLines.push(clean);
   if(captionLines.length>6)captionLines.shift();
   renderCaption();
-  $("transcriptLog").textContent=state.transcript.slice(0,10).map(x=>"▸ "+x.text).join("\n");
+  const logEl=$("transcriptLog");
+  if(logEl){logEl.innerHTML=state.transcript.slice(0,15).map(x=>{
+    const t=new Date(x.at),ts=String(t.getHours()).padStart(2,"0")+":"+String(t.getMinutes()).padStart(2,"0");
+    return`<div class="transcript-entry"><span class="ts">${ts}</span><span class="tx">${xss(x.text)}</span></div>`;
+  }).join(""); logEl.scrollTop=logEl.scrollHeight;}
+  const _ss=$("transcriptStat");if(_ss)_ss.textContent=(state.transcript||[]).length+"件";
   // Auto-fill archive keyword from transcript
   if(!$("archiveKw")?.value&&state.keyword&&state.keyword!=="今日のキーワード"){
     $("archiveKw").value=state.keyword;
@@ -1456,6 +1533,14 @@ ${recent||"経済学習配信中。"}
 function addComment(text,name,color,superChat=false){
     commentCount++;updateDockMeta();
   if(!text)return;
+  const _clog=$("commentLog");
+  if(_clog){if(_clog.textContent==="コメント待機中...")_clog.innerHTML="";
+    const _now=new Date(),_ts=String(_now.getHours()).padStart(2,"0")+":"+String(_now.getMinutes()).padStart(2,"0");
+    const _ci=document.createElement("div");_ci.className="comment-log-item";
+    _ci.innerHTML=`<span class="cl-name">@${xss(cleanName(name))}</span><span class="cl-text">${xss(text)}</span><span class="cl-ts">${_ts}</span>`;
+    _clog.insertBefore(_ci,_clog.firstChild);while(_clog.children.length>15)_clog.removeChild(_clog.lastChild);
+    const _cc=$("commentLogCount");if(_cc)_cc.textContent=`(${commentCount}件)`;}
+
   const node=document.createElement("article");
   node.className=`comment${superChat?" super":""}`;
   node.style.setProperty("--uc",color||"var(--acc)");
@@ -1626,5 +1711,31 @@ window.addEventListener("storage",e=>{
 });
 })();
 </script>
+
+<!-- Keyboard Help Overlay -->
+<div id="kbHelp" class="kb-help-overlay">
+  <div class="kb-help-panel">
+    <div class="kb-help-hd">
+      ⌚️⌨ キーボードショートカット
+      <button class="dock-icon-btn" onclick="toggleKbHelp()" style="margin-left:12px;">✕</button>
+    </div>
+    <div class="kb-grid">
+      <kbd>M</kbd><span>マイク ON/OFF</span>
+      <kbd>Space</kbd><span>タイマー 開始/停止</span>
+      <kbd>C</kbd><span>コメント 1件生成</span>
+      <kbd>T</kbd><span>手入力フォームにフォーカス</span>
+      <kbd>D</kbd><span>パネル 表示/非表示</span>
+      <kbd>F</kbd><span>全画面 切替</span>
+      <kbd>1</kbd><span>Stage: Seed — まず知る</span>
+      <kbd>2</kbd><span>Stage: Branch — 繋げる</span>
+      <kbd>3</kbd><span>Stage: Leaf — 記録する</span>
+      <kbd>4</kbd><span>Stage: Tree — 体系化</span>
+      <kbd>5</kbd><span>Stage: Forest — 教材化</span>
+      <kbd>Enter</kbd><span>ステージ反映（キーワード/議题 入力中）</span>
+      <kbd>? /</kbd><span>このヘルプを開閉</span>
+      <kbd>Esc</kbd><span>ヘルプ / パネル 閉じる</span>
+    </div>
+  </div>
+</div>
 </body>
 </html>
