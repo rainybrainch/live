@@ -583,6 +583,11 @@ body.timer-warning .action-timer-time{color:#ff6b7a!important;}
 /* section:nth-child colors for new order */
 .section:nth-child(2){border-left-color:#5aafcf;}
 .section:nth-child(2) .step{background:#5aafcf;color:#001a22;}
+/* -- ITER6: dock-pos memory + seed-done + engine-toggle -- */
+.seed-pick-btn{position:relative;}
+.seed-pick-btn.done{border-color:rgba(126,200,122,.35);}
+.seed-pick-btn.done::after{content:'✓';position:absolute;top:2px;right:2px;font-size:7px;color:var(--good);font-weight:900;line-height:1;}
+#engineToggleBtn.gemini{border-color:rgba(100,210,255,.4);background:rgba(100,210,255,.08);color:#64d2ff;}
 </style>
 </head>
 <body>
@@ -679,6 +684,7 @@ body.timer-warning .action-timer-time{color:#ff6b7a!important;}
       <button class="spd-btn active" data-speed="normal" onclick="setCommentSpeed('normal')">▷</button>
       <button class="spd-btn" data-speed="fast" onclick="setCommentSpeed('fast')">🔥</button>
     </div>
+    <button id="engineToggleBtn" class="mini-btn" type="button" title="テンプレート（クリックで切替）">📝</button>
     <div class="burst-mini">
       <button id="commentBtn" class="mini-btn" type="button" title="コメント1件 (C)">×1</button>
       <button id="burstBtn3" class="mini-btn warn" type="button" title="×3件">×3</button>
@@ -935,6 +941,7 @@ let personas=loadPersonas(), recognition=null, listening=false;
 let audioCtx=null, meterTimer=null, micStream=null;
 let commentsEnabled=true,commentCount=0,sessionStartedAt=null,sessionStartMs=null;
 let inputHistory=[],historyIdx=-1;
+let completedSeeds=new Set(JSON.parse(localStorage.getItem('rbt_completed_seeds_v1')||'[]'));
 let commentTimer=null, sheetSyncing=null;
 let transcriptBuf="", flushTimer=null, lastKey="";
 let restartTimer=null;
@@ -945,6 +952,14 @@ init();
 function init(){
   hydrate(); bind(); renderSeedPicker(); applyStage(); startClock(); scheduleComment(); syncPersonas(true);
   if(typeof Notification!=="undefined"&&Notification.permission==="default")Notification.requestPermission().catch(()=>{});
+  try{
+    const _dp=JSON.parse(localStorage.getItem('rbt_dock_pos')||'{}');
+    const _ds=JSON.parse(localStorage.getItem('rbt_dock_size')||'{}');
+    const _dk=$('dock');
+    if(_dk&&_dp.l&&_dp.t){_dk.style.transform='none';_dk.style.left=_dp.l;_dk.style.top=_dp.t;}
+    if(_dk&&_ds.w)_dk.style.width=_ds.w;
+    if(_dk&&_ds.h)_dk.style.maxHeight=_ds.h;
+  }catch{}
   // Auto-select seed from URL param: economy.html?seed=6
   const urlSeed=parseInt(new URLSearchParams(location.search).get("seed")||"0");
   if(urlSeed&&!state.selectedSeed){
@@ -1015,7 +1030,10 @@ function bind(){
           const h=Math.max(120,Math.min(window.innerHeight-20,rh0+(e2.clientY-ry)));
           dock.style.maxHeight=h+"px";
         };
-        const onUp=()=>{document.removeEventListener("mousemove",onMove);document.removeEventListener("mouseup",onUp);};
+        const onUp=()=>{
+          document.removeEventListener("mousemove",onMove);document.removeEventListener("mouseup",onUp);
+          try{localStorage.setItem("rbt_dock_size",JSON.stringify({w:dock.style.width,h:dock.style.maxHeight}));}catch{}
+        };
         document.addEventListener("mousemove",onMove);
         document.addEventListener("mouseup",onUp);
       });
@@ -1030,7 +1048,10 @@ function bind(){
           const w=Math.max(240,Math.min(window.innerWidth-20,rw0+(e2.clientX-rx)));
           dock.style.width=w+"px";
         };
-        const onUp=()=>{document.removeEventListener("mousemove",onMove);document.removeEventListener("mouseup",onUp);};
+        const onUp=()=>{
+          document.removeEventListener("mousemove",onMove);document.removeEventListener("mouseup",onUp);
+          try{localStorage.setItem("rbt_dock_size",JSON.stringify({w:dock.style.width,h:dock.style.maxHeight}));}catch{}
+        };
         document.addEventListener("mousemove",onMove);
         document.addEventListener("mouseup",onUp);
       });
@@ -1058,7 +1079,10 @@ function bind(){
       dock.style.left=Math.max(0,Math.min(maxX,e.clientX-ox))+"px";
       dock.style.top=Math.max(0,Math.min(maxY,e.clientY-oy))+"px";
     });
-    document.addEventListener("mouseup",()=>{dragging=false;});
+    document.addEventListener("mouseup",()=>{
+      if(dragging)try{localStorage.setItem("rbt_dock_pos",JSON.stringify({l:dock.style.left,t:dock.style.top}));}catch{}
+      dragging=false;
+    });
     head.addEventListener("touchstart",e=>{
       if(e.target.closest("button")) return;
       const t=e.touches[0], r=dock.getBoundingClientRect();
@@ -1139,6 +1163,22 @@ function bind(){
     $("dockOpacityBtn").classList.toggle("active",_od.classList.contains("translucent"));
     setStatus(_od.classList.contains("translucent")?"◐ 半透明モード":"● 通常モード");
   });
+  (function(){
+    function _syncEngine(){
+      const _etb=$("engineToggleBtn");if(!_etb)return;
+      const _g=state.commentEngine==="gemini";
+      _etb.textContent=_g?"🤖":"📝";
+      _etb.title=_g?"Gemini AI（クリックでテンプレートに）":"テンプレート（クリックでGeminiに）";
+      _etb.classList.toggle("gemini",_g);
+    }
+    _syncEngine();
+    $("engineToggleBtn")?.addEventListener("click",()=>{
+      state.commentEngine=state.commentEngine==="gemini"?"template":"gemini";
+      const _ce=$("commentEngine");if(_ce)_ce.value=state.commentEngine;
+      save();_syncEngine();
+      setStatus(state.commentEngine==="gemini"?"🤖 Gemini AI":"📝 テンプレート");
+    });
+  })();
 
   // Stage selector
   document.querySelectorAll(".stage-sel-btn").forEach(btn=>{
@@ -1330,7 +1370,9 @@ function renderSeedPicker(){
     html+=`<div class="seed-pick-grid ${col?"hidden":""}">`;
     seeds.forEach(s=>{
       const active=state.selectedSeed===s.num?"active":"";
-      html+=`<button class="seed-pick-btn ${active}" data-num="${s.num}" type="button"><span class="seed-pick-num">${String(s.num).padStart(2,"0")}</span>${s.name}</button>`;
+      const _sk="E"+String(s.num).padStart(3,"0");
+      const _done=completedSeeds.has(_sk)?" done":"";
+      html+=`<button class="seed-pick-btn ${active}${_done}" data-num="${s.num}" type="button"><span class="seed-pick-num">${String(s.num).padStart(2,"0")}</span>${s.name}</button>`;
     });
     html+="</div>";
   });
@@ -1474,6 +1516,9 @@ function saveSeedToArchive(sk){
     const idx=arr.findIndex(x=>x.id?.startsWith(`rbt_${sk}_stream_`));
     if(idx>=0) arr[idx]=entry; else arr.unshift(entry);
     localStorage.setItem(ARCHIVE_KEY,JSON.stringify(arr));
+    completedSeeds.add(sk);
+    try{localStorage.setItem("rbt_completed_seeds_v1",JSON.stringify([...completedSeeds]));}catch{}
+    renderSeedPicker();
     setStatus(`🌱「${s.name}」をArchiveに保存しました`);
   }catch{ setStatus("Archive保存に失敗しました"); }
 }
