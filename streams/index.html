@@ -7,30 +7,29 @@
 <style>
 :root {
   --bg: #07080d;
-  --line: rgba(255,255,255,.12);
+  --line: rgba(255,255,255,.1);
   --text: #f7f8fb;
-  --muted: rgba(247,248,251,.48);
+  --muted: rgba(247,248,251,.46);
   --font: "Yu Gothic","Hiragino Kaku Gothic ProN","Noto Sans JP",system-ui,sans-serif;
 }
 * { box-sizing:border-box; margin:0; padding:0; }
-body {
-  min-height:100vh; background:var(--bg); color:var(--text); font-family:var(--font);
-  padding:52px 20px 72px;
-}
-.container { max-width:960px; margin:0 auto; }
-h1 {
-  font-size:clamp(1.6rem,3.5vw,2.6rem); font-weight:900; letter-spacing:.06em;
-  margin-bottom:6px; text-align:center;
-}
-.sub {
-  color:var(--muted); font-size:.68rem; letter-spacing:.24em; text-transform:uppercase;
-  margin-bottom:52px; text-align:center;
-}
+body { min-height:100vh; background:var(--bg); color:var(--text); font-family:var(--font); padding:48px 20px 80px; }
+.container { max-width:1000px; margin:0 auto; }
 
-/* セクション */
-.section { margin-bottom:40px; }
+/* ── HEADER ── */
+.hd { text-align:center; margin-bottom:52px; }
+h1 { font-size:clamp(1.6rem,4vw,2.8rem); font-weight:900; letter-spacing:.06em; line-height:1; margin-bottom:8px; }
+.hd-sub { color:var(--muted); font-size:.65rem; letter-spacing:.22em; text-transform:uppercase; }
+.hd-badge-row { display:flex; justify-content:center; gap:8px; flex-wrap:wrap; margin-top:16px; }
+.hd-badge { font-size:.6rem; font-weight:900; letter-spacing:.1em; padding:3px 10px; border-radius:999px; border:1px solid; }
+.hd-badge.obs  { color:#64d2ff; border-color:rgba(100,210,255,.35); background:rgba(100,210,255,.07); }
+.hd-badge.ai   { color:#c890d8; border-color:rgba(200,144,216,.35); background:rgba(200,144,216,.07); }
+.hd-badge.obs:hover, .hd-badge.ai:hover { filter:brightness(1.2); }
+
+/* ── SECTION ── */
+.section { margin-bottom:44px; }
 .section-label {
-  font-size:.62rem; letter-spacing:.2em; text-transform:uppercase;
+  font-size:.6rem; letter-spacing:.2em; text-transform:uppercase;
   color:var(--muted); margin-bottom:14px;
   display:flex; align-items:center; gap:10px;
 }
@@ -39,41 +38,46 @@ h1 {
   background:linear-gradient(to right, transparent, rgba(255,255,255,.1), transparent);
 }
 
-.grid {
-  display:grid;
-  grid-template-columns:repeat(auto-fill, minmax(190px,1fr));
-  gap:14px;
-}
+.grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:12px; }
 
-/* カード */
+/* ── CARD ── */
 .card {
-  display:flex; flex-direction:column; gap:9px;
-  padding:20px 18px;
+  display:flex; flex-direction:column; gap:8px;
+  padding:18px 16px 14px;
   border:1px solid var(--line); border-radius:12px;
-  background:rgba(255,255,255,.038);
+  background:rgba(255,255,255,.034);
   text-decoration:none; color:var(--text);
-  transition:background .15s, border-color .15s, transform .14s, box-shadow .15s;
-  position:relative;
+  transition:background .15s, border-color .15s, transform .13s, box-shadow .15s;
+  position:relative; overflow:hidden;
 }
-.card:hover {
-  background:rgba(255,255,255,.072);
-  border-color:var(--card-color);
-  transform:translateY(-2px);
-  box-shadow:0 8px 28px rgba(0,0,0,.22);
+.card::before {
+  content:""; position:absolute; inset:0; opacity:0;
+  background:radial-gradient(ellipse at top, var(--card-color), transparent 70%);
+  transition:opacity .25s;
+  pointer-events:none;
 }
-.card-icon { font-size:1.8rem; line-height:1; }
-.card-name { font-size:.98rem; font-weight:900; color:var(--card-color); }
-.card-desc { font-size:.68rem; color:var(--muted); line-height:1.65; flex:1; }
-.card-tag  { font-size:.58rem; color:var(--card-color); opacity:.65; letter-spacing:.1em; margin-top:4px; }
+.card:hover { background:rgba(255,255,255,.066); border-color:var(--card-color); transform:translateY(-2px); box-shadow:0 8px 28px rgba(0,0,0,.22); }
+.card:hover::before { opacity:.05; }
+.card-icon { font-size:1.7rem; line-height:1; }
+.card-name { font-size:.95rem; font-weight:900; color:var(--card-color); line-height:1.2; }
+.card-desc { font-size:.66rem; color:var(--muted); line-height:1.65; flex:1; }
+.card-footer { display:flex; align-items:center; gap:5px; flex-wrap:wrap; margin-top:2px; }
+.card-tag  { font-size:.56rem; color:var(--card-color); opacity:.6; letter-spacing:.1em; }
+/* 機能バッジ */
+.feat { font-size:.52rem; font-weight:900; letter-spacing:.06em; padding:2px 6px; border-radius:999px; border:1px solid; opacity:.8; }
+.feat.obs  { color:#64d2ff; border-color:rgba(100,210,255,.4); background:rgba(100,210,255,.08); }
+.feat.ai   { color:#c890d8; border-color:rgba(200,144,216,.38); background:rgba(200,144,216,.07); }
+.feat.duo  { color:#57c87c; border-color:rgba(87,200,124,.38); background:rgba(87,200,124,.07); }
+.feat.ext  { color:rgba(255,255,255,.5); border-color:rgba(255,255,255,.2); background:rgba(255,255,255,.04); }
 
 /* カラー変数 */
-.card[data-color="book"]       { --card-color:#f2c14e; }
-.card[data-color="manga"]      { --card-color:#f79f57; }
-.card[data-color="literature"] { --card-color:#c4b48a; }
-.card[data-color="radio"]      { --card-color:#64d2ff; }
-.card[data-color="game"]       { --card-color:#57d68d; }
-.card[data-color="movie"]      { --card-color:#ff6b7a; }
-.card[data-color="study"]      { --card-color:#c890d8; }
+.card[data-color="book"]        { --card-color:#f2c14e; }
+.card[data-color="manga"]       { --card-color:#f79f57; }
+.card[data-color="literature"]  { --card-color:#c4b48a; }
+.card[data-color="radio"]       { --card-color:#64d2ff; }
+.card[data-color="game"]        { --card-color:#57d68d; }
+.card[data-color="movie"]       { --card-color:#ff6b7a; }
+.card[data-color="study"]       { --card-color:#c890d8; }
 .card[data-color="channel-os"]  { --card-color:#e0a0ff; }
 .card[data-color="rbt-econ"]    { --card-color:#c9a84c; }
 .card[data-color="rbt-poli"]    { --card-color:#6bb6ff; }
@@ -86,8 +90,15 @@ h1 {
 </head>
 <body>
 <div class="container">
-  <h1>RAINYBRAIN STREAMS</h1>
-  <p class="sub">配信画面を選ぶ</p>
+
+  <div class="hd">
+    <h1>RAINYBRAIN STREAMS</h1>
+    <p class="hd-sub">Channel OS — 配信画面を選ぶ</p>
+    <div class="hd-badge-row">
+      <span class="hd-badge obs">📺 OBS オーバーレイ対応</span>
+      <span class="hd-badge ai">🤖 Gemini AI コメント対応</span>
+    </div>
+  </div>
 
   <!-- ── 本・活字 ── -->
   <section class="section">
@@ -97,22 +108,31 @@ h1 {
       <a class="card" data-color="book" href="book.html">
         <div class="card-icon">📚</div>
         <div class="card-name">本紹介（全般）</div>
-        <div class="card-desc">Amazon アフィリエイトリンク付き。表紙画像・著者・感想コメントが流れる。</div>
-        <div class="card-tag">BOOK REVIEW</div>
+        <div class="card-desc">Amazonアフィリエイトリンク付き。表紙画像・著者・コメント3トラック。マイク音声認識。</div>
+        <div class="card-footer">
+          <span class="card-tag">BOOK REVIEW</span>
+          <span class="feat obs">OBS</span><span class="feat ai">AI</span>
+        </div>
       </a>
 
       <a class="card" data-color="literature" href="literature.html">
         <div class="card-icon">🖋</div>
         <div class="card-name">文学紹介</div>
-        <div class="card-desc">小説・詩・随筆。文章の深みを語る。文学好きコメントが集まる。</div>
-        <div class="card-tag">LITERATURE</div>
+        <div class="card-desc">小説・詩・随筆。引用パッセージをステージに大きく表示。Amazon対応。</div>
+        <div class="card-footer">
+          <span class="card-tag">LITERATURE</span>
+          <span class="feat obs">OBS</span><span class="feat ai">AI</span>
+        </div>
       </a>
 
       <a class="card" data-color="manga" href="manga.html">
         <div class="card-icon">🗺</div>
         <div class="card-name">漫画紹介</div>
-        <div class="card-desc">漫画・コミックの魅力を語る。キャラ・展開・作画の反応コメントが飛び交う。</div>
-        <div class="card-tag">MANGA REVIEW</div>
+        <div class="card-desc">巻数・話数を+1ボタンで即更新。表紙画像・Amazon対応。</div>
+        <div class="card-footer">
+          <span class="card-tag">MANGA REVIEW</span>
+          <span class="feat obs">OBS</span><span class="feat ai">AI</span>
+        </div>
       </a>
 
     </div>
@@ -126,15 +146,21 @@ h1 {
       <a class="card" data-color="game" href="game.html">
         <div class="card-icon">🎮</div>
         <div class="card-name">ゲーム実況</div>
-        <div class="card-desc">1人でゲームをしながら配信。AIコメントがゲームのノリで盛り上がる。</div>
-        <div class="card-tag">GAME STREAM</div>
+        <div class="card-desc">2キャラパネル。セッションタイマー・クリップメモ・AIコメント。</div>
+        <div class="card-footer">
+          <span class="card-tag">GAME STREAM</span>
+          <span class="feat obs">OBS</span>
+        </div>
       </a>
 
       <a class="card" data-color="movie" href="movie.html">
         <div class="card-icon">🎬</div>
         <div class="card-name">映画紹介</div>
-        <div class="card-desc">1人で映画を語る。映画ファン目線のコメントが反応する。</div>
-        <div class="card-tag">MOVIE REVIEW</div>
+        <div class="card-desc">監督・公開年・配信サービスリンク。ポスター画像・マイク音声認識。</div>
+        <div class="card-footer">
+          <span class="card-tag">MOVIE REVIEW</span>
+          <span class="feat obs">OBS</span><span class="feat ai">AI</span>
+        </div>
       </a>
 
     </div>
@@ -148,15 +174,21 @@ h1 {
       <a class="card" data-color="study" href="study.html">
         <div class="card-icon">🧠</div>
         <div class="card-name">学朱雨会</div>
-        <div class="card-desc">がくしゅうかい。教育・AI解説コンテンツ向け。知識系コメントが飛び交う。</div>
-        <div class="card-tag">GAKUSHUUKAI</div>
+        <div class="card-desc">科目クイックタグ17種。キーポイントをステージ表示。マイク音声認識。</div>
+        <div class="card-footer">
+          <span class="card-tag">GAKUSHUUKAI</span>
+          <span class="feat obs">OBS</span><span class="feat ai">AI</span>
+        </div>
       </a>
 
       <a class="card" data-color="radio" href="../radio/index.html">
         <div class="card-icon">🎙</div>
         <div class="card-name">対談配信</div>
-        <div class="card-desc">2人以上でしゃべる。ホスト＋ゲスト。トピックグリッドからテーマを選んで配信。</div>
-        <div class="card-tag">2+ PERSON LIVE</div>
+        <div class="card-desc">2人以上のトーク配信。100トピックグリッド。ホスト+ゲストのOBSオーバーレイ。</div>
+        <div class="card-footer">
+          <span class="card-tag">2+ PERSON LIVE</span>
+          <span class="feat duo">DUO</span>
+        </div>
       </a>
 
     </div>
@@ -170,8 +202,11 @@ h1 {
       <a class="card" data-color="singing" href="singing.html">
         <div class="card-icon">🎤</div>
         <div class="card-name">歌ってみた配信</div>
-        <div class="card-desc">セットリスト管理・単発モード。曲名・アーティスト・歌詞を表示。OBSオーバーレイ対応。</div>
-        <div class="card-tag">SINGING LIVE</div>
+        <div class="card-desc">セットリスト管理・単発モード。曲名・歌詞・コメントフロー。OBSオーバーレイ対応。</div>
+        <div class="card-footer">
+          <span class="card-tag">SINGING LIVE</span>
+          <span class="feat obs">OBS</span>
+        </div>
       </a>
 
     </div>
@@ -185,43 +220,61 @@ h1 {
       <a class="card" data-color="rbt-econ" href="economy.html">
         <div class="card-icon">🌳</div>
         <div class="card-name">RB-Tree Economics</div>
-        <div class="card-desc">経済・ニュース・金融を止めながら一緒に学ぶ公開学習配信。金利・インフレ・為替を種から育てる。</div>
-        <div class="card-tag">経済の樹</div>
+        <div class="card-desc">経済・金利・インフレを止めながら学ぶ。Seed記録・解説フロー・Gemini AI搭載。</div>
+        <div class="card-footer">
+          <span class="card-tag">経済の樹</span>
+          <span class="feat obs">OBS</span><span class="feat ai">AI</span><span class="feat duo">DUO</span>
+        </div>
       </a>
 
       <a class="card" data-color="rbt-poli" href="politics.html">
-        <div class="card-icon">🌳</div>
+        <div class="card-icon">🏛</div>
         <div class="card-name">RB-Tree Politics</div>
-        <div class="card-desc">政治・選挙・国家の仕組みを止めながら理解する。三権分立から国家予算まで体系化する。</div>
-        <div class="card-tag">政治の樹</div>
+        <div class="card-desc">政治・選挙・国家の仕組みを止めながら理解する。Seed記録・解説フロー搭載。</div>
+        <div class="card-footer">
+          <span class="card-tag">政治の樹</span>
+          <span class="feat obs">OBS</span><span class="feat ai">AI</span><span class="feat duo">DUO</span>
+        </div>
       </a>
 
       <a class="card" data-color="rbt-invest" href="investment.html">
-        <div class="card-icon">🌳</div>
+        <div class="card-icon">📈</div>
         <div class="card-name">RB-Tree Investment</div>
-        <div class="card-desc">投資・NISA・ETFを初心者と一緒に学ぶ。複利から投資哲学まで。分からないをその場で止める。</div>
-        <div class="card-tag">投資の樹</div>
+        <div class="card-desc">NISA・ETF・複利を初心者と学ぶ。Seed記録・解説フロー搭載。</div>
+        <div class="card-footer">
+          <span class="card-tag">投資の樹</span>
+          <span class="feat obs">OBS</span><span class="feat ai">AI</span><span class="feat duo">DUO</span>
+        </div>
       </a>
 
       <a class="card" data-color="rbt-method" href="rb-tree-method.html">
         <div class="card-icon">📋</div>
-        <div class="card-name">RB-Tree学習</div>
-        <div class="card-desc">止めるタイミング・解説フロー・視聴者への問いかけ・リアルタイムSeed記録。配信中に開いておく学習ツール。</div>
-        <div class="card-tag">学習ツール（1人）</div>
+        <div class="card-name">RB-Tree 学習ツール</div>
+        <div class="card-desc">止めるタイミング・解説フロー・問い記録。配信中に開いておく1人用ツール。</div>
+        <div class="card-footer">
+          <span class="card-tag">学習ツール（1人）</span>
+          <span class="feat obs">OBS</span>
+        </div>
       </a>
 
       <a class="card" data-color="rbt-duo" href="rb-tree-duo.html">
         <div class="card-icon">👥</div>
-        <div class="card-name">RB-Tree学習 2人</div>
-        <div class="card-desc">進行役と学習者の2人で進める。ステップごとに役割が変わる。OBSオーバーレイ・ミニモード対応。NDIでアバター2体を合成。</div>
-        <div class="card-tag">学習ツール（2人）</div>
+        <div class="card-name">RB-Tree 2人学習</div>
+        <div class="card-desc">進行役と学習者の2人で進む。OBSオーバーレイ・ミニモード・Seed記録。</div>
+        <div class="card-footer">
+          <span class="card-tag">学習ツール（2人）</span>
+          <span class="feat obs">OBS</span><span class="feat duo">DUO</span>
+        </div>
       </a>
 
       <a class="card" data-color="rbt-archive" href="https://rainybrainch.github.io/rb-tree-archive/" target="_blank">
         <div class="card-icon">🌲</div>
         <div class="card-name">RB-Tree Archive</div>
-        <div class="card-desc">学習セッションで得た知識を Seed→Forest の5段階で蓄積・検索できる知識の森。</div>
-        <div class="card-tag">知識アーカイブ ↗</div>
+        <div class="card-desc">学習セッションの知識を Seed→Forest の5段階で蓄積・検索できる知識の森。</div>
+        <div class="card-footer">
+          <span class="card-tag">知識アーカイブ ↗</span>
+          <span class="feat ext">外部</span>
+        </div>
       </a>
 
     </div>
@@ -235,8 +288,11 @@ h1 {
       <a class="card" data-color="channel-os" href="https://rainybrainch.github.io/comment-studio/ai-comment-personas.html" target="_blank">
         <div class="card-icon">🎭</div>
         <div class="card-name">Channel OS</div>
-        <div class="card-desc">AIコメント人格を作成・管理する。ここで作った人格が全配信画面のコメントに反映される。</div>
-        <div class="card-tag">PERSONA STUDIO</div>
+        <div class="card-desc">AIコメント人格を作成・管理。ここで作った人格が全配信画面のコメントに反映される。</div>
+        <div class="card-footer">
+          <span class="card-tag">PERSONA STUDIO ↗</span>
+          <span class="feat ext">外部</span>
+        </div>
       </a>
 
     </div>
