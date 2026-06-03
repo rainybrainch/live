@@ -627,6 +627,13 @@ body.timer-warning .action-timer-time{color:#ff6b7a!important;}
 .field{gap:5px!important;}
 .dock-body{gap:10px!important;padding:12px!important;}
 .keyword-sub-desc{color:rgba(240,232,200,.55);font-size:clamp(10px,.9vw,13px);line-height:1.5;margin-top:4px;}
+/* -- ITER8: mic-select + seed-progress + comment-who-flash -- */
+.seed-progress-bar{height:4px;background:rgba(255,255,255,.1);border-radius:999px;overflow:hidden;margin:6px 0 2px;}
+.seed-progress-fill{height:100%;background:var(--good);border-radius:999px;transition:width .5s cubic-bezier(.34,1.56,.64,1);}
+.seed-progress-label{font-size:9px;color:var(--faint);text-align:right;margin-bottom:6px;font-variant-numeric:tabular-nums;}
+.comment-who-flash{position:absolute;top:86px;left:50%;transform:translateX(-50%);padding:4px 14px;border-radius:999px;background:rgba(6,10,4,.82);border:1px solid rgba(255,255,255,.15);font-size:11px;font-weight:900;color:var(--muted);opacity:0;transition:opacity .25s;pointer-events:none;z-index:12;white-space:nowrap;letter-spacing:.04em;}
+.comment-who-flash.show{opacity:1;}
+.mic-device-note{font-size:10px;color:var(--faint);margin-top:3px;line-height:1.4;}
 </style>
 </head>
 <body>
@@ -634,6 +641,7 @@ body.timer-warning .action-timer-time{color:#ff6b7a!important;}
 
   <!-- Stage ambient background -->
   <div class="stage-bg-overlay" id="stageBgOverlay"></div>
+  <div class="comment-who-flash" id="commentWhoFlash"></div>
   <!-- Stage flash -->
   <div class="stage-flash" id="stageFlash"></div>
 
@@ -742,6 +750,8 @@ body.timer-warning .action-timer-time{color:#ff6b7a!important;}
       <div class="section-title"><span class="step">1</span>今日の学習設定</div>
       <div class="field">
         <label>今日のSeed <span id="seedLevelTag" style="font-size:9px;padding:1px 7px;border-radius:999px;border:1px solid rgba(255,255,255,.1);margin-left:4px;color:var(--muted);">未選択</span><button id="randomSeedBtn" class="random-seed-btn" type="button" title="ランダムSeedを選択">🎲</button></label>
+        <div class="seed-progress-bar"><div class="seed-progress-fill" id="seedProgressFill" style="width:0%"></div></div>
+        <div class="seed-progress-label" id="seedProgressLabel">0 / 0 完了</div>
         <div id="seedPicker"></div>
         <!-- Seed reference card (shows when seed selected) -->
         <div class="seed-ref" id="seedRef"></div>
@@ -801,6 +811,14 @@ body.timer-warning .action-timer-time{color:#ff6b7a!important;}
         <label>字幕サイズ</label>
         <input type="range" id="captionSizeRange" min="60" max="180" value="100" step="5">
         <span class="sv" id="captionSizeVal">100%</span>
+      </div>
+      <div class="field">
+        <label>🎤 マイクデバイス</label>
+        <div style="display:flex;gap:6px;">
+          <select id="micDeviceSelect" style="flex:1;"><option value="">デフォルト</option></select>
+          <button id="refreshMicBtn" type="button" style="flex-shrink:0;padding:0 10px;" title="デバイス一覧を更新">🔄 更新</button>
+        </div>
+        <div class="mic-device-note">VUメーターに反映。文字起こしはシステムデフォルトを使用します。</div>
       </div>
     </section>
 
@@ -1190,6 +1208,12 @@ function bind(){
   $("quickNotes")?.addEventListener("input",()=>{
     try{localStorage.setItem("rbt_quick_notes_v1",$("quickNotes").value);}catch{}
   });
+  $("micDeviceSelect")?.addEventListener("change",()=>{
+    state.micDeviceId=$("micDeviceSelect").value;save();
+    if(listening){restartMic();}
+    setStatus("🎤 マイクデバイス変更: "+($("micDeviceSelect").selectedOptions[0]?.text||"デフォルト"));
+  });
+  $("refreshMicBtn")?.addEventListener("click",loadMicDevices);
   $("captionSizeRange")?.addEventListener("input",()=>{
     const v=$("captionSizeRange").value;
     const sv=$("captionSizeVal");if(sv)sv.textContent=v+"%";
@@ -1393,6 +1417,29 @@ function toggleSummary(){
   el.classList.toggle("show",show);
 }
 
+
+async function loadMicDevices(){
+  try{
+    const _str=await navigator.mediaDevices.getUserMedia({audio:true});
+    _str.getTracks().forEach(t=>t.stop());
+    const _devs=await navigator.mediaDevices.enumerateDevices();
+    const _sel=$("micDeviceSelect");if(!_sel)return;
+    const _audio=_devs.filter(d=>d.kind==="audioinput");
+    const _cur=state.micDeviceId||"";
+    _sel.innerHTML='<option value="">デフォルト</option>'+
+      _audio.map(d=>`<option value="${d.deviceId}" ${d.deviceId===_cur?"selected":""}>${d.label||"マイク "+d.deviceId.slice(0,6)}</option>`).join("");
+    setStatus(`🎤 ${_audio.length}件のマイクを検出`);
+  }catch{setStatus("マイクの許可が必要です");}
+}
+
+function updateSeedProgress(){
+  const _tot=SEEDS_DATA.length,_done=completedSeeds.size;
+  const _pct=_tot>0?(_done/_tot*100).toFixed(0):0;
+  const _f=$("seedProgressFill"),_l=$("seedProgressLabel");
+  if(_f)_f.style.width=_pct+"%";
+  if(_l)_l.textContent=`${_done} / ${_tot} 完了`;
+}
+
 function nextSeed(){
   const nums=SEEDS_DATA.map(s=>s.num).sort((a,b)=>a-b);
   const cur=state.selectedSeed||0;
@@ -1450,6 +1497,7 @@ function renderSeedPicker(){
     html+="</div>";
   });
   container.innerHTML=html;
+  updateSeedProgress();
   container.querySelectorAll(".seed-pick-btn").forEach(btn=>{
     btn.addEventListener("click",()=>selectSeed(Number(btn.dataset.num)));
   });
@@ -1592,6 +1640,7 @@ function saveSeedToArchive(sk){
     localStorage.setItem(ARCHIVE_KEY,JSON.stringify(arr));
     completedSeeds.add(sk);
     try{localStorage.setItem("rbt_completed_seeds_v1",JSON.stringify([...completedSeeds]));}catch{}
+    updateSeedProgress();
     renderSeedPicker();
     setStatus(`🌱「${s.name}」をArchiveに保存しました`);
   }catch{ setStatus("Archive保存に失敗しました"); }
@@ -1820,7 +1869,9 @@ function toggleMic(){
 
 async function startMeter(){
   try{
-    micStream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true}});
+    const _did=state.micDeviceId;
+    const _ac=_did?{deviceId:{exact:_did},echoCancellation:true,noiseSuppression:true}:{echoCancellation:true,noiseSuppression:true};
+    micStream=await navigator.mediaDevices.getUserMedia({audio:_ac});
     audioCtx=new AudioContext();
     const an=audioCtx.createAnalyser();audioCtx.createMediaStreamSource(micStream).connect(an);
     an.fftSize=64;const buf=new Uint8Array(an.frequencyBinCount);
@@ -1891,6 +1942,15 @@ ${recent||"経済学習配信中。"}
 function addComment(text,name,color,superChat=false){
     commentCount++;updateDockMeta();
   if(!text)return;
+  const _cwf=document.getElementById('commentWhoFlash');
+  if(_cwf&&name){
+    _cwf.textContent='@'+cleanName(name);
+    _cwf.style.borderColor=color||'rgba(255,255,255,.2)';
+    _cwf.style.color=color||'var(--muted)';
+    _cwf.classList.add('show');
+    clearTimeout(_cwf._t);
+    _cwf._t=setTimeout(()=>_cwf.classList.remove('show'),2200);
+  }
   const _clog=$("commentLog");
   if(_clog){if(_clog.textContent==="コメント待機中...")_clog.innerHTML="";
     const _now=new Date(),_ts=String(_now.getHours()).padStart(2,"0")+":"+String(_now.getMinutes()).padStart(2,"0");
