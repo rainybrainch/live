@@ -484,6 +484,20 @@ body.listening .mic-main-btn .mic-live-dot{display:inline-block;}
 .comment-ctrl-row{display:flex;gap:4px;align-items:center;flex-shrink:0;}
 .spd-trio{display:flex;gap:3px;}
 .spd-trio .spd-btn{width:32px;min-height:42px;padding:0;display:grid;place-items:center;font-size:15px;flex:none;border-radius:8px;}
+/* -- PC ENHANCEMENTS -- */
+@media(min-width:900px){.dock{width:min(560px,calc(100vw - 28px));}}
+.kb-help-overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);backdrop-filter:blur(8px);z-index:200;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s;}
+.kb-help-overlay.show{opacity:1;pointer-events:auto;}
+.kb-help-panel{background:rgba(6,10,4,.97);border:1px solid rgba(201,168,76,.32);border-radius:16px;padding:22px 26px;min-width:340px;max-width:500px;box-shadow:0 28px 80px rgba(0,0,0,.65);}
+.kb-help-hd{font-size:13px;font-weight:900;letter-spacing:.06em;color:var(--acc);margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;}
+.kb-grid{display:grid;grid-template-columns:auto 1fr;gap:8px 16px;align-items:center;}
+kbd{display:inline-flex;align-items:center;justify-content:center;min-width:28px;padding:2px 8px;border:1px solid rgba(255,255,255,.28);border-radius:6px;background:rgba(255,255,255,.09);font-size:11px;font-weight:900;font-family:monospace;color:var(--text);box-shadow:0 2px 0 rgba(0,0,0,.55);white-space:nowrap;}
+.kb-grid span{font-size:12px;color:var(--muted);}
+.dock-status-bar{padding:5px 14px;background:rgba(0,0,0,.2);border-top:1px solid rgba(255,255,255,.06);font-size:10px;color:var(--muted);font-weight:700;min-height:26px;display:flex;align-items:center;gap:7px;letter-spacing:.05em;}
+.dock-status-bar .dsb-dot{width:5px;height:5px;border-radius:999px;background:rgba(255,255,255,.18);flex-shrink:0;transition:all .3s;}
+body.listening .dock-status-bar .dsb-dot{background:var(--good);box-shadow:0 0 8px rgba(126,200,122,.55);}
+.kb-num{font-size:8px;color:rgba(255,255,255,.22);font-weight:900;display:block;line-height:1;margin-top:2px;}
+.stage-sel-btn.active .kb-num{color:rgba(201,168,76,.55);}
 </style>
 </head>
 <body>
@@ -558,10 +572,11 @@ body.listening .mic-main-btn .mic-live-dot{display:inline-block;}
   <div class="dock-head">
     <div class="dock-title" style="flex:1;min-width:0;"><strong>RB-Tree政治</strong><div class="dock-meta" id="dockMeta">💬 0件　🎤 停止中</div></div>
     <button class="dock-icon-btn" id="dockFullscreenBtn" type="button" title="全画面（F）">⛶</button>
-    <button class="dock-icon-btn" id="hideDock" type="button" title="閉じる">✕</button>
+    <button class="dock-icon-btn" id="kbHelpBtn" type="button" title="ショートカット（?）" style="font-family:monospace;font-weight:900;">?</button>
+    <button class="dock-icon-btn" id="hideDock" type="button" title="閉じる（D）">✕</button>
   </div>
   <div class="dock-action-bar">
-    <button id="micBtn" class="mic-main-btn good" type="button"><span class="mic-live-dot"></span>🎤 マイク開始</button>
+    <button id="micBtn" class="mic-main-btn good" type="button" title="マイク ON/OFF — M キー"><span class="mic-live-dot"></span>🎤 マイク開始</button>
     <div class="comment-ctrl-row">
       <button class="cc-btn" id="ccBtn" onclick="toggleComments()">💬 ON</button>
       <div class="spd-trio">
@@ -593,20 +608,20 @@ body.listening .mic-main-btn .mic-live-dot{display:inline-block;}
       <div class="field">
         <label>学習ステージ</label>
         <div class="stage-selector" id="stageSelector">
-          <button class="stage-sel-btn active" data-stage="seed" data-icon="🌱" data-en="まず知る">
-            <span class="ico">🌱</span>Seed
+          <button class="stage-sel-btn active" data-stage="seed" data-icon="🌱" data-en="まず知る" title="Seed — まず知る [1]">
+            <span class="ico">🌱</span>Seed<span class="kb-num">1</span>
           </button>
-          <button class="stage-sel-btn" data-stage="branch" data-icon="🌿" data-en="繋げる">
-            <span class="ico">🌿</span>Branch
+          <button class="stage-sel-btn " data-stage="branch" data-icon="🌿" data-en="繋げる" title="Branch — 繋げる [2]">
+            <span class="ico">🌿</span>Branch<span class="kb-num">2</span>
           </button>
-          <button class="stage-sel-btn" data-stage="leaf" data-icon="🍃" data-en="記録する">
-            <span class="ico">🍃</span>Leaf
+          <button class="stage-sel-btn " data-stage="leaf" data-icon="🍃" data-en="記録する" title="Leaf — 記録する [3]">
+            <span class="ico">🍃</span>Leaf<span class="kb-num">3</span>
           </button>
-          <button class="stage-sel-btn" data-stage="tree" data-icon="🌳" data-en="体系化">
-            <span class="ico">🌳</span>Tree
+          <button class="stage-sel-btn " data-stage="tree" data-icon="🌳" data-en="体系化" title="Tree — 体系化 [4]">
+            <span class="ico">🌳</span>Tree<span class="kb-num">4</span>
           </button>
-          <button class="stage-sel-btn" data-stage="forest" data-icon="🌲" data-en="教材化">
-            <span class="ico">🌲</span>Forest
+          <button class="stage-sel-btn " data-stage="forest" data-icon="🌲" data-en="教材化" title="Forest — 教材化 [5]">
+            <span class="ico">🌲</span>Forest<span class="kb-num">5</span>
           </button>
         </div>
       </div>
@@ -630,7 +645,7 @@ body.listening .mic-main-btn .mic-live-dot{display:inline-block;}
       </div>
       <div class="actions">
         <button id="timerSetBtn" type="button">反映</button>
-        <button id="timerStartBtn" class="good" type="button">開始</button>
+        <button id="timerStartBtn" class="good" type="button" title="Space キー">開始</button>
         <button id="timerResetBtn" type="button">リセット</button>
       </div>
     </section>
@@ -640,7 +655,7 @@ body.listening .mic-main-btn .mic-live-dot{display:inline-block;}
       <div class="section-title"><span class="step">3</span>文字起こし</div>
       <div class="actions">
         <button id="clearTranscriptBtn" type="button">字幕クリア</button>
-        <button id="commentBtn" class="warn" type="button">コメント1件</button>
+        <button id="commentBtn" class="warn" type="button" title="C キー">コメント1件</button>
       </div>
       <div class="field">
         <label>手入力（Enter で反映）</label>
@@ -840,6 +855,7 @@ function hydrate(){
 function bind(){
   $("hideDock")?.addEventListener("click",()=>document.body.classList.add("panel-hidden"));
   $("openDock")?.addEventListener("click",()=>document.body.classList.remove("panel-hidden"));
+  $("kbHelpBtn")?.addEventListener("click",toggleKbHelp);
   $("applyBtn")?.addEventListener("click",applyStage);
   $("keywordInput")?.addEventListener("input",()=>{state.keyword=$("keywordInput").value;save();});
   $("subInput")?.addEventListener("input",()=>{state.sub=$("subInput").value;save();});
@@ -981,9 +997,43 @@ function bind(){
     if(db){db.textContent=fs?"✕ 全画面解除":"⛶ 全画面";db.className=fs?"warn":"";}
   });
   document.addEventListener("keydown",e=>{
-    if(e.key==="f"||e.key==="F"){if(document.activeElement?.tagName!=="INPUT"&&document.activeElement?.tagName!=="TEXTAREA")toggleFullscreen();}
-    if(e.key==="Escape"&&!document.fullscreenElement)document.body.classList.remove("panel-hidden");
+    const ae=document.activeElement;
+    const inInput=ae?.tagName==="INPUT"||ae?.tagName==="TEXTAREA"||ae?.tagName==="SELECT";
+    if(!inInput){
+      if(e.key==="f"||e.key==="F"){toggleFullscreen();return;}
+      if(e.key==="m"||e.key==="M"){toggleMic();e.preventDefault();return;}
+      if(e.key===" "){toggleTimer();e.preventDefault();return;}
+      if(e.key==="c"||e.key==="C"){spawnComment();e.preventDefault();return;}
+      if(e.key==="d"||e.key==="D"){document.body.classList.toggle("panel-hidden");e.preventDefault();return;}
+      if(e.key==="?"||e.key==="/"){toggleKbHelp();e.preventDefault();return;}
+      if(e.key==="1"){selectStageByKey("seed");e.preventDefault();return;}
+      if(e.key==="2"){selectStageByKey("branch");e.preventDefault();return;}
+      if(e.key==="3"){selectStageByKey("leaf");e.preventDefault();return;}
+      if(e.key==="4"){selectStageByKey("tree");e.preventDefault();return;}
+      if(e.key==="5"){selectStageByKey("forest");e.preventDefault();return;}
+    }
+    if(e.key==="Escape"){
+      if(document.getElementById("kbHelp")?.classList.contains("show")){toggleKbHelp();return;}
+      if(!document.fullscreenElement)document.body.classList.remove("panel-hidden");
+    }
+    if(inInput&&e.key==="Enter"&&(ae.id==="keywordInput"||ae.id==="subInput")){
+      applyStage();e.preventDefault();
+    }
   });
+}
+
+
+function toggleKbHelp(){
+  document.getElementById("kbHelp")?.classList.toggle("show");
+}
+
+function selectStageByKey(stage){
+  const btn=document.querySelector(`.stage-sel-btn[data-stage="${stage}"]`);
+  if(!btn)return;
+  document.querySelectorAll(".stage-sel-btn").forEach(b=>b.classList.toggle("active",b.dataset.stage===stage));
+  state.currentStage=stage;save();updateStageBadge(stage);
+  const keys={seed:"1",branch:"2",leaf:"3",tree:"4",forest:"5"};
+  setStatus(STAGES_META[stage].icon+" "+STAGES_META[stage].name+" ["+keys[stage]+"]");
 }
 
 // ── Seed Picker ──
@@ -1557,7 +1607,9 @@ function load(){try{return JSON.parse(localStorage.getItem(STORAGE_KEY)||"{}");}
 function setStatus(t){
   if($("personaStatus"))$("personaStatus").textContent=t;
   const toast=$("statusToast");
-  if(toast){toast.textContent=t;toast.classList.add("show");setTimeout(()=>toast.classList.remove("show"),3000);}
+  if(toast){toast.textContent=t;toast.classList.add("show");clearTimeout(toast._t);toast._t=setTimeout(()=>toast.classList.remove("show"),2500);}
+  const bar=$("dockStatusBar");
+  if(bar){bar.textContent=t;clearTimeout(bar._t);bar._t=setTimeout(()=>{bar.textContent="準備完了";},4000);}
 }
 
 window.addEventListener("storage",e=>{
