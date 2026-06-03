@@ -559,6 +559,17 @@ body[data-stage=forest]{--stage-color:#4dab78;--stage-color-a:rgba(77,171,120,.3
 .stage-badge{border-color:var(--stage-color-a)!important;transition:border-color .5s ease;}
 .stage-icon{transition:transform .3s cubic-bezier(.34,1.56,.64,1);}
 .stage-badge:hover .stage-icon{transform:scale(1.2);}
+/* -- ITER5: translucent dock + download -- */
+.dock.translucent{
+  background:linear-gradient(180deg,rgba(255,255,255,.02),rgba(255,255,255,.008)),rgba(6,10,4,.35)!important;
+  backdrop-filter:blur(28px) saturate(180%)!important;
+  border-color:rgba(255,255,255,.12)!important;
+}
+.dock.translucent .dock-body{opacity:.72;transition:opacity .2s;}
+.dock.translucent .dock-body:hover{opacity:1;}
+.dock.translucent .dock-head{background:rgba(0,0,0,.12)!important;}
+.dock.translucent .dock-action-bar{background:rgba(0,0,0,.06)!important;}
+#dockOpacityBtn.active{color:var(--acc);border-color:rgba(201,168,76,.5);background:rgba(201,168,76,.1);}
 </style>
 </head>
 <body>
@@ -636,6 +647,7 @@ body[data-stage=forest]{--stage-color:#4dab78;--stage-color-a:rgba(77,171,120,.3
   <div class="dock-head">
     <div class="dock-title" style="flex:1;min-width:0;"><strong>RB-Tree政治</strong><div class="dock-meta" id="dockMeta">💬 0件　🎤 停止中</div></div>
     <button class="dock-icon-btn" id="dockFullscreenBtn" type="button" title="全画面（F）">⛶</button>
+    <button class="dock-icon-btn" id="dockOpacityBtn" type="button" title="半透明モード切替（O）">◐</button>
     <button class="dock-icon-btn" id="kbHelpBtn" type="button" title="ショートカット（?）" style="font-family:monospace;font-weight:900;">?</button>
     <button class="dock-icon-btn" id="hideDock" type="button" title="閉じる（D）">✕</button>
   </div>
@@ -717,10 +729,11 @@ body[data-stage=forest]{--stage-color:#4dab78;--stage-color-a:rgba(77,171,120,.3
     <!-- Step 3: 文字起こし -->
     <section class="section">
       <div class="section-title"><span class="step">3</span>文字起こし<span class="section-stat" id="transcriptStat">0件</span></div>
-      <div class="actions" style="grid-template-columns:1fr 1fr 1fr;">
+      <div class="actions" style="grid-template-columns:1fr 1fr 1fr 1fr;">
         <button id="clearTranscriptBtn" type="button">字幕クリア</button>
         <button id="commentBtn" class="warn" type="button" title="C キー">コメント1件</button>
-        <button id="copySessionBtn" type="button" title="📋 セッションを一括コピー">📋 コピー</button>
+        <button id="copySessionBtn" type="button" title="📋 セッションをコピー">📋 コピー</button>
+        <button id="downloadBtn" class="primary" type="button" title="Markdownで保存（S）">💾 保存</button>
       </div>
       <div class="burst-row">
         <button id="burstBtn3" class="warn" type="button" title="コメント3件を連続生成">💬×3</button>
@@ -1100,6 +1113,12 @@ function bind(){
     selectSeed(s.num);
     setStatus("🎲 ランダムSeed: "+s.name);
   });
+  $("downloadBtn")?.addEventListener("click",downloadSession);
+  $("dockOpacityBtn")?.addEventListener("click",()=>{
+    const _od=$("dock");_od.classList.toggle("translucent");
+    $("dockOpacityBtn").classList.toggle("active",_od.classList.contains("translucent"));
+    setStatus(_od.classList.contains("translucent")?"◐ 半透明モード":"● 通常モード");
+  });
 
   // Stage selector
   document.querySelectorAll(".stage-sel-btn").forEach(btn=>{
@@ -1135,6 +1154,12 @@ function bind(){
       if(e.key==="4"){selectStageByKey("tree");e.preventDefault();return;}
       if(e.key==="5"){selectStageByKey("forest");e.preventDefault();return;}
       if(e.key==="t"||e.key==="T"){$("manualTranscript")?.focus();e.preventDefault();return;}
+      if(e.key==="s"||e.key==="S"){downloadSession();e.preventDefault();return;}
+      if(e.key==="o"||e.key==="O"){
+        const _od=$("dock");_od.classList.toggle("translucent");
+        $("dockOpacityBtn")?.classList.toggle("active",_od.classList.contains("translucent"));
+        setStatus(_od.classList.contains("translucent")?"◐ 半透明モード":"● 通常モード");
+        e.preventDefault();return;}
       if(e.key==="n"||e.key==="N"){nextSeed();e.preventDefault();return;}
       if(e.key==="p"||e.key==="P"){prevSeed();e.preventDefault();return;}
     }
@@ -1201,6 +1226,39 @@ function flashStage(stage){
   el.classList.remove("show");void el.offsetWidth;el.classList.add("show");
 }
 
+
+
+function downloadSession(){
+  const date=new Date().toLocaleDateString("ja-JP").replace(/\//g,"-");
+  const stage=STAGES_META[state.currentStage];
+  const entries=(state.transcript||[]).slice().reverse().map(x=>{
+    const t=new Date(x.at),ts=String(t.getHours()).padStart(2,"0")+":"+String(t.getMinutes()).padStart(2,"0");
+    return`[${ts}] ${x.text}`;
+  }).join("\n");
+  const notes=$("quickNotes")?.value||"";
+  const archBody=$("archiveBody")?.value||"";
+  const elapsed=sessionStartMs?fmt(Math.floor((Date.now()-sessionStartMs)/1000)):"";
+  const lines=[
+    `# RB-Tree 配信メモ ${date}`,
+    `\nキーワード: **${state.keyword}**`,
+    state.sub?`議題: ${state.sub}`:"",
+    `ステージ: ${stage?.icon||""} ${stage?.name||""}`,
+    elapsed?`配信時間: ${elapsed}`:"",
+    `コメント: ${commentCount}件`,
+    "\n---\n",
+    "## 文字起こし\n",
+    entries||"（なし）",
+    notes?"\n---\n\n## メモ\n"+notes:"",
+    archBody?"\n---\n\n## Archive 本文\n"+archBody:"",
+  ].filter(x=>x!="");
+  const blob=new Blob([lines.join("\n")],{type:"text/markdown;charset=utf-8"});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download=`rbt-session-${date}.md`;
+  a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),3000);
+  setStatus("💾 セッションを保存しました (" + a.download + ")");
+}
 
 function nextSeed(){
   const nums=SEEDS_DATA.map(s=>s.num).sort((a,b)=>a-b);
@@ -1881,6 +1939,8 @@ window.addEventListener("storage",e=>{
       <kbd>4</kbd><span>Stage: Tree — 体系化</span>
       <kbd>5</kbd><span>Stage: Forest — 教材化</span>
       <kbd>Enter</kbd><span>ステージ反映（キーワード/議题 入力中）</span>
+      <kbd>S</kbd><span>セッションをMarkdownでダウンロード</span>
+      <kbd>O</kbd><span>Dock 半透明モード切替</span>
       <kbd>N</kbd><span>次のSeedに進む</span>
       <kbd>P</kbd><span>前のSeedに戻る</span>
       <kbd>? /</kbd><span>このヘルプを開閉</span>
