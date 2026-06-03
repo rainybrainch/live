@@ -535,6 +535,18 @@ body.timer-warning .on-air-dot{background:#ff6b7a;}
 .stage-flash-inner{font-family:var(--serif);font-size:clamp(52px,9vw,100px);font-weight:700;color:var(--acc);letter-spacing:.04em;animation:sfScale .9s cubic-bezier(.22,1,.36,1) forwards;text-shadow:0 0 60px rgba(201,168,76,.55),0 6px 30px rgba(0,0,0,.85);}
 @keyframes sfScale{0%{transform:scale(1.5);opacity:0;}18%{opacity:1;transform:scale(1.02);}80%{opacity:.8;}100%{opacity:0;transform:scale(.92);}}
 .burst-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;}
+/* -- ITER3: caption-scale slider + elapsed -- */
+.slider-row{display:flex;align-items:center;gap:8px;padding:2px 0;}
+.slider-row label{font-size:10px;color:var(--muted);font-weight:900;white-space:nowrap;flex-shrink:0;}
+.slider-row .sv{min-width:32px;text-align:right;font-size:10px;color:var(--faint);font-variant-numeric:tabular-nums;flex-shrink:0;}
+input[type=range]{-webkit-appearance:none;appearance:none;flex:1;height:4px;border-radius:999px;background:rgba(255,255,255,.15);border:none;padding:0;cursor:pointer;outline:none;}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:999px;background:var(--acc);cursor:pointer;box-shadow:0 1px 6px rgba(0,0,0,.5);}
+.caption-line.c-current{font-size:calc(clamp(15px,1.5vw,25px)*var(--caption-scale,1));opacity:1;}
+.caption-line.c-prev1{font-size:calc(clamp(12px,1.2vw,20px)*var(--caption-scale,1));opacity:.5;}
+.caption-line.c-prev2{font-size:calc(clamp(10px,.98vw,16px)*var(--caption-scale,1));opacity:.26;}
+.dm-elapsed{color:var(--acc);font-size:9px;font-weight:900;margin-left:4px;font-variant-numeric:tabular-nums;}
+.random-seed-btn{padding:1px 6px;border-radius:5px;font-size:10px;cursor:pointer;border:1px solid var(--line);background:rgba(255,255,255,.04);margin-left:5px;vertical-align:middle;min-height:20px;}
+.random-seed-btn:hover{background:rgba(201,168,76,.15);border-color:rgba(201,168,76,.4);}
 </style>
 </head>
 <body>
@@ -632,7 +644,7 @@ body.timer-warning .on-air-dot{background:#ff6b7a;}
     <section class="section">
       <div class="section-title"><span class="step">1</span>今日の学習設定</div>
       <div class="field">
-        <label>今日のSeed <span id="seedLevelTag" style="font-size:9px;padding:1px 7px;border-radius:999px;border:1px solid rgba(255,255,255,.1);margin-left:4px;color:var(--muted);">未選択</span></label>
+        <label>今日のSeed <span id="seedLevelTag" style="font-size:9px;padding:1px 7px;border-radius:999px;border:1px solid rgba(255,255,255,.1);margin-left:4px;color:var(--muted);">未選択</span><button id="randomSeedBtn" class="random-seed-btn" type="button" title="ランダムSeedを選択">🎲</button></label>
         <div id="seedPicker"></div>
         <!-- Seed reference card (shows when seed selected) -->
         <div class="seed-ref" id="seedRef"></div>
@@ -706,6 +718,11 @@ body.timer-warning .on-air-dot{background:#ff6b7a;}
       <div class="field">
         <label>手入力（Enter で反映 / T キー / ↑↓ 履歴）</label>
         <input id="manualTranscript" placeholder="例: 金利とは何か？">
+      </div>
+      <div class="slider-row">
+        <label>字幕サイズ</label>
+        <input type="range" id="captionSizeRange" min="60" max="180" value="100" step="5">
+        <span class="sv" id="captionSizeVal">100%</span>
       </div>
       <div id="transcriptLog" class="log">まだ文字起こしはありません。</div>
     </section>
@@ -873,7 +890,7 @@ state.timer = normTimer(state.timer);
 
 let personas=loadPersonas(), recognition=null, listening=false;
 let audioCtx=null, meterTimer=null, micStream=null;
-let commentsEnabled=true,commentCount=0,sessionStartedAt=null;
+let commentsEnabled=true,commentCount=0,sessionStartedAt=null,sessionStartMs=null;
 let inputHistory=[],historyIdx=-1;
 let commentTimer=null, sheetSyncing=null;
 let transcriptBuf="", flushTimer=null, lastKey="";
@@ -906,6 +923,11 @@ function hydrate(){
   $("geminiKey").value    = localStorage.getItem(GEMINI_KEY_STORE)||"";
   $("timerMinutes").value = Math.max(1,Math.round(state.timer.durationSec/60));
   try{const _qn=localStorage.getItem("rbt_quick_notes_v1");if(_qn&&$("quickNotes"))$("quickNotes").value=_qn;}catch{}
+  if(state.captionScale&&$("captionSizeRange")){
+    $("captionSizeRange").value=state.captionScale;
+    const _sv=$("captionSizeVal");if(_sv)_sv.textContent=state.captionScale+"%";
+    document.documentElement.style.setProperty("--caption-scale",state.captionScale/100);
+  }
   // Restore stage
   document.querySelectorAll(".stage-sel-btn").forEach(b=>{
     b.classList.toggle("active", b.dataset.stage===state.currentStage);
@@ -1054,6 +1076,17 @@ function bind(){
   $("superChatBtn")?.addEventListener("click",()=>spawnComment(true));
   $("quickNotes")?.addEventListener("input",()=>{
     try{localStorage.setItem("rbt_quick_notes_v1",$("quickNotes").value);}catch{}
+  });
+  $("captionSizeRange")?.addEventListener("input",()=>{
+    const v=$("captionSizeRange").value;
+    const sv=$("captionSizeVal");if(sv)sv.textContent=v+"%";
+    document.documentElement.style.setProperty("--caption-scale",v/100);
+    state.captionScale=parseInt(v);save();
+  });
+  $("randomSeedBtn")?.addEventListener("click",()=>{
+    const s=SEEDS_DATA[Math.floor(Math.random()*SEEDS_DATA.length)];
+    selectSeed(s.num);
+    setStatus("🎲 ランダムSeed: "+s.name);
   });
 
   // Stage selector
@@ -1416,6 +1449,7 @@ function updateClock(){
       new Notification("RB-Tree タイマー終了",{body:state.keyword||"配信終了",icon:""});
   }
   if(state.timer.remainingSec>0)state._timerNotified=false;
+  updateDockMeta();
   if($("timerStartBtn"))$("timerStartBtn").textContent=state.timer.running?"停止":"開始";
   if($("stageTimerToggle")){
     $("stageTimerToggle").textContent=state.timer.running?"Ⅱ":"▶";
@@ -1513,6 +1547,7 @@ function toggleMic(){
   recognition.onerror=()=>{if(listening){clearTimeout(restartTimer);restartTimer=setTimeout(()=>{if(listening)try{recognition.start();}catch{}},1200);}};
   recognition.onend=()=>{if(listening){clearTimeout(restartTimer);restartTimer=setTimeout(()=>{if(listening)try{recognition.start();}catch{}},700);}};
   if(!sessionStartedAt){const _sn=new Date();sessionStartedAt=String(_sn.getHours()).padStart(2,"0")+":"+String(_sn.getMinutes()).padStart(2,"0");}
+  if(!sessionStartMs)sessionStartMs=Date.now();
   recognition.start();listening=true;updateDockMeta();
   $("micBtn").textContent="マイク停止";$("micBtn").className="warn";
   startMeter();
@@ -1667,8 +1702,9 @@ function setCommentSpeed(spd){
 function updateDockMeta(){
   const el=document.getElementById('dockMeta');
   if(!el)return;
-  const _st=sessionStartedAt?` <span class="dm-session">開始${sessionStartedAt}</span>`:"";
-  el.innerHTML='💬 '+commentCount+'件　🎤 '+(listening?'<span class="on">● 収録中</span>':'停止中')+_st;
+  const _el=sessionStartMs?Math.floor((Date.now()-sessionStartMs)/1000):0;
+  const _elStr=_el>0?` <span class="dm-elapsed">${fmt(_el)}</span>`:"";
+  el.innerHTML='💬 '+commentCount+'件　🎤 '+(listening?'<span class="on">● 収録中</span>':'停止中')+_elStr;
 }
 
 function scheduleComment(){
