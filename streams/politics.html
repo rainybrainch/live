@@ -547,6 +547,18 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;heigh
 .dm-elapsed{color:var(--acc);font-size:9px;font-weight:900;margin-left:4px;font-variant-numeric:tabular-nums;}
 .random-seed-btn{padding:1px 6px;border-radius:5px;font-size:10px;cursor:pointer;border:1px solid var(--line);background:rgba(255,255,255,.04);margin-left:5px;vertical-align:middle;min-height:20px;}
 .random-seed-btn:hover{background:rgba(201,168,76,.15);border-color:rgba(201,168,76,.4);}
+/* -- ITER4: stage-color vars + beep -- */
+:root{--stage-color:#c9a84c;--stage-color-a:rgba(201,168,76,.32);}
+body[data-stage=seed]{--stage-color:#7ec87a;--stage-color-a:rgba(126,200,122,.32);}
+body[data-stage=branch]{--stage-color:#5aafcf;--stage-color-a:rgba(90,175,207,.32);}
+body[data-stage=leaf]{--stage-color:#a8e0a0;--stage-color-a:rgba(168,224,160,.32);}
+body[data-stage=tree]{--stage-color:#c9a84c;--stage-color-a:rgba(201,168,76,.32);}
+body[data-stage=forest]{--stage-color:#4dab78;--stage-color-a:rgba(77,171,120,.32);}
+.keyword-card{border-left-color:var(--stage-color)!important;transition:border-left-color .5s ease;}
+.kicker::before{background:var(--stage-color)!important;box-shadow:0 0 6px var(--stage-color)!important;}
+.stage-badge{border-color:var(--stage-color-a)!important;transition:border-color .5s ease;}
+.stage-icon{transition:transform .3s cubic-bezier(.34,1.56,.64,1);}
+.stage-badge:hover .stage-icon{transform:scale(1.2);}
 </style>
 </head>
 <body>
@@ -1123,6 +1135,8 @@ function bind(){
       if(e.key==="4"){selectStageByKey("tree");e.preventDefault();return;}
       if(e.key==="5"){selectStageByKey("forest");e.preventDefault();return;}
       if(e.key==="t"||e.key==="T"){$("manualTranscript")?.focus();e.preventDefault();return;}
+      if(e.key==="n"||e.key==="N"){nextSeed();e.preventDefault();return;}
+      if(e.key==="p"||e.key==="P"){prevSeed();e.preventDefault();return;}
     }
     if(e.key==="Escape"){
       if(document.getElementById("kbHelp")?.classList.contains("show")){toggleKbHelp();return;}
@@ -1185,6 +1199,43 @@ function flashStage(stage){
   const el=$("stageFlash");if(!el)return;
   el.innerHTML=`<div class="stage-flash-inner">${m.icon} ${m.name}</div>`;
   el.classList.remove("show");void el.offsetWidth;el.classList.add("show");
+}
+
+
+function nextSeed(){
+  const nums=SEEDS_DATA.map(s=>s.num).sort((a,b)=>a-b);
+  const cur=state.selectedSeed||0;
+  const idx=nums.indexOf(cur);
+  const n=idx>=0&&idx<nums.length-1?nums[idx+1]:nums[0];
+  selectSeed(n);
+  const s=SEEDS_DATA.find(x=>x.num===n);
+  if(s)setStatus("→ "+String(n).padStart(2,"0")+" "+s.name);
+}
+
+function prevSeed(){
+  const nums=SEEDS_DATA.map(s=>s.num).sort((a,b)=>a-b);
+  const cur=state.selectedSeed||0;
+  const idx=nums.indexOf(cur);
+  const n=idx>0?nums[idx-1]:nums[nums.length-1];
+  selectSeed(n);
+  const s=SEEDS_DATA.find(x=>x.num===n);
+  if(s)setStatus("← "+String(n).padStart(2,"0")+" "+s.name);
+}
+
+function playBeep(){
+  try{
+    const ctx=new AudioContext();
+    const osc=ctx.createOscillator();
+    const gain=ctx.createGain();
+    osc.connect(gain);gain.connect(ctx.destination);
+    osc.frequency.setValueAtTime(880,ctx.currentTime);
+    osc.frequency.setValueAtTime(660,ctx.currentTime+0.25);
+    osc.type="sine";
+    gain.gain.setValueAtTime(0.5,ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+1.0);
+    osc.start(ctx.currentTime);osc.stop(ctx.currentTime+1.0);
+    setTimeout(()=>ctx.close(),1500);
+  }catch{}
 }
 
 // ── Seed Picker ──
@@ -1378,6 +1429,7 @@ function applyStage(){
 }
 
 function updateStageBadge(stage){
+  document.body.dataset.stage=stage;
   const m=STAGES_META[stage]||STAGES_META.seed;
   $("stageBadgeIcon").textContent=m.icon;
   $("stageBadgeName").textContent=m.name;
@@ -1447,6 +1499,7 @@ function updateClock(){
     state._timerNotified=true;setStatus("⏰ タイマー終了！");
     if(typeof Notification!=="undefined"&&Notification.permission==="granted")
       new Notification("RB-Tree タイマー終了",{body:state.keyword||"配信終了",icon:""});
+    playBeep();
   }
   if(state.timer.remainingSec>0)state._timerNotified=false;
   updateDockMeta();
@@ -1828,6 +1881,8 @@ window.addEventListener("storage",e=>{
       <kbd>4</kbd><span>Stage: Tree — 体系化</span>
       <kbd>5</kbd><span>Stage: Forest — 教材化</span>
       <kbd>Enter</kbd><span>ステージ反映（キーワード/議题 入力中）</span>
+      <kbd>N</kbd><span>次のSeedに進む</span>
+      <kbd>P</kbd><span>前のSeedに戻る</span>
       <kbd>? /</kbd><span>このヘルプを開閉</span>
       <kbd>Esc</kbd><span>ヘルプ / パネル 閉じる</span>
     </div>
