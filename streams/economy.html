@@ -465,6 +465,16 @@ body.obs-mode .dock,body.obs-mode .open-tab,body.obs-mode .sc-btns{display:none!
   .keyword-card{left:12px;right:250px;width:auto;}
   .caption-card{width:calc(100vw - 40px);}
 }
+/* -- DOCK ENHANCEMENTS -- */
+.dock-meta{font-size:10px;color:var(--muted);font-weight:700;margin-top:2px;min-height:14px;}
+.dock-meta .on{color:var(--good);}
+.cc-btn{padding:5px 10px;border-radius:7px;border:1px solid rgba(100,210,255,.3);background:rgba(100,210,255,.08);color:#64d2ff;font-size:11px;font-weight:900;cursor:pointer;min-height:36px;transition:all .15s;flex-shrink:0;}
+.cc-btn.off{border-color:var(--line);background:rgba(255,255,255,.04);color:var(--muted);}
+.speed-row{display:flex;gap:4px;padding:0 12px 10px;}
+.spd-btn{flex:1;padding:6px 4px;border-radius:7px;border:1px solid var(--line);background:rgba(255,255,255,.04);font-size:10px;font-weight:900;cursor:pointer;transition:all .15s;color:var(--muted);}
+.spd-btn.active[data-speed="slow"]{border-color:rgba(100,210,255,.4);background:rgba(100,210,255,.08);color:#64d2ff;}
+.spd-btn.active[data-speed="normal"]{border-color:rgba(87,200,124,.4);background:rgba(87,200,124,.08);color:var(--good);}
+.spd-btn.active[data-speed="fast"]{border-color:rgba(255,107,122,.4);background:rgba(255,107,122,.08);color:#ff6b7a;}
 </style>
 </head>
 <body>
@@ -537,14 +547,13 @@ body.obs-mode .dock,body.obs-mode .open-tab,body.obs-mode .sc-btns{display:none!
 <!-- Dock -->
 <aside id="dock" class="dock">
   <div class="dock-head">
-    <div class="dock-title">
-      RB-Tree経済
-      <span>公開学習配信コントロール</span>
-    </div>
+    <div class="dock-title" style="flex:1;min-width:0;"><strong>RB-Tree経済</strong><div class="dock-meta" id="dockMeta">💬 0件　🎤 停止中</div></div>
+    <button class="cc-btn" id="ccBtn" onclick="toggleComments()">💬 ON</button>
     <button id="hideDock" type="button">閉じる</button>
     <button id="dockFullscreenBtn" type="button" title="全画面（F）">⛶ 全画面</button>
     <button id="micBtn" class="good" type="button">マイク開始</button>
   </div>
+  <div class="speed-row"><button class="spd-btn" data-speed="slow" onclick="setCommentSpeed('slow')">🐢 低</button><button class="spd-btn active" data-speed="normal" onclick="setCommentSpeed('normal')">▷ 普通</button><button class="spd-btn" data-speed="fast" onclick="setCommentSpeed('fast')">🔥 高</button></div>
   <div class="dock-body">
 
     <!-- Step 1: キーワード + ステージ -->
@@ -774,6 +783,7 @@ state.timer = normTimer(state.timer);
 
 let personas=loadPersonas(), recognition=null, listening=false;
 let audioCtx=null, meterTimer=null, micStream=null;
+let commentsEnabled=true,commentCount=0;
 let commentTimer=null, sheetSyncing=null;
 let transcriptBuf="", flushTimer=null, lastKey="";
 let restartTimer=null;
@@ -1301,7 +1311,7 @@ function toggleMic(){
   };
   recognition.onerror=()=>{if(listening){clearTimeout(restartTimer);restartTimer=setTimeout(()=>{if(listening)try{recognition.start();}catch{}},1200);}};
   recognition.onend=()=>{if(listening){clearTimeout(restartTimer);restartTimer=setTimeout(()=>{if(listening)try{recognition.start();}catch{}},700);}};
-  recognition.start();listening=true;
+  recognition.start();listening=true;updateDockMeta();
   $("micBtn").textContent="マイク停止";$("micBtn").className="warn";
   startMeter();
 }
@@ -1377,6 +1387,7 @@ ${recent||"経済学習配信中。"}
 }
 
 function addComment(text,name,color,superChat=false){
+    commentCount++;updateDockMeta();
   if(!text)return;
   const node=document.createElement("article");
   node.className=`comment${superChat?" super":""}`;
@@ -1428,8 +1439,29 @@ function intervalRange(){
   if(state.commentSpeed==="slow")return[10000,18000];
   return[6000,12000];
 }
+
+function toggleComments(){
+  commentsEnabled=!commentsEnabled;
+  const b=document.getElementById('ccBtn');
+  if(b){b.textContent=commentsEnabled?'💬 ON':'💬 OFF';b.classList.toggle('off',!commentsEnabled);}
+  setStatus(commentsEnabled?'💬 コメント ON':'💬 コメント OFF');
+  if(commentsEnabled)scheduleComment();else clearTimeout(commentTimer);
+}
+function setCommentSpeed(spd){
+  state.commentSpeed=spd;
+  document.querySelectorAll('.spd-btn').forEach(b=>b.classList.toggle('active',b.dataset.speed===spd));
+  const cs=document.getElementById('commentSpeed');if(cs)cs.value=spd;
+  save();if(commentsEnabled)scheduleComment();
+  setStatus(spd==='slow'?'🐢 低速':spd==='fast'?'🔥 高速':'▷ 普通速');
+}
+function updateDockMeta(){
+  const el=document.getElementById('dockMeta');
+  if(el)el.innerHTML='💬 '+commentCount+'件　🎤 '+(listening?'<span class="on">● 収録中</span>':'停止中');
+}
+
 function scheduleComment(){
   clearTimeout(commentTimer);
+  if(!commentsEnabled)return;
   const[mn,mx]=intervalRange();
   commentTimer=setTimeout(()=>{spawnComment();scheduleComment();},mn+Math.random()*(mx-mn));
 }
