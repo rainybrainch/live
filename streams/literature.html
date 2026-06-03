@@ -126,6 +126,16 @@ body.obs-mode .stage::before,body.obs-mode .stage::after{display:none;}
 body.obs-mode .dock,body.obs-mode .open-tab{display:none!important;}
 .obs-btn{padding:3px 9px;border-radius:5px;border:1px solid rgba(255,255,255,.2);background:0;font-size:9px;font-weight:900;color:rgba(255,255,255,.4);cursor:pointer;letter-spacing:.06em;transition:all .15s;flex-shrink:0;}
 .obs-btn.active{border-color:rgba(196,180,138,.5);background:rgba(196,180,138,.12);color:var(--accent);}
+/* ── DOCK ENHANCEMENTS ── */
+.dock-meta{font-size:10px;color:var(--muted);font-weight:700;margin-top:2px;min-height:14px;letter-spacing:.02em;}
+.dock-meta .on{color:#57c87c;}
+.cc-btn{padding:5px 10px;border-radius:7px;border:1px solid rgba(100,210,255,.3);background:rgba(100,210,255,.08);color:#64d2ff;font-size:11px;font-weight:900;cursor:pointer;min-height:36px;transition:all .15s;flex-shrink:0;}
+.cc-btn.off{border-color:var(--line);background:rgba(255,255,255,.04);color:var(--muted);}
+.speed-row{display:flex;gap:4px;padding:0 12px 10px;}
+.spd-btn{flex:1;padding:6px 4px;border-radius:7px;border:1px solid var(--line);background:rgba(255,255,255,.04);font-size:10px;font-weight:900;cursor:pointer;transition:all .15s;color:var(--muted);}
+.spd-btn.active[data-speed="slow"]{border-color:rgba(100,210,255,.4);background:rgba(100,210,255,.08);color:#64d2ff;}
+.spd-btn.active[data-speed="normal"]{border-color:rgba(87,200,124,.4);background:rgba(87,200,124,.08);color:#57c87c;}
+.spd-btn.active[data-speed="fast"]{border-color:rgba(255,107,122,.4);background:rgba(255,107,122,.08);color:#ff6b7a;}
 </style>
 </head>
 <body>
@@ -169,9 +179,18 @@ body.obs-mode .dock,body.obs-mode .open-tab{display:none!important;}
 
 <aside id="dock" class="dock">
   <div class="dock-head">
-    <div class="dock-title">文学紹介<span>RAINYBRAIN 文学・小説・詩配信</span></div>
+    <div style="flex:1;min-width:0;">
+      <div class="dock-title">文学紹介<span>RAINYBRAIN 文学・小説・詩配信</span></div>
+      <div class="dock-meta" id="dockMeta">💬 0件　🎙 停止中</div>
+    </div>
+    <button class="cc-btn" id="ccBtn" onclick="toggleComments()" type="button">💬 ON</button>
     <button id="hideDock"  type="button">閉じる</button>
     <button id="micBtn" class="good" type="button">マイク開始</button>
+  </div>
+  <div class="speed-row">
+    <button class="spd-btn" data-speed="slow"   onclick="setSpeed('slow')"   type="button">🐢 低</button>
+    <button class="spd-btn active" data-speed="normal" onclick="setSpeed('normal')" type="button">▷ 普通</button>
+    <button class="spd-btn" data-speed="fast"   onclick="setSpeed('fast')"   type="button">🔥 高</button>
   </div>
   <div class="dock-body">
     <section class="section">
@@ -279,12 +298,32 @@ if(PARAMS.get("author")) state.bookAuthor = PARAMS.get("author");
 state.timer = normalizeTimer(state.timer);
 
 let personas=loadPersonas(), transcript=[], commentTimer=null, recognition=null;
+let commentsEnabled=true, commentCountN=0;
 let restartTimer=null, listening=false, audioCtx=null, micStream=null;
 let lastKey="", transcriptBuf="", flushTimer=null, trackRR=0;
 
 init();
 
 function init() { hydrate(); bind(); applyStage(); startClock(); scheduleComment(); }
+
+function toggleComments(){
+  commentsEnabled=!commentsEnabled;
+  const btn=document.getElementById("ccBtn");
+  if(btn){btn.textContent=commentsEnabled?"💬 ON":"💬 OFF";btn.classList.toggle("off",!commentsEnabled);}
+  let t=document.getElementById("toast");if(t){t.textContent=commentsEnabled?"💬 コメント ON":"💬 コメント OFF";t.classList.add("show");setTimeout(()=>t.classList.remove("show"),2800);}
+  if(commentsEnabled)scheduleComment();else clearTimeout(commentTimer);
+}
+function setSpeed(spd){
+  state.commentSpeed=spd;
+  document.querySelectorAll(".spd-btn").forEach(b=>b.classList.toggle("active",b.dataset.speed===spd));
+  const cs=document.getElementById("commentSpeed");if(cs)cs.value=spd;
+  saveSettings();if(commentsEnabled)scheduleComment();
+  let t=document.getElementById("toast");if(t){t.textContent=spd==="slow"?"🐢 低速":spd==="fast"?"🔥 高速":"▷ 普通速";t.classList.add("show");setTimeout(()=>t.classList.remove("show"),2800);}
+}
+function updateDockMeta(){
+  const el=document.getElementById("dockMeta");
+  if(el)el.innerHTML=`💬 ${commentCountN}件　🎙 ${listening?'<span class="on">● 収録中</span>':"停止中"}`;
+}
 function hydrate() {
   ["bookTitle","bookAuthor","passage","affiliateUrl","coverUrl","avatarInput","personaSheetUrl","commentSpeed"].forEach(id=>{ if($(id)) $(id).value=state[id]||""; });
   $("timerMinutes").value=Math.max(1,Math.round(state.timer.durationSec/60));
@@ -292,6 +331,7 @@ function hydrate() {
   const gk=localStorage.getItem(GEMINI_KEY_STORE)||"";
   if($("geminiKey")) $("geminiKey").value=gk;
   if(state.commentEngine==="gemini"||gk){ if($("commentEngine"))$("commentEngine").value="gemini"; if($("geminiArea"))$("geminiArea").style.display="flex"; state.commentEngine="gemini"; }
+  document.querySelectorAll(".spd-btn").forEach(b=>b.classList.toggle("active",b.dataset.speed===(state.commentSpeed||"normal")));
 }
 function bind() {
   ["bookTitle","bookAuthor","passage","affiliateUrl","coverUrl","avatarInput","personaSheetUrl","commentSpeed"].forEach(id=>{ if($(id)) $(id).addEventListener("input",()=>{ state[id]=$(id).value; saveSettings(); applyStage(); }); });
@@ -352,7 +392,7 @@ function pushTranscript(text){ const clean=text.replace(/\s+/g," ").trim();if(!c
 function queueTranscript(text){ transcriptBuf=[transcriptBuf,text].filter(Boolean).join(" ").replace(/\s+/g," ").trim();clearTimeout(flushTimer);flushTimer=setTimeout(()=>{const t=transcriptBuf;transcriptBuf="";if(t)pushTranscript(t);},820); }
 function recentText(){return transcript.slice(0,6).map(x=>x.text).reverse().join("\n").slice(-1000);}
 
-function toggleMic(){ if(!SpeechRecognition){$("caption").textContent="⚠ Chrome / Edge が必要です";toast("Chrome/Edge の音声認識が必要です");return;}if(listening){clearTimeout(restartTimer);listening=false;try{recognition.stop();}catch{}stopMeter();$("micBtn").textContent="マイク開始";$("micBtn").className="good";$("micLive")?.classList.remove("active");toast("マイク停止");return;}recognition=new SpeechRecognition();recognition.lang="ja-JP";recognition.continuous=true;recognition.interimResults=true;recognition.onresult=e=>{let fin="",int="";for(let i=e.resultIndex;i<e.results.length;i++){const t=e.results[i][0]?.transcript||"";if(e.results[i].isFinal)fin+=t;else int+=t;}if(int)$("caption").textContent=int;if(fin.trim())queueTranscript(fin);};recognition.onerror=()=>{if(listening){clearTimeout(restartTimer);restartTimer=setTimeout(()=>{if(listening)try{recognition.start();}catch{}},1200);}};recognition.onend=()=>{if(listening){clearTimeout(restartTimer);restartTimer=setTimeout(()=>{if(listening)try{recognition.start();}catch{}},700);}};recognition.start();listening=true;$("micBtn").textContent="マイク停止";$("micBtn").className="warn";$("micLive")?.classList.add("active");toast("マイク開始 — 話してください");startMeter(); }
+function toggleMic(){ if(!SpeechRecognition){$("caption").textContent="⚠ Chrome / Edge が必要です";toast("Chrome/Edge の音声認識が必要です");return;}if(listening){clearTimeout(restartTimer);listening=false;try{recognition.stop();}catch{}stopMeter();$("micBtn").textContent="マイク開始";$("micBtn").className="good";$("micLive")?.classList.remove("active");toast("マイク停止");updateDockMeta();return;}recognition=new SpeechRecognition();recognition.lang="ja-JP";recognition.continuous=true;recognition.interimResults=true;recognition.onresult=e=>{let fin="",int="";for(let i=e.resultIndex;i<e.results.length;i++){const t=e.results[i][0]?.transcript||"";if(e.results[i].isFinal)fin+=t;else int+=t;}if(int)$("caption").textContent=int;if(fin.trim())queueTranscript(fin);};recognition.onerror=()=>{if(listening){clearTimeout(restartTimer);restartTimer=setTimeout(()=>{if(listening)try{recognition.start();}catch{}},1200);}};recognition.onend=()=>{if(listening){clearTimeout(restartTimer);restartTimer=setTimeout(()=>{if(listening)try{recognition.start();}catch{}},700);}};recognition.start();listening=true;$("micBtn").textContent="マイク停止";$("micBtn").className="warn";$("micLive")?.classList.add("active");toast("マイク開始 — 話してください");startMeter();updateDockMeta(); }
 async function startMeter(){try{micStream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true}});audioCtx=new AudioContext();const an=audioCtx.createAnalyser();audioCtx.createMediaStreamSource(micStream).connect(an);}catch{}}
 function stopMeter(){if(audioCtx){audioCtx.close().catch(()=>{});audioCtx=null;}if(micStream){micStream.getTracks().forEach(t=>t.stop());micStream=null;}}
 
@@ -384,7 +424,7 @@ function saveGeminiKey(){
   saveSettings(); toast("Gemini APIキーを保存しました");
 }
 function toggleObsMode(){document.body.classList.toggle("obs-mode");const btn=$("btnObs");if(btn)btn.classList.toggle("active");}
-function addComment(text,name,color){ const track=document.getElementById(`track${trackRR%3}`);trackRR++;if(!track)return;const speed=Math.max(10,10+text.length*0.3+Math.random()*5);const node=document.createElement("div");node.className="comment-h";node.style.setProperty("--user-color",color||"var(--accent)");node.style.setProperty("--speed",speed+"s");const u=document.createElement("span");u.className="user";u.textContent="@"+name;const t=document.createElement("span");t.className="text";t.textContent=text;node.append(u,t);track.append(node);node.addEventListener("animationend",()=>node.remove()); }
+function addComment(text,name,color){ commentCountN++;updateDockMeta(); const track=document.getElementById(`track${trackRR%3}`);trackRR++;if(!track)return;const speed=Math.max(10,10+text.length*0.3+Math.random()*5);const node=document.createElement("div");node.className="comment-h";node.style.setProperty("--user-color",color||"var(--accent)");node.style.setProperty("--speed",speed+"s");const u=document.createElement("span");u.className="user";u.textContent="@"+name;const t=document.createElement("span");t.className="text";t.textContent=text;node.append(u,t);track.append(node);node.addEventListener("animationend",()=>node.remove()); }
 function pickPersona(){ const list=personas.length?personas:defaultPersonas();const text=recentText();return list.map(p=>({p,s:relevance(p,text)+Math.random()*.4})).sort((a,b)=>b.s-a.s).slice(0,Math.min(list.length,6))[Math.floor(Math.random()*Math.min(list.length,6))].p; }
 function relevance(p,text){ const hay=[p.name,p.roleType,p.reactionPattern,p.catchphrase,...(p.words||[]),...(p.interests||[])].join(" ");let s=0;text.split(/[\s、。,]+/).filter(w=>w.length>=2).forEach(w=>{if(hay.includes(w))s+=2;});if(/文学|小説|詩|随筆|言葉|文体|美しい|表現/.test(text)&&/文学|読書|言語|表現/.test(hay))s+=4;if(/孤独|死|愛|人間|感情/.test(text)&&/哲学|思想|感受性/.test(hay))s+=3;return s; }
 function buildComment(p){
@@ -407,7 +447,7 @@ function buildComment(p){
 }
 function defaultPersonas(){ return[{name:"文学好き",roleType:"共感勢",catchphrase:"心に響く",color:"#c4b48a",words:[]},{name:"国文学者",roleType:"知識勢",catchphrase:"文学史的に重要",color:"#c890d8",words:[]},{name:"積読民",roleType:"質問勢",catchphrase:"読みたくなった",color:"#64d2ff",words:[]},{name:"感受性",roleType:"妄想勢",catchphrase:"広がる世界観が好き",color:"#ff93bd",words:[]}]; }
 function intervalRange(){if(state.commentSpeed==="fast")return[3000,7000];if(state.commentSpeed==="slow")return[10000,18000];return[7000,14000];}
-function scheduleComment(){clearTimeout(commentTimer);const[mn,mx]=intervalRange();commentTimer=setTimeout(()=>{spawnComment();scheduleComment();},mn+Math.random()*(mx-mn));}
+function scheduleComment(){clearTimeout(commentTimer);if(!commentsEnabled)return;const[mn,mx]=intervalRange();commentTimer=setTimeout(()=>{spawnComment();scheduleComment();},mn+Math.random()*(mx-mn));}
 
 function loadPersonas(){ const result=[];try{const p=JSON.parse(localStorage.getItem("all_domedia_personas_v5")||"[]");result.push(...p.filter(x=>x&&x.name&&x.enabled!==false));}catch{}try{const ids=new Set(result.map(x=>x.id||x.name));const p=JSON.parse(localStorage.getItem(SHARED_PERSONA_KEY)||"[]");result.push(...p.filter(x=>x&&x.name&&!ids.has(x.id||x.name)));}catch{}return result; }
 async function syncPersonas(){ try{const csvUrl=toSheetCsvUrl(state.personaSheetUrl);let csv=null;try{const r=await fetch(csvUrl,{cache:"no-store"});if(r.ok)csv=await r.text();}catch{}if(!csv)throw new Error("no csv");personas=parsePersonas(csv);localStorage.setItem(SHARED_PERSONA_KEY,JSON.stringify(personas));setStatus(`人格 ${personas.length}件 同期済み`);}catch{personas=loadPersonas();if(!personas.length)personas=defaultPersonas();setStatus(`人格 ${personas.length}件（キャッシュ）`);} }

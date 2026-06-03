@@ -325,6 +325,16 @@ body.obs-mode .stage::before,body.obs-mode .stage::after{display:none;}
 body.obs-mode .dock,body.obs-mode .open-tab{display:none!important;}
 .obs-btn{padding:3px 9px;border-radius:5px;border:1px solid rgba(255,255,255,.2);background:0;font-size:9px;font-weight:900;color:rgba(255,255,255,.4);cursor:pointer;letter-spacing:.06em;transition:all .15s;flex-shrink:0;}
 .obs-btn.active{border-color:rgba(242,193,78,.5);background:rgba(242,193,78,.12);color:var(--accent);}
+/* ── DOCK ENHANCEMENTS ── */
+.dock-meta{font-size:10px;color:var(--muted);font-weight:700;margin-top:2px;min-height:14px;letter-spacing:.02em;}
+.dock-meta .on{color:#57c87c;}
+.cc-btn{padding:5px 10px;border-radius:7px;border:1px solid rgba(100,210,255,.3);background:rgba(100,210,255,.08);color:#64d2ff;font-size:11px;font-weight:900;cursor:pointer;min-height:36px;transition:all .15s;flex-shrink:0;}
+.cc-btn.off{border-color:var(--line);background:rgba(255,255,255,.04);color:var(--muted);}
+.speed-row{display:flex;gap:4px;padding:0 12px 10px;}
+.spd-btn{flex:1;padding:6px 4px;border-radius:7px;border:1px solid var(--line);background:rgba(255,255,255,.04);font-size:10px;font-weight:900;cursor:pointer;transition:all .15s;color:var(--muted);}
+.spd-btn.active[data-speed="slow"]{border-color:rgba(100,210,255,.4);background:rgba(100,210,255,.08);color:#64d2ff;}
+.spd-btn.active[data-speed="normal"]{border-color:rgba(87,200,124,.4);background:rgba(87,200,124,.08);color:#57c87c;}
+.spd-btn.active[data-speed="fast"]{border-color:rgba(255,107,122,.4);background:rgba(255,107,122,.08);color:#ff6b7a;}
 </style>
 </head>
 <body>
@@ -372,9 +382,18 @@ body.obs-mode .dock,body.obs-mode .open-tab{display:none!important;}
 
 <aside id="dock" class="dock">
   <div class="dock-head">
-    <div class="dock-title">Book Stream<span>RAINYBRAIN 本紹介配信</span></div>
+    <div style="flex:1;min-width:0;">
+      <div class="dock-title">Book Stream<span>RAINYBRAIN 本紹介配信</span></div>
+      <div class="dock-meta" id="dockMeta">💬 0件　🎙 停止中</div>
+    </div>
+    <button class="cc-btn" id="ccBtn">💬 ON</button>
     <button id="hideDock"  type="button">閉じる</button>
     <button id="micBtn" class="good" type="button">マイク開始</button>
+  </div>
+  <div class="speed-row">
+    <button class="spd-btn" data-speed="slow">🐢 低</button>
+    <button class="spd-btn active" data-speed="normal">▷ 普通</button>
+    <button class="spd-btn" data-speed="fast">🔥 高</button>
   </div>
   <div class="dock-body">
 
@@ -536,6 +555,8 @@ body.obs-mode .dock,body.obs-mode .open-tab{display:none!important;}
   if (PARAMS.get("author")) state.bookAuthor = PARAMS.get("author");
   state.timer = normalizeTimer(state.timer);
 
+  let commentsEnabled = true;
+  let commentCountN = 0;
   let personas      = loadPersonas();
   let transcript    = [];
   let commentTimer  = null;
@@ -565,6 +586,7 @@ body.obs-mode .dock,body.obs-mode .open-tab{display:none!important;}
     });
     $("timerMinutes").value = Math.max(1, Math.round(state.timer.durationSec / 60));
     $("timerPreset").value  = String(Math.max(1, Math.round(state.timer.durationSec / 60)));
+    document.querySelectorAll(".spd-btn").forEach(b => b.classList.toggle("active", b.dataset.speed === (state.commentSpeed || "normal")));
     const gk = localStorage.getItem(GEMINI_KEY_STORE)||"";
     if($("geminiKey")) $("geminiKey").value = gk;
     if(state.commentEngine==="gemini"||gk){ if($("commentEngine"))$("commentEngine").value="gemini"; if($("geminiArea"))$("geminiArea").style.display="flex"; state.commentEngine="gemini"; }
@@ -599,6 +621,8 @@ body.obs-mode .dock,body.obs-mode .open-tab{display:none!important;}
     });
     $("syncPersonaBtn")?.addEventListener("click", syncPersonas);
     $("commentSpeed")?.addEventListener("change", () => { state.commentSpeed=$("commentSpeed").value; saveSettings(); scheduleComment(); });
+    $("ccBtn")?.addEventListener("click", toggleComments);
+    document.querySelectorAll(".spd-btn").forEach(b => b.addEventListener("click", () => setSpeed(b.dataset.speed)));
     $("commentEngine")?.addEventListener("change",()=>{ state.commentEngine=$("commentEngine").value; if($("geminiArea"))$("geminiArea").style.display=state.commentEngine==="gemini"?"flex":"none"; saveSettings(); });
     $("hideDock")?.addEventListener("click", () => document.body.classList.add("panel-hidden"));
     $("planFreeBtn")?.addEventListener("click", () => {
@@ -737,7 +761,7 @@ body.obs-mode .dock,body.obs-mode .open-tab{display:none!important;}
       stopMeter();
       $("micBtn").textContent="マイク開始"; $("micBtn").className="good";
       $("micLive")?.classList.remove("active");
-      toast("マイク停止");
+      toast("マイク停止"); updateDockMeta();
       return;
     }
     recognition = new SpeechRecognition();
@@ -757,7 +781,7 @@ body.obs-mode .dock,body.obs-mode .open-tab{display:none!important;}
     $("micBtn").textContent="マイク停止"; $("micBtn").className="warn";
     $("micLive")?.classList.add("active");
     toast("マイク開始 — 話してください");
-    startMeter();
+    startMeter(); updateDockMeta();
   }
   async function startMeter() {
     try {
@@ -810,6 +834,26 @@ body.obs-mode .dock,body.obs-mode .open-tab{display:none!important;}
     if($("geminiStatus")){$("geminiStatus").textContent="✓ 保存済み";$("geminiStatus").style.color="#64d2ff";}
     saveSettings(); toast("Gemini APIキーを保存しました");
   }
+
+  function toggleComments() {
+    commentsEnabled = !commentsEnabled;
+    const btn = $("ccBtn");
+    if(btn){btn.textContent=commentsEnabled?"💬 ON":"💬 OFF";btn.classList.toggle("off",!commentsEnabled);}
+    toast(commentsEnabled ? "💬 コメント ON" : "💬 コメント OFF");
+    if(commentsEnabled) scheduleComment(); else clearTimeout(commentTimer);
+  }
+  function setSpeed(spd) {
+    state.commentSpeed = spd;
+    document.querySelectorAll(".spd-btn").forEach(b => b.classList.toggle("active", b.dataset.speed === spd));
+    if($("commentSpeed")) $("commentSpeed").value = spd;
+    saveSettings(); if(commentsEnabled) scheduleComment();
+    toast(spd==="slow"?"🐢 低速":spd==="fast"?"🔥 高速":"▷ 普通速");
+  }
+  function updateDockMeta() {
+    const el = $("dockMeta");
+    if(el) el.innerHTML = `💬 ${commentCountN}件　🎙 ${listening ? '<span class="on">● 収録中</span>' : "停止中"}`;
+  }
+
   function toggleObsMode() {
     document.body.classList.toggle("obs-mode");
     const btn = $("btnObs"); if(btn) btn.classList.toggle("active");
@@ -817,6 +861,7 @@ body.obs-mode .dock,body.obs-mode .open-tab{display:none!important;}
 
   let trackRR = 0;
   function addComment(text, name, color, superChat=false) {
+    commentCountN++; updateDockMeta();
     const track = document.getElementById(`track${trackRR % 3}`);
     trackRR++;
     if (!track) return;
@@ -885,6 +930,7 @@ body.obs-mode .dock,body.obs-mode .open-tab{display:none!important;}
   }
   function scheduleComment() {
     clearTimeout(commentTimer);
+    if(!commentsEnabled) return;
     const [mn,mx]=intervalRange();
     commentTimer=setTimeout(()=>{ spawnComment(); scheduleComment(); }, mn+Math.random()*(mx-mn));
   }
