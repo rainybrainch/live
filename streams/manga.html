@@ -121,6 +121,10 @@ body.panel-hidden .open-tab { display:inline-flex; }
 @keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
 @keyframes flashanim{0%,100%{opacity:1}50%{opacity:.15}}
 .timer-display.flash { animation:flashanim .35s 8; }
+.shortcut-hint { position:absolute; bottom:90px; right:24px; color:rgba(255,255,255,.28); font-size:9px; font-weight:800; letter-spacing:.08em; line-height:1.8; text-align:right; pointer-events:none; z-index:5; }
+.inc-row { display:flex; gap:6px; }
+.inc-btn { flex:1; padding:8px; border-radius:8px; border:1px solid rgba(247,159,87,.3); background:rgba(247,159,87,.08); color:var(--accent); font-size:11px; font-weight:900; cursor:pointer; transition:all .15s; min-height:36px; }
+.inc-btn:hover { background:rgba(247,159,87,.18); }
 </style>
 </head>
 <body>
@@ -158,6 +162,7 @@ body.panel-hidden .open-tab { display:inline-flex; }
     <a class="card-link" id="cardLink" href="#" target="_blank" style="display:none">🛒 Amazon で購入する</a>
   </section>
   <div class="caption" id="caption">「マイク開始」で文字起こしが始まります</div>
+  <div class="shortcut-hint">Space=タイマー　M=マイク　C=コメント　F=全画面　H=パネル</div>
 </main>
 
 <aside id="dock" class="dock">
@@ -174,6 +179,11 @@ body.panel-hidden .open-tab { display:inline-flex; }
       <div class="grid2">
         <div class="field"><label for="volume">巻数</label><input id="volume" placeholder="例: 1巻　/ 全34巻" type="text"></div>
         <div class="field"><label for="chapter">話数・回</label><input id="chapter" placeholder="例: 第1話" type="text"></div>
+      </div>
+      <div class="inc-row">
+        <button class="inc-btn" type="button" onclick="incVolume()">+1巻</button>
+        <button class="inc-btn" type="button" onclick="incChapter()">+1話</button>
+        <button class="inc-btn" type="button" onclick="resetVolChap()" style="opacity:.55">リセット</button>
       </div>
       <div class="field"><label for="affiliateUrl">Amazon アフィリエイト URL（任意）</label><input id="affiliateUrl" placeholder="https://amzn.to/..."></div>
       <div class="field"><label for="coverUrl">表紙画像 URL（任意）</label><input id="coverUrl" placeholder="https://..."></div>
@@ -271,6 +281,25 @@ let lastKey="", transcriptBuf="", flushTimer=null, trackRR=0;
 init();
 
 function init() { hydrate(); bind(); applyStage(); startClock(); scheduleComment(); }
+
+function incVolume() {
+  const el=$("volume"); if(!el) return;
+  const m=el.value.match(/(\d+)/);
+  const n=m?parseInt(m[1])+1:1;
+  el.value=`${n}巻`; state.volume=el.value; saveSettings(); applyStage(); toast(`📖 ${n}巻`);
+}
+function incChapter() {
+  const el=$("chapter"); if(!el) return;
+  const m=el.value.match(/(\d+)/);
+  const n=m?parseInt(m[1])+1:1;
+  el.value=`第${n}話`; state.chapter=el.value; saveSettings(); applyStage(); toast(`📄 第${n}話`);
+}
+function resetVolChap() {
+  const v=$("volume"),c=$("chapter");
+  if(v){v.value="";state.volume="";}
+  if(c){c.value="";state.chapter="";}
+  saveSettings(); applyStage();
+}
 function hydrate() {
   ["mangaTitle","mangaAuthor","volume","chapter","affiliateUrl","coverUrl","avatarInput","personaSheetUrl","commentSpeed"].forEach(id=>{ if($(id)) $(id).value=state[id]||""; });
   $("timerMinutes").value=Math.max(1,Math.round(state.timer.durationSec/60));

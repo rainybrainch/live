@@ -120,6 +120,7 @@ body.panel-hidden .open-tab { display:inline-flex; }
 @keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
 @keyframes flashanim{0%,100%{opacity:1}50%{opacity:.15}}
 .timer-display.flash { animation:flashanim .35s 8; }
+.shortcut-hint { position:absolute; bottom:90px; right:24px; color:rgba(255,255,255,.28); font-size:9px; font-weight:800; letter-spacing:.08em; line-height:1.8; text-align:right; pointer-events:none; z-index:5; }
 </style>
 </head>
 <body>
@@ -157,6 +158,7 @@ body.panel-hidden .open-tab { display:inline-flex; }
     <a class="card-link" id="cardLink" href="#" target="_blank" style="display:none">🛒 Amazon で購入する</a>
   </section>
   <div class="caption" id="caption">「マイク開始」で文字起こしが始まります</div>
+  <div class="shortcut-hint">Space=タイマー　M=マイク　C=コメント　F=全画面　H=パネル</div>
 </main>
 
 <aside id="dock" class="dock">

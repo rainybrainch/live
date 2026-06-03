@@ -114,6 +114,10 @@ body.panel-hidden .open-tab { display:inline-flex; }
 @keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
 @keyframes flashanim{0%,100%{opacity:1}50%{opacity:.15}}
 .timer-display.flash { animation:flashanim .35s 8; }
+.shortcut-hint { position:absolute; bottom:90px; right:24px; color:rgba(255,255,255,.28); font-size:9px; font-weight:800; letter-spacing:.08em; line-height:1.8; text-align:right; pointer-events:none; z-index:5; }
+.tag-row { padding:0 12px 10px; display:flex; flex-wrap:wrap; gap:5px; }
+.tag-btn { padding:3px 9px; border-radius:999px; border:1px solid rgba(200,144,216,.22); background:rgba(200,144,216,.06); color:var(--accent); font-size:10px; font-weight:700; cursor:pointer; transition:all .15s; }
+.tag-btn:hover { background:rgba(200,144,216,.18); border-color:rgba(200,144,216,.4); }
 </style>
 </head>
 <body>
@@ -149,6 +153,7 @@ body.panel-hidden .open-tab { display:inline-flex; }
     <div class="card-meta"  id="cardMeta"></div>
   </section>
   <div class="caption" id="caption">「マイク開始」で文字起こしが始まります</div>
+  <div class="shortcut-hint">Space=タイマー　M=マイク　C=コメント　F=全画面　H=パネル</div>
 </main>
 
 <aside id="dock" class="dock">
@@ -163,6 +168,7 @@ body.panel-hidden .open-tab { display:inline-flex; }
       <div class="field"><label for="lessonTitle">今日のテーマ</label><input id="lessonTitle" placeholder="例: AIの仕組みを学ぶ"></div>
       <div class="field"><label for="subject">科目・カテゴリ</label><input id="subject" placeholder="例: AI・機械学習　/ 数学　/ 哲学"></div>
       <div class="field"><label for="keyPoint">キーポイント（ステージ表示）</label><input id="keyPoint" placeholder="例: 機械学習とは「経験から学ぶ」プログラム"></div>
+      <div class="tag-row" id="tagRow"></div>
       <div class="actions">
         <button id="applyBtn" class="primary wide" type="button">ステージに反映</button>
         <button id="copyObsBtn" type="button">OBS URL</button>
@@ -255,7 +261,24 @@ let lastKey="", transcriptBuf="", flushTimer=null, trackRR=0;
 
 init();
 
-function init() { hydrate(); bind(); applyStage(); startClock(); scheduleComment(); }
+const STUDY_TAGS = ['AI','機械学習','Python','数学','統計','哲学','歴史','経済','心理学','生物','物理','化学','言語学','社会学','プログラミング','アルゴリズム','デザイン'];
+
+function init() { hydrate(); bind(); applyStage(); startClock(); scheduleComment(); renderTags(); }
+
+function renderTags() {
+  const row = document.getElementById('tagRow');
+  if (!row) return;
+  row.innerHTML = STUDY_TAGS.map(t =>
+    `<button class="tag-btn" onclick="insertTag('${t}')">${t}</button>`
+  ).join('');
+}
+function insertTag(tag) {
+  const el = document.getElementById('lessonTitle');
+  if (!el) return;
+  el.value = el.value ? el.value + ' / ' + tag : tag;
+  state.lessonTitle = el.value; saveSettings(); applyStage();
+  el.focus();
+}
 
 function hydrate() {
   ["lessonTitle","subject","keyPoint","avatarInput","personaSheetUrl","commentSpeed"].forEach(id=>{ if($(id)) $(id).value=state[id]||""; });
