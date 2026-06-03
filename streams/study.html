@@ -115,6 +115,11 @@ body.panel-hidden .open-tab { display:inline-flex; }
 @keyframes flashanim{0%,100%{opacity:1}50%{opacity:.15}}
 .timer-display.flash { animation:flashanim .35s 8; }
 .shortcut-hint { position:absolute; bottom:90px; right:24px; color:rgba(255,255,255,.28); font-size:9px; font-weight:800; letter-spacing:.08em; line-height:1.8; text-align:right; pointer-events:none; z-index:5; }
+body.obs-mode .stage{background:transparent!important;}
+body.obs-mode .stage::before,body.obs-mode .stage::after{display:none;}
+body.obs-mode .dock,body.obs-mode .open-tab{display:none!important;}
+.obs-btn{padding:3px 9px;border-radius:5px;border:1px solid rgba(255,255,255,.2);background:0;font-size:9px;font-weight:900;color:rgba(255,255,255,.4);cursor:pointer;letter-spacing:.06em;transition:all .15s;flex-shrink:0;}
+.obs-btn.active{border-color:rgba(200,144,216,.5);background:rgba(200,144,216,.12);color:var(--accent);}
 .tag-row { padding:0 12px 10px; display:flex; flex-wrap:wrap; gap:5px; }
 .tag-btn { padding:3px 9px; border-radius:999px; border:1px solid rgba(200,144,216,.22); background:rgba(200,144,216,.06); color:var(--accent); font-size:10px; font-weight:700; cursor:pointer; transition:all .15s; }
 .tag-btn:hover { background:rgba(200,144,216,.18); border-color:rgba(200,144,216,.4); }
@@ -128,6 +133,7 @@ body.panel-hidden .open-tab { display:inline-flex; }
     <div class="mark">RB</div>
     <div><strong>RAINYBRAIN</strong><span id="brandMode">GAKUSHUUKAI</span></div>
     <div class="mic-live" id="micLive">● LIVE</div>
+    <button class="obs-btn" id="btnObs" onclick="toggleObsMode()">📺 OBS</button>
   </div>
   <div class="timer-display" id="timerDisplay">
     <div>
@@ -226,6 +232,14 @@ body.panel-hidden .open-tab { display:inline-flex; }
           <a href="https://rainybrainch.github.io/comment-studio/ai-comment-personas.html" target="_blank" style="display:flex;align-items:center;justify-content:center;min-height:44px;padding:7px 10px;border:1px solid rgba(224,160,255,.45);border-radius:8px;background:rgba(224,160,255,.12);color:#e0a0ff;font-weight:900;font-size:12px;text-decoration:none;letter-spacing:.04em;">🎭 Channel OS</a>
         </div>
         <div class="status-text" id="personaStatus">未同期</div>
+        <div style="border-top:1px solid rgba(255,255,255,.08);padding-top:10px;display:flex;flex-direction:column;gap:6px;">
+          <div style="font-size:9px;font-weight:900;letter-spacing:.1em;color:var(--muted);text-transform:uppercase;">AI コメント生成 <span style="font-size:9px;background:rgba(100,210,255,.1);color:#64d2ff;border:1px solid rgba(100,210,255,.25);padding:1px 6px;border-radius:999px;text-transform:none;letter-spacing:0;">Gemini 2.0 Flash</span></div>
+          <select id="commentEngine" style="min-height:36px;font-size:11px;"><option value="template">テンプレート（無料）</option><option value="gemini">Gemini AI</option></select>
+          <div id="geminiArea" style="display:none;flex-direction:column;gap:5px;">
+            <div style="display:flex;gap:5px;"><input id="geminiKey" type="password" placeholder="AIzaSy... または AQ.Ab8..." style="flex:1;min-height:36px;font-size:11px;"><button onclick="saveGeminiKey()" style="white-space:nowrap;min-height:36px;padding:0 10px;font-size:11px;font-weight:900;border:1px solid rgba(100,210,255,.3);background:rgba(100,210,255,.08);color:#64d2ff;border-radius:8px;cursor:pointer;flex-shrink:0;">保存</button></div>
+            <div id="geminiStatus" style="font-size:10px;color:var(--muted);"></div>
+          </div>
+        </div>
       </div>
     </details>
   </div>
@@ -241,12 +255,14 @@ body.panel-hidden .open-tab { display:inline-flex; }
 const SHARED_PERSONA_KEY = "rainybrain_personas_v1";
 const SHARED_COMMENT_KEY = "rainybrain_comment_log_v1";
 const SETTINGS_KEY       = "rainybrain_study_stream_v1";
+const GEMINI_KEY_STORE   = "streaming_gemini_key_v1";
 const PARAMS = new URLSearchParams(location.search);
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 const $ = id => document.getElementById(id);
 
 const state = {
   lessonTitle:"", subject:"", keyPoint:"",
+  commentEngine:"template",
   avatarInput:"", personaSheetUrl:"https://docs.google.com/spreadsheets/d/1YNQUnDv18WsMm7H84Ytg3lIgvWmetLZ3bqyMm3RCgkI/export?format=csv",
   commentSpeed:"normal",
   timer:{ durationSec:2700, remainingSec:2700, running:false, endAt:0 }
@@ -284,6 +300,9 @@ function hydrate() {
   ["lessonTitle","subject","keyPoint","avatarInput","personaSheetUrl","commentSpeed"].forEach(id=>{ if($(id)) $(id).value=state[id]||""; });
   $("timerMinutes").value = Math.max(1,Math.round(state.timer.durationSec/60));
   $("timerPreset").value  = String(Math.max(1,Math.round(state.timer.durationSec/60)));
+  const gk=localStorage.getItem(GEMINI_KEY_STORE)||"";
+  if($("geminiKey")) $("geminiKey").value=gk;
+  if(state.commentEngine==="gemini"||gk){ if($("commentEngine"))$("commentEngine").value="gemini"; if($("geminiArea"))$("geminiArea").style.display="flex"; state.commentEngine="gemini"; }
 }
 
 function bind() {
@@ -302,6 +321,7 @@ function bind() {
   $("commentBtn")?.addEventListener("click",spawnComment);
   $("manualTranscript")?.addEventListener("keydown",e=>{ if(e.key!=="Enter")return; const v=$("manualTranscript").value.trim(); if(!v)return; $("manualTranscript").value=""; pushTranscript(v); spawnComment(); });
   $("syncPersonaBtn")?.addEventListener("click",syncPersonas);
+  $("commentEngine")?.addEventListener("change",()=>{ state.commentEngine=$("commentEngine").value; if($("geminiArea"))$("geminiArea").style.display=state.commentEngine==="gemini"?"flex":"none"; saveSettings(); });
   $("hideDock")?.addEventListener("click",()=>document.body.classList.add("panel-hidden"));
   $("openDock")?.addEventListener("click",()=>document.body.classList.remove("panel-hidden"));
   $("planFreeBtn")?.addEventListener("click",()=>{ $("planFreeBtn").classList.add("active"); $("planProBtn").classList.remove("active"); $("planFreeArea").style.display=""; $("planProArea").style.display="none"; });
@@ -360,7 +380,34 @@ function toggleMic(){
 async function startMeter(){try{micStream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true}});audioCtx=new AudioContext();const an=audioCtx.createAnalyser();audioCtx.createMediaStreamSource(micStream).connect(an);}catch{}}
 function stopMeter(){if(audioCtx){audioCtx.close().catch(()=>{});audioCtx=null;}if(micStream){micStream.getTracks().forEach(t=>t.stop());micStream=null;}}
 
-function spawnComment(){const p=pickPersona();const text=buildComment(p);addComment(text,p.name,p.color);saveCommentLog({user:p.name,text});}
+function spawnComment(){
+  const k=localStorage.getItem(GEMINI_KEY_STORE)||"";
+  if(state.commentEngine==="gemini"&&k){spawnGeminiComment();return;}
+  const p=pickPersona();const text=buildComment(p);addComment(text,p.name,p.color);saveCommentLog({user:p.name,text});
+}
+async function spawnGeminiComment(){
+  const apiKey=localStorage.getItem(GEMINI_KEY_STORE)||"";
+  const p=pickPersona();
+  const topic=recentText()||[state.lessonTitle,state.subject].filter(Boolean).join(" ")||"授業中";
+  const prompt=`あなたはYouTubeライブ配信の視聴者です。ロール：${p.roleType||"共感勢"}、名前：${p.name}。\n配信トピック：「${topic.slice(0,200)}」\n自然な日本語コメントを1つ、40文字以内で。コメントのみ返してください。`;
+  try{
+    const resp=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{maxOutputTokens:60,temperature:0.95}})});
+    if(!resp.ok)throw new Error();
+    const data=await resp.json();
+    const comment=(data.candidates?.[0]?.content?.parts?.[0]?.text||"").trim().replace(/\n.*/,"").slice(0,40);
+    if(!comment)throw new Error();
+    addComment(comment,p.name,p.color);saveCommentLog({user:p.name,text:comment});
+  }catch{const text=buildComment(p);addComment(text,p.name,p.color);saveCommentLog({user:p.name,text});}
+}
+function saveGeminiKey(){
+  const k=$("geminiKey")?.value.trim(); if(!k)return;
+  localStorage.setItem(GEMINI_KEY_STORE,k);
+  state.commentEngine="gemini"; if($("commentEngine"))$("commentEngine").value="gemini";
+  if($("geminiArea"))$("geminiArea").style.display="flex";
+  if($("geminiStatus")){$("geminiStatus").textContent="✓ 保存済み";$("geminiStatus").style.color="#64d2ff";}
+  saveSettings(); toast("Gemini APIキーを保存しました");
+}
+function toggleObsMode(){document.body.classList.toggle("obs-mode");const btn=$("btnObs");if(btn)btn.classList.toggle("active");}
 function addComment(text,name,color){ const track=document.getElementById(`track${trackRR%3}`);trackRR++;if(!track)return;const speed=Math.max(10,10+text.length*0.3+Math.random()*5);const node=document.createElement("div");node.className="comment-h";node.style.setProperty("--user-color",color||"var(--accent)");node.style.setProperty("--speed",speed+"s");const u=document.createElement("span");u.className="user";u.textContent="@"+name;const t=document.createElement("span");t.className="text";t.textContent=text;node.append(u,t);track.append(node);node.addEventListener("animationend",()=>node.remove()); }
 function pickPersona(){ const list=personas.length?personas:defaultPersonas();const text=recentText();return list.map(p=>({p,s:relevance(p,text)+Math.random()*.4})).sort((a,b)=>b.s-a.s).slice(0,Math.min(list.length,6))[Math.floor(Math.random()*Math.min(list.length,6))].p; }
 function relevance(p,text){ const hay=[p.name,p.roleType,p.reactionPattern,p.catchphrase,...(p.words||[]),...(p.interests||[])].join(" ");let s=0;text.split(/[\s、。,]+/).filter(w=>w.length>=2).forEach(w=>{if(hay.includes(w))s+=2;});if(/AI|機械学習|プログラム|アルゴリズム|データ/.test(text)&&/AI|技術|開発/.test(hay))s+=4;if(/数学|統計|確率|微分/.test(text)&&/数学|理系/.test(hay))s+=3;return s; }
