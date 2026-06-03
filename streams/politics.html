@@ -655,6 +655,9 @@ body.timer-warning .comment-progress-fill{background:#ff6b7a;}
 .arc-kw{font-size:11px;font-weight:900;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .arc-stage{font-size:9px;color:var(--faint);white-space:nowrap;}
 .arc-empty{font-size:11px;color:var(--faint);padding:8px 10px;text-align:center;}
+/* -- ITER11: draft-btn + ref-collapsed -- */
+.draft-btn{grid-column:1;font-size:11px!important;}
+.draft-btn:active{transform:scale(.97);}
 </style>
 </head>
 <body>
@@ -877,8 +880,9 @@ body.timer-warning .comment-progress-fill{background:#ff6b7a;}
           <label>関連キーワード（カンマ区切り）</label>
           <input id="archiveBranches" placeholder="例: 国会, 内閣, 外交">
         </div>
-        <div class="actions">
-          <button id="archiveSaveBtn" class="primary wide" type="button">🌱 Archive に追加</button>
+        <div class="actions" style="grid-template-columns:1fr 1fr;">
+          <button id="draftFromTranscriptBtn" class="draft-btn" type="button" title="最近の文字起こしを本文に追加">📄 文字起こし</button>
+          <button id="archiveSaveBtn" class="primary" type="button">🌱 Archive に追加</button>
         </div>
       </div>
       <a href="https://rainybrainch.github.io/rb-tree-archive/" target="_blank" rel="noopener"
@@ -1260,6 +1264,14 @@ function bind(){
     setStatus("🎲 ランダムSeed: "+s.name);
   });
   $("downloadBtn")?.addEventListener("click",downloadSession);
+  $("draftFromTranscriptBtn")?.addEventListener("click",()=>{
+    const _recent=(state.transcript||[]).slice(0,8).slice().reverse().map(x=>x.text).join("\n");
+    const _ab=$("archiveBody");if(!_ab)return;
+    const _cur=_ab.value.trim();
+    _ab.value=_cur?(_cur+"\n---\n"+_recent):_recent;
+    _ab.focus();
+    setStatus("📄 文字起こしを下書きに追加しました");
+  });
   $("clearCommentLogBtn")?.addEventListener("click",e=>{
     e.stopPropagation();
     const _cl=$("commentLog");if(_cl)_cl.innerHTML="コメント待機中...";
@@ -1330,6 +1342,20 @@ function bind(){
         const _od=$("dock");_od.classList.toggle("translucent");
         $("dockOpacityBtn")?.classList.toggle("active",_od.classList.contains("translucent"));
         setStatus(_od.classList.contains("translucent")?"◐ 半透明モード":"● 通常モード");
+        e.preventDefault();return;}
+      if(e.key==="x"||e.key==="X"){
+        const _cl=$("commentLog");if(_cl)_cl.innerHTML="コメント待機中...";
+        commentCount=0;updateDockMeta();
+        const _cc=$("commentLogCount");if(_cc)_cc.textContent="(0件)";
+        setStatus("🗑 コメント履歴をクリア");
+        e.preventDefault();return;}
+      if(e.key==="a"||e.key==="A"){
+        document.body.classList.remove("panel-hidden");
+        const _secs=document.querySelectorAll(".section");
+        if(_secs[3]){_secs[3].classList.remove("collapsed");
+          setTimeout(()=>_secs[3].scrollIntoView({behavior:"smooth",block:"start"}),60);}
+        const _ab=$("archiveBody");if(_ab)setTimeout(()=>_ab.focus(),200);
+        setStatus("📚 Archive セクションを開きました");
         e.preventDefault();return;}
       if(e.key==="v"||e.key==="V"){
         document.body.classList.toggle("card-hidden");
@@ -1614,7 +1640,7 @@ function updateSeedUI(){
   let notes={};
   try{ notes=JSON.parse(localStorage.getItem(noteKey)||"{}"); }catch{}
 
-  const isCollapsed = state[`ref_collapsed_${sk}`]||false;
+  const isCollapsed = state[`ref_collapsed_${sk}`]!==false;  // default closed
   let html=`<div class="src-hd" onclick="toggleRef('${sk}')" style="cursor:pointer;">
     <span class="src-badge">${sk}</span>
     <span class="src-level">${s.level}</span>
@@ -2236,6 +2262,8 @@ window.addEventListener("storage",e=>{
       <kbd>I</kbd><span>配信サマリーを表示</span>
       <kbd>S</kbd><span>セッションをMarkdownでダウンロード</span>
       <kbd>O</kbd><span>Dock 半透明モード切替</span>
+      <kbd>X</kbd><span>コメント履歴をクリア</span>
+      <kbd>A</kbd><span>Archive セクションを開く</span>
       <kbd>V</kbd><span>キーワードカード 表示/非表示</span>
       <kbd>N</kbd><span>次のSeedに進む</span>
       <kbd>P</kbd><span>前のSeedに戻る</span>
