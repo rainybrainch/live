@@ -136,6 +136,22 @@ body.obs-mode .dock,body.obs-mode .open-tab{display:none!important;}
 .spd-btn.active[data-speed="slow"]{border-color:rgba(100,210,255,.4);background:rgba(100,210,255,.08);color:#64d2ff;}
 .spd-btn.active[data-speed="normal"]{border-color:rgba(87,200,124,.4);background:rgba(87,200,124,.08);color:#57c87c;}
 .spd-btn.active[data-speed="fast"]{border-color:rgba(255,107,122,.4);background:rgba(255,107,122,.08);color:#ff6b7a;}
+/* -- UI2: collapsible sections + polish -- */
+.section { cursor:pointer; }
+.section-title { cursor:pointer; user-select:none; }
+.section-toggle { margin-left:auto; font-size:11px; color:var(--muted); transition:transform .22s; opacity:.6; pointer-events:none; }
+.section.collapsed .section-toggle { transform:rotate(-90deg); }
+.section.collapsed > *:not(.section-title) { display:none; }
+.section:hover { background:rgba(255,255,255,.045)!important; }
+.section:nth-child(1){border-left:3px solid var(--accent);}
+.section:nth-child(2){border-left:3px solid rgba(100,210,255,.6);}
+.section:nth-child(3){border-left:3px solid rgba(87,200,124,.6);}
+.section:nth-child(4){border-left:3px solid rgba(200,144,216,.6);}
+.field label { font-size:9px!important; font-weight:900!important; letter-spacing:.1em!important; text-transform:uppercase; }
+.dock-body input:focus,.dock-body textarea:focus,.dock-body select:focus { border-color:rgba(255,255,255,.3)!important; box-shadow:0 0 0 2px rgba(255,255,255,.06); }
+.title-card { transition:box-shadow .35s ease; }
+.title-card.flash { box-shadow:0 0 0 2px var(--accent), 0 8px 32px rgba(0,0,0,.28)!important; animation:card-glow .7s ease-out forwards; }
+@keyframes card-glow { 0%{box-shadow:0 0 0 3px var(--accent),0 0 40px color-mix(in srgb,var(--accent) 28%,transparent);} 100%{box-shadow:0 8px 32px rgba(0,0,0,.28);} }
 </style>
 </head>
 <body>
@@ -194,7 +210,7 @@ body.obs-mode .dock,body.obs-mode .open-tab{display:none!important;}
   </div>
   <div class="dock-body">
     <section class="section">
-      <div class="section-title"><span class="step">1</span>作品情報</div>
+      <div class="section-title"><span class="step">1</span>作品情報<span class="section-toggle">▾</span></div>
       <div class="field"><label for="bookTitle">タイトル</label><input id="bookTitle" placeholder="例: 人間失格"></div>
       <div class="field"><label for="bookAuthor">著者</label><input id="bookAuthor" placeholder="例: 太宰 治"></div>
       <div class="field"><label for="passage">引用・印象的な一節（ステージ表示）</label><textarea id="passage" rows="3" placeholder="例: 恥の多い生涯を送って来ました。"></textarea></div>
@@ -207,7 +223,7 @@ body.obs-mode .dock,body.obs-mode .open-tab{display:none!important;}
       </div>
     </section>
     <section class="section">
-      <div class="section-title"><span class="step">2</span>収録タイマー</div>
+      <div class="section-title"><span class="step">2</span>収録タイマー<span class="section-toggle">▾</span></div>
       <div class="grid2">
         <div class="field"><label for="timerMinutes">分</label><input id="timerMinutes" type="number" min="1" max="240" value="30"></div>
         <div class="field"><label for="timerPreset">プリセット</label>
@@ -221,7 +237,7 @@ body.obs-mode .dock,body.obs-mode .open-tab{display:none!important;}
       </div>
     </section>
     <section class="section">
-      <div class="section-title"><span class="step">3</span>文字起こし</div>
+      <div class="section-title"><span class="step">3</span>文字起こし<span class="section-toggle">▾</span></div>
       <div class="transcript-plan-row">
         <button class="plan-btn active" id="planFreeBtn" type="button">無料<span class="plan-tag">Web Speech</span></button>
         <button class="plan-btn pro"    id="planProBtn"  type="button">Pro<span class="plan-tag">Whisper API</span><span class="plan-soon">準備中</span></button>
@@ -304,7 +320,7 @@ let lastKey="", transcriptBuf="", flushTimer=null, trackRR=0;
 
 init();
 
-function init() { hydrate(); bind(); applyStage(); startClock(); scheduleComment(); }
+function init() { hydrate(); bind(); applyStage(); startClock(); scheduleComment(); initCollapsible(); }
 
 function toggleComments(){
   commentsEnabled=!commentsEnabled;
@@ -313,11 +329,22 @@ function toggleComments(){
   let t=document.getElementById("toast");if(t){t.textContent=commentsEnabled?"💬 コメント ON":"💬 コメント OFF";t.classList.add("show");setTimeout(()=>t.classList.remove("show"),2800);}
   if(commentsEnabled)scheduleComment();else clearTimeout(commentTimer);
 }
+
+function initCollapsible(){
+  document.querySelectorAll(".dock-body .section").forEach((sec,i)=>{
+    const title=sec.querySelector(".section-title");
+    if(!title)return;
+    if(i>0)sec.classList.add("collapsed");
+    title.addEventListener("click",()=>{
+      sec.classList.toggle("collapsed");
+    });
+  });
+}
 function setSpeed(spd){
   state.commentSpeed=spd;
   document.querySelectorAll(".spd-btn").forEach(b=>b.classList.toggle("active",b.dataset.speed===spd));
   const cs=document.getElementById("commentSpeed");if(cs)cs.value=spd;
-  saveSettings();if(commentsEnabled)scheduleComment();
+  saveSettings();const _tc=document.querySelector('.title-card');if(_tc){_tc.classList.remove('flash');void _tc.offsetWidth;_tc.classList.add('flash');}if(commentsEnabled)scheduleComment();
   let t=document.getElementById("toast");if(t){t.textContent=spd==="slow"?"🐢 低速":spd==="fast"?"🔥 高速":"▷ 普通速";t.classList.add("show");setTimeout(()=>t.classList.remove("show"),2800);}
 }
 function updateDockMeta(){
@@ -334,7 +361,7 @@ function hydrate() {
   document.querySelectorAll(".spd-btn").forEach(b=>b.classList.toggle("active",b.dataset.speed===(state.commentSpeed||"normal")));
 }
 function bind() {
-  ["bookTitle","bookAuthor","passage","affiliateUrl","coverUrl","avatarInput","personaSheetUrl","commentSpeed"].forEach(id=>{ if($(id)) $(id).addEventListener("input",()=>{ state[id]=$(id).value; saveSettings(); applyStage(); }); });
+  ["bookTitle","bookAuthor","passage","affiliateUrl","coverUrl","avatarInput","personaSheetUrl","commentSpeed"].forEach(id=>{ if($(id)) $(id).addEventListener("input",()=>{ state[id]=$(id).value; saveSettings();const _tc=document.querySelector('.title-card');if(_tc){_tc.classList.remove('flash');void _tc.offsetWidth;_tc.classList.add('flash');} applyStage(); }); });
   $("applyBtn")?.addEventListener("click",applyStage);
   $("copyObsBtn")?.addEventListener("click",copyObsUrl);
   $("fullscreenBtn")?.addEventListener("click",toggleFullscreen);
@@ -349,7 +376,7 @@ function bind() {
   $("commentBtn")?.addEventListener("click",spawnComment);
   $("manualTranscript")?.addEventListener("keydown",e=>{ if(e.key!=="Enter")return; const v=$("manualTranscript").value.trim(); if(!v)return; $("manualTranscript").value=""; pushTranscript(v); spawnComment(); });
   $("syncPersonaBtn")?.addEventListener("click",syncPersonas);
-  $("commentEngine")?.addEventListener("change",()=>{ state.commentEngine=$("commentEngine").value; if($("geminiArea"))$("geminiArea").style.display=state.commentEngine==="gemini"?"flex":"none"; saveSettings(); });
+  $("commentEngine")?.addEventListener("change",()=>{ state.commentEngine=$("commentEngine").value; if($("geminiArea"))$("geminiArea").style.display=state.commentEngine==="gemini"?"flex":"none"; saveSettings();const _tc=document.querySelector('.title-card');if(_tc){_tc.classList.remove('flash');void _tc.offsetWidth;_tc.classList.add('flash');} });
   $("hideDock")?.addEventListener("click",()=>document.body.classList.add("panel-hidden"));
   $("openDock")?.addEventListener("click",()=>document.body.classList.remove("panel-hidden"));
   $("planFreeBtn")?.addEventListener("click",()=>{ $("planFreeBtn").classList.add("active"); $("planProBtn").classList.remove("active"); $("planFreeArea").style.display=""; $("planProArea").style.display="none"; });
@@ -379,9 +406,9 @@ function applyStage() {
 function updateAvatar(){ const src=state.avatarInput.trim(),av=$("avatar");av.innerHTML="";av.classList.toggle("empty",!src);if(!src)return;const el=document.createElement(/\.(webm|mp4|mov)(\?.*)?$/i.test(src)?"video":"img");el.src=src;if(el.tagName==="VIDEO"){el.autoplay=true;el.loop=true;el.muted=true;el.playsInline=true;}av.append(el); }
 
 function normalizeTimer(t){ const dur=Math.max(60,parseInt(t?.durationSec||1800,10)||1800);const endAt=parseInt(t?.endAt||0,10)||0;const run=Boolean(t?.running&&endAt>Date.now());const rem=run?Math.max(0,Math.ceil((endAt-Date.now())/1000)):Math.max(0,Math.min(dur,parseInt(t?.remainingSec||dur,10)||dur));return{durationSec:dur,remainingSec:rem,running:run,endAt:run?endAt:0}; }
-function setTimerFromInput(){ const m=Math.max(1,Math.min(240,parseInt($("timerMinutes").value||"30")||30));state.timer={durationSec:m*60,remainingSec:m*60,running:false,endAt:0};saveSettings();updateClock(); }
-function toggleTimer(){ state.timer=normalizeTimer(state.timer);if(state.timer.running){state.timer.running=false;state.timer.endAt=0;}else{if(state.timer.remainingSec<=0)state.timer.remainingSec=state.timer.durationSec;state.timer.running=true;state.timer.endAt=Date.now()+state.timer.remainingSec*1000;}saveSettings();updateClock(); }
-function resetTimer(){ state.timer=normalizeTimer(state.timer);state.timer.running=false;state.timer.endAt=0;state.timer.remainingSec=state.timer.durationSec;saveSettings();updateClock(); }
+function setTimerFromInput(){ const m=Math.max(1,Math.min(240,parseInt($("timerMinutes").value||"30")||30));state.timer={durationSec:m*60,remainingSec:m*60,running:false,endAt:0};saveSettings();const _tc=document.querySelector('.title-card');if(_tc){_tc.classList.remove('flash');void _tc.offsetWidth;_tc.classList.add('flash');}updateClock(); }
+function toggleTimer(){ state.timer=normalizeTimer(state.timer);if(state.timer.running){state.timer.running=false;state.timer.endAt=0;}else{if(state.timer.remainingSec<=0)state.timer.remainingSec=state.timer.durationSec;state.timer.running=true;state.timer.endAt=Date.now()+state.timer.remainingSec*1000;}saveSettings();const _tc=document.querySelector('.title-card');if(_tc){_tc.classList.remove('flash');void _tc.offsetWidth;_tc.classList.add('flash');}updateClock(); }
+function resetTimer(){ state.timer=normalizeTimer(state.timer);state.timer.running=false;state.timer.endAt=0;state.timer.remainingSec=state.timer.durationSec;saveSettings();const _tc=document.querySelector('.title-card');if(_tc){_tc.classList.remove('flash');void _tc.offsetWidth;_tc.classList.add('flash');}updateClock(); }
 function updateClock(){ const prevRem=state.timer.remainingSec;state.timer=normalizeTimer(state.timer);if(state.timer.running&&state.timer.remainingSec<=0){state.timer.running=false;state.timer.endAt=0;if(prevRem>0){toast("⏱ タイマー終了！");$("timerDisplay")?.classList.add("flash");setTimeout(()=>$("timerDisplay")?.classList.remove("flash"),2800);}}$("timerTime").textContent=fmt(state.timer.remainingSec);$("timerLabel").textContent=state.timer.running?"REC RUNNING":"REC TIMER";$("timerDisplay").classList.toggle("running",state.timer.running);$("timerStartBtn").textContent=state.timer.running?"停止":"開始";$("stageTimerToggle").textContent=state.timer.running?"Ⅱ":"▶";$("stageTimerToggle").classList.toggle("running",state.timer.running); }
 function fmt(sec){const n=Math.max(0,parseInt(sec||0)||0),h=Math.floor(n/3600),m=Math.floor((n%3600)/60),s=n%60;return h>0?`${h}:${pad(m)}:${pad(s)}`:`${pad(m)}:${pad(s)}`;}
 function pad(n){return String(n).padStart(2,"0");}
@@ -421,7 +448,7 @@ function saveGeminiKey(){
   state.commentEngine="gemini"; if($("commentEngine"))$("commentEngine").value="gemini";
   if($("geminiArea"))$("geminiArea").style.display="flex";
   if($("geminiStatus")){$("geminiStatus").textContent="✓ 保存済み";$("geminiStatus").style.color="#64d2ff";}
-  saveSettings(); toast("Gemini APIキーを保存しました");
+  saveSettings();const _tc=document.querySelector('.title-card');if(_tc){_tc.classList.remove('flash');void _tc.offsetWidth;_tc.classList.add('flash');} toast("Gemini APIキーを保存しました");
 }
 function toggleObsMode(){document.body.classList.toggle("obs-mode");const btn=$("btnObs");if(btn)btn.classList.toggle("active");}
 function addComment(text,name,color){ commentCountN++;updateDockMeta(); const track=document.getElementById(`track${trackRR%3}`);trackRR++;if(!track)return;const speed=Math.max(10,10+text.length*0.3+Math.random()*5);const node=document.createElement("div");node.className="comment-h";node.style.setProperty("--user-color",color||"var(--accent)");node.style.setProperty("--speed",speed+"s");const u=document.createElement("span");u.className="user";u.textContent="@"+name;const t=document.createElement("span");t.className="text";t.textContent=text;node.append(u,t);track.append(node);node.addEventListener("animationend",()=>node.remove()); }
@@ -446,7 +473,7 @@ function buildComment(p){
   const pool=map[role]||map["共感勢"];return pool[Math.floor(Math.random()*pool.length)].slice(0,40);
 }
 function defaultPersonas(){ return[{name:"文学好き",roleType:"共感勢",catchphrase:"心に響く",color:"#c4b48a",words:[]},{name:"国文学者",roleType:"知識勢",catchphrase:"文学史的に重要",color:"#c890d8",words:[]},{name:"積読民",roleType:"質問勢",catchphrase:"読みたくなった",color:"#64d2ff",words:[]},{name:"感受性",roleType:"妄想勢",catchphrase:"広がる世界観が好き",color:"#ff93bd",words:[]}]; }
-function intervalRange(){if(state.commentSpeed==="fast")return[3000,7000];if(state.commentSpeed==="slow")return[10000,18000];return[7000,14000];}
+function intervalRange(){if(state.commentSpeed==="fast")return[1500,3000];if(state.commentSpeed==="slow")return[7000,12000];return[3500,7000];}
 function scheduleComment(){clearTimeout(commentTimer);if(!commentsEnabled)return;const[mn,mx]=intervalRange();commentTimer=setTimeout(()=>{spawnComment();scheduleComment();},mn+Math.random()*(mx-mn));}
 
 function loadPersonas(){ const result=[];try{const p=JSON.parse(localStorage.getItem("all_domedia_personas_v5")||"[]");result.push(...p.filter(x=>x&&x.name&&x.enabled!==false));}catch{}try{const ids=new Set(result.map(x=>x.id||x.name));const p=JSON.parse(localStorage.getItem(SHARED_PERSONA_KEY)||"[]");result.push(...p.filter(x=>x&&x.name&&!ids.has(x.id||x.name)));}catch{}return result; }

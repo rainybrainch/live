@@ -201,6 +201,22 @@ body.obs-mode .dock,body.obs-mode .open-tab{display:none!important;}
 .spd-btn.active[data-speed="slow"]{border-color:rgba(100,210,255,.4);background:rgba(100,210,255,.08);color:#64d2ff;}
 .spd-btn.active[data-speed="normal"]{border-color:rgba(87,200,124,.4);background:rgba(87,200,124,.08);color:#57c87c;}
 .spd-btn.active[data-speed="fast"]{border-color:rgba(255,107,122,.4);background:rgba(255,107,122,.08);color:#ff6b7a;}
+/* -- UI2: collapsible sections + polish -- */
+.section { cursor:pointer; }
+.section-title { cursor:pointer; user-select:none; }
+.section-toggle { margin-left:auto; font-size:11px; color:var(--muted); transition:transform .22s; opacity:.6; pointer-events:none; }
+.section.collapsed .section-toggle { transform:rotate(-90deg); }
+.section.collapsed > *:not(.section-title) { display:none; }
+.section:hover { background:rgba(255,255,255,.045)!important; }
+.section:nth-child(1){border-left:3px solid var(--accent);}
+.section:nth-child(2){border-left:3px solid rgba(100,210,255,.6);}
+.section:nth-child(3){border-left:3px solid rgba(87,200,124,.6);}
+.section:nth-child(4){border-left:3px solid rgba(200,144,216,.6);}
+.field label { font-size:9px!important; font-weight:900!important; letter-spacing:.1em!important; text-transform:uppercase; }
+.dock-body input:focus,.dock-body textarea:focus,.dock-body select:focus { border-color:rgba(255,255,255,.3)!important; box-shadow:0 0 0 2px rgba(255,255,255,.06); }
+.title-card { transition:box-shadow .35s ease; }
+.title-card.flash { box-shadow:0 0 0 2px var(--accent), 0 8px 32px rgba(0,0,0,.28)!important; animation:card-glow .7s ease-out forwards; }
+@keyframes card-glow { 0%{box-shadow:0 0 0 3px var(--accent),0 0 40px color-mix(in srgb,var(--accent) 28%,transparent);} 100%{box-shadow:0 8px 32px rgba(0,0,0,.28);} }
 </style>
 </head>
 <body>
@@ -255,7 +271,7 @@ body.obs-mode .dock,body.obs-mode .open-tab{display:none!important;}
   </div>
   <div class="dock-body">
     <section class="section">
-      <div class="section-title"><span class="step">1</span>映画の情報</div>
+      <div class="section-title"><span class="step">1</span>映画の情報<span class="section-toggle">▾</span></div>
       <div class="field"><label for="movieTitle">タイトル</label><input id="movieTitle" placeholder="例: 君の名は。"></div>
       <div class="grid2">
         <div class="field"><label for="director">監督</label><input id="director" placeholder="例: 新海誠"></div>
@@ -270,7 +286,7 @@ body.obs-mode .dock,body.obs-mode .open-tab{display:none!important;}
       </div>
     </section>
     <section class="section">
-      <div class="section-title"><span class="step">2</span>収録タイマー</div>
+      <div class="section-title"><span class="step">2</span>収録タイマー<span class="section-toggle">▾</span></div>
       <div class="grid2">
         <div class="field"><label for="timerMinutes">分</label><input id="timerMinutes" type="number" min="1" max="240" value="60"></div>
         <div class="field"><label for="timerPreset">プリセット</label>
@@ -284,7 +300,7 @@ body.obs-mode .dock,body.obs-mode .open-tab{display:none!important;}
       </div>
     </section>
     <section class="section">
-      <div class="section-title"><span class="step">3</span>文字起こし</div>
+      <div class="section-title"><span class="step">3</span>文字起こし<span class="section-toggle">▾</span></div>
       <div class="transcript-plan-row">
         <button class="plan-btn active" id="planFreeBtn" type="button">無料<span class="plan-tag">Web Speech</span></button>
         <button class="plan-btn pro"    id="planProBtn"  type="button">Pro<span class="plan-tag">Whisper API</span><span class="plan-soon">準備中</span></button>
@@ -367,7 +383,7 @@ let commentsEnabled=true, commentCountN=0;
 
 init();
 
-function init() { hydrate(); bind(); applyStage(); startClock(); scheduleComment(); }
+function init() { hydrate(); bind(); applyStage(); startClock(); scheduleComment(); initCollapsible(); }
 
 function toggleComments(){
   commentsEnabled=!commentsEnabled;
@@ -376,11 +392,22 @@ function toggleComments(){
   toast(commentsEnabled?"💬 コメント ON":"💬 コメント OFF");
   if(commentsEnabled)scheduleComment();else clearTimeout(commentTimer);
 }
+
+function initCollapsible(){
+  document.querySelectorAll(".dock-body .section").forEach((sec,i)=>{
+    const title=sec.querySelector(".section-title");
+    if(!title)return;
+    if(i>0)sec.classList.add("collapsed");
+    title.addEventListener("click",()=>{
+      sec.classList.toggle("collapsed");
+    });
+  });
+}
 function setSpeed(spd){
   state.commentSpeed=spd;
   document.querySelectorAll(".spd-btn").forEach(b=>b.classList.toggle("active",b.dataset.speed===spd));
   if($("commentSpeed"))$("commentSpeed").value=spd;
-  saveSettings();if(commentsEnabled)scheduleComment();
+  saveSettings();const _tc=document.querySelector('.title-card');if(_tc){_tc.classList.remove('flash');void _tc.offsetWidth;_tc.classList.add('flash');}if(commentsEnabled)scheduleComment();
   toast(spd==="slow"?"🐢 低速":spd==="fast"?"🔥 高速":"▷ 普通速");
 }
 function updateDockMeta(){
@@ -402,7 +429,7 @@ function hydrate() {
 
 function bind() {
   ["movieTitle","director","releaseYear","serviceUrl","posterUrl","avatarInput","personaSheetUrl","commentSpeed"].forEach(id=>{
-    if($(id)) $(id).addEventListener("input",()=>{ state[id]=$(id).value; saveSettings(); applyStage(); });
+    if($(id)) $(id).addEventListener("input",()=>{ state[id]=$(id).value; saveSettings();const _tc=document.querySelector('.title-card');if(_tc){_tc.classList.remove('flash');void _tc.offsetWidth;_tc.classList.add('flash');} applyStage(); });
   });
   $("applyBtn")?.addEventListener("click",applyStage);
   $("copyObsBtn")?.addEventListener("click",copyObsUrl);
@@ -418,7 +445,7 @@ function bind() {
   $("commentBtn")?.addEventListener("click",spawnComment);
   $("manualTranscript")?.addEventListener("keydown",e=>{ if(e.key!=="Enter")return; const v=$("manualTranscript").value.trim(); if(!v)return; $("manualTranscript").value=""; pushTranscript(v); spawnComment(); });
   $("syncPersonaBtn")?.addEventListener("click",syncPersonas);
-  $("commentEngine")?.addEventListener("change",()=>{ state.commentEngine=$("commentEngine").value; if($("geminiArea"))$("geminiArea").style.display=state.commentEngine==="gemini"?"flex":"none"; saveSettings(); });
+  $("commentEngine")?.addEventListener("change",()=>{ state.commentEngine=$("commentEngine").value; if($("geminiArea"))$("geminiArea").style.display=state.commentEngine==="gemini"?"flex":"none"; saveSettings();const _tc=document.querySelector('.title-card');if(_tc){_tc.classList.remove('flash');void _tc.offsetWidth;_tc.classList.add('flash');} });
   $("hideDock")?.addEventListener("click",()=>document.body.classList.add("panel-hidden"));
   $("openDock")?.addEventListener("click",()=>document.body.classList.remove("panel-hidden"));
   $("planFreeBtn")?.addEventListener("click",()=>{ $("planFreeBtn").classList.add("active"); $("planProBtn").classList.remove("active"); $("planFreeArea").style.display=""; $("planProArea").style.display="none"; });
@@ -467,17 +494,17 @@ function normalizeTimer(t){
 function setTimerFromInput(){
   const m=Math.max(1,Math.min(240,parseInt($("timerMinutes").value||"60")||60));
   state.timer={durationSec:m*60,remainingSec:m*60,running:false,endAt:0};
-  saveSettings();updateClock();
+  saveSettings();const _tc=document.querySelector('.title-card');if(_tc){_tc.classList.remove('flash');void _tc.offsetWidth;_tc.classList.add('flash');}updateClock();
 }
 function toggleTimer(){
   state.timer=normalizeTimer(state.timer);
   if(state.timer.running){state.timer.running=false;state.timer.endAt=0;}
   else{if(state.timer.remainingSec<=0)state.timer.remainingSec=state.timer.durationSec;state.timer.running=true;state.timer.endAt=Date.now()+state.timer.remainingSec*1000;}
-  saveSettings();updateClock();
+  saveSettings();const _tc=document.querySelector('.title-card');if(_tc){_tc.classList.remove('flash');void _tc.offsetWidth;_tc.classList.add('flash');}updateClock();
 }
 function resetTimer(){
   state.timer=normalizeTimer(state.timer);state.timer.running=false;state.timer.endAt=0;state.timer.remainingSec=state.timer.durationSec;
-  saveSettings();updateClock();
+  saveSettings();const _tc=document.querySelector('.title-card');if(_tc){_tc.classList.remove('flash');void _tc.offsetWidth;_tc.classList.add('flash');}updateClock();
 }
 function updateClock(){
   const prevRem=state.timer.remainingSec;state.timer=normalizeTimer(state.timer);
@@ -545,7 +572,7 @@ function saveGeminiKey(){
   state.commentEngine="gemini"; if($("commentEngine"))$("commentEngine").value="gemini";
   if($("geminiArea"))$("geminiArea").style.display="flex";
   if($("geminiStatus")){$("geminiStatus").textContent="✓ 保存済み";$("geminiStatus").style.color="#64d2ff";}
-  saveSettings(); toast("Gemini APIキーを保存しました");
+  saveSettings();const _tc=document.querySelector('.title-card');if(_tc){_tc.classList.remove('flash');void _tc.offsetWidth;_tc.classList.add('flash');} toast("Gemini APIキーを保存しました");
 }
 function toggleObsMode(){
   document.body.classList.toggle("obs-mode");
@@ -598,7 +625,7 @@ function defaultPersonas(){
     {name:"ネタ民",  roleType:"ネタ勢",  catchphrase:"草",                    color:"#57c87c",words:[]}
   ];
 }
-function intervalRange(){if(state.commentSpeed==="fast")return[3000,7000];if(state.commentSpeed==="slow")return[10000,18000];return[6000,12000];}
+function intervalRange(){if(state.commentSpeed==="fast")return[1500,3000];if(state.commentSpeed==="slow")return[7000,12000];return[3500,7000];}
 function scheduleComment(){clearTimeout(commentTimer);if(!commentsEnabled)return;const[mn,mx]=intervalRange();commentTimer=setTimeout(()=>{spawnComment();scheduleComment();},mn+Math.random()*(mx-mn));}
 
 function loadPersonas(){
