@@ -321,9 +321,19 @@ body[data-lv] .lv-badge{display:block;}
 .hdr-spd{width:24px;height:24px;min-height:24px;padding:0;display:grid;place-items:center;border-radius:6px;border:1px solid var(--line);background:rgba(255,255,255,.04);font-size:10px;cursor:pointer;color:var(--muted);transition:all .12s;}
 .hdr-spd.active{border-color:rgba(232,121,160,.5);background:rgba(232,121,160,.1);color:var(--acc);}
 .hdr-burst{padding:3px 7px;border-radius:6px;border:1px solid rgba(255,183,77,.25);background:rgba(255,183,77,.07);color:#ffb74d;font-size:10px;font-weight:900;cursor:pointer;min-height:24px;transition:all .12s;}
+/* Unified comment tracks */
+.comment-tracks{position:fixed;left:0;right:0;bottom:0;height:108px;overflow:hidden;pointer-events:none;z-index:20;background:linear-gradient(0deg,rgba(0,0,0,.5),transparent);}
+.c-track{height:36px;position:relative;overflow:hidden;border-bottom:1px solid rgba(255,255,255,.04);}
+.comment-h{position:absolute;top:0;left:0;height:100%;display:inline-flex;align-items:center;gap:7px;padding:0 18px 0 10px;border-left:3px solid var(--user-color,#e879a0);background:rgba(0,0,0,.55);backdrop-filter:blur(8px);border-radius:0 999px 999px 0;font-size:clamp(13px,1.2vw,17px);font-weight:700;text-shadow:0 1px 2px rgba(0,0,0,.7);transform:translateX(100vw);animation:fly-left var(--speed,14s) linear forwards;white-space:nowrap;}
+.comment-h .user{color:var(--user-color,#e879a0);font-weight:900;font-size:.82em;}
+.comment-h .text{color:#f7f8fb;}
+@keyframes fly-left{from{transform:translateX(100vw);}to{transform:translateX(calc(-100% - 20px));}}
+.freq-btn{padding:4px 8px;border-radius:6px;border:1px solid var(--line);background:rgba(255,255,255,.04);font-size:10px;font-weight:900;color:var(--muted);cursor:pointer;transition:all .15s;flex-shrink:0;}
+.freq-btn.active{border-color:rgba(232,121,160,.5);background:rgba(232,121,160,.1);color:var(--acc);}
 </style>
 </head>
 <body>
+<div class="comment-tracks" id="commentTracks"><div class="c-track" id="track0"></div><div class="c-track" id="track1"></div><div class="c-track" id="track2"></div></div>
 
 <div class="toast" id="toast"></div>
 
@@ -355,7 +365,7 @@ body[data-lv] .lv-badge{display:block;}
     <span class="countdown-display" id="cdDisplay">4:00</span>
   </div>
 
-  <div class="hdr-cc-wrap">
+  <div class="hdr-cc-wrap"><span style="font-size:9px;font-weight:900;color:var(--muted);">頻度</span><button class="freq-btn active" data-freq="1" onclick="setFrequencyLevel(1)">少</button><button class="freq-btn" data-freq="2" onclick="setFrequencyLevel(2)">普通</button><button class="freq-btn" data-freq="3" onclick="setFrequencyLevel(3)">多め</button><button class="freq-btn" data-freq="4" onclick="setFrequencyLevel(4)">激熱</button>
     <button class="hdr-spd" data-speed="slow"   onclick="setSingingSpeed('slow')"   title="低速">🐢</button>
     <button class="hdr-spd active" data-speed="normal" onclick="setSingingSpeed('normal')" title="普通">▷</button>
     <button class="hdr-spd" data-speed="fast"   onclick="setSingingSpeed('fast')"   title="高速">🔥</button>
@@ -477,6 +487,23 @@ body[data-lv] .lv-badge{display:block;}
 </div>
 
 <script>
+const STREAM_GENRES=["歌","音楽","歌ってみた","ボーカル","カバー","配信","アーティスト"];
+let _trackRR=0;
+function addComment(text,name,color){
+  const track=document.getElementById("track"+(_trackRR%3));_trackRR++;
+  if(!track)return;
+  const speed=Math.max(9,9+text.length*0.28+Math.random()*5);
+  const node=document.createElement("div");
+  node.className="comment-h";
+  node.style.setProperty("--user-color",color||"#e879a0");
+  node.style.setProperty("--speed",speed+"s");
+  const u=document.createElement("span");u.className="user";u.textContent="@"+name;
+  const t=document.createElement("span");t.className="text";t.textContent=text;
+  node.append(u,t);track.append(node);
+  node.addEventListener("animationend",()=>node.remove());
+}
+let _commentFreqLevel=1;
+function setFrequencyLevel(lv){_commentFreqLevel=lv;document.querySelectorAll(".freq-btn").forEach(b=>b.classList.toggle("active",parseInt(b.dataset.freq)===lv));if(commentsActive){stopComments();startComments();}}
 // ════════════════════════════════════
 //  State
 // ════════════════════════════════════
@@ -1114,6 +1141,8 @@ function spawnComment() {
       <div class="ci-name" style="color:${color||'#e879a0'};">${name}</div>
       <div class="ci-text">${text}</div>
     </div>`;
+  const r=buildSingingComment(persona,null);
+  addComment(r.text,r.name,r.color);
   wrap.appendChild(el);
   setTimeout(() => el.remove(), dur + 400);
   if (commentInterval) {
@@ -1130,6 +1159,9 @@ function setSingingSpeed(spd){
 let singingSpeedOverride=null;
 
 function getCommentInterval() {
+  if(_commentFreqLevel>=4) return randomBetween(600,1200);
+  if(_commentFreqLevel>=3) return randomBetween(1000,2000);
+  if(_commentFreqLevel>=2) return randomBetween(2000,4000);
   if(singingSpeedOverride==="fast") return randomBetween(800,2000);
   if(singingSpeedOverride==="slow") return randomBetween(8000,14000);
   const bases = [5000, 3700, 2600, 1700, 1000];

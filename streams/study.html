@@ -568,6 +568,14 @@ function defaultPersonas(){return[
 // Frequency-scaled interval
 const _baseInterval=intervalRange;
 function intervalRange(){const[mn,mx]=_baseInterval();const d=_commentFreqLevel||1;return[Math.max(700,Math.round(mn/d)),Math.max(1200,Math.round(mx/d))];}
+let _commentFreqLevel=1;
+function setFrequencyLevel(lv){
+  _commentFreqLevel=lv;
+  document.querySelectorAll(".freq-btn").forEach(b=>b.classList.toggle("active",parseInt(b.dataset.freq)===lv));
+  if(typeof commentsEnabled!=="undefined"&&commentsEnabled){if(typeof commentTimer!=="undefined")clearTimeout(commentTimer);if(typeof scheduleComment==="function")scheduleComment();}
+}
+const _baseInterval=intervalRange;
+function intervalRange(){const[mn,mx]=_baseInterval();const d=_commentFreqLevel||1;return[Math.max(700,Math.round(mn/d)),Math.max(1200,Math.round(mx/d))];}
 </script>
 </body>
 </html>
