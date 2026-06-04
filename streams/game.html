@@ -460,6 +460,16 @@ body::after{width:42vw;height:38vh;right:4%;bottom:8%;background:radial-gradient
           <button onclick="syncPersonas()" style="white-space:nowrap;min-height:36px;padding:0 12px;font-size:11px;font-weight:900;border:1px solid rgba(79,195,247,.3);background:rgba(79,195,247,.08);color:#4fc3f7;border-radius:8px;cursor:pointer;">🔄 同期</button>
         </div>
         <a href="https://rainybrainch.github.io/comment-studio/ai-comment-personas.html" target="_blank" style="display:flex;align-items:center;justify-content:center;min-height:36px;border:1px solid rgba(224,160,255,.35);border-radius:8px;background:rgba(224,160,255,.07);color:#e0a0ff;font-size:11px;font-weight:900;text-decoration:none;">🎭 Channel OS で人格を作る ↗</a>
+        <div style="border-top:1px solid rgba(255,255,255,.07);padding-top:8px;margin-top:2px;display:grid;gap:5px;">
+          <div style="font-size:9px;font-weight:900;letter-spacing:.1em;color:var(--muted);text-transform:uppercase;">✨ YouTube から人格生成</div>
+          <input id="ytGenUrl" placeholder="https://youtube.com/..." style="width:100%;min-height:34px;font-size:11px;border:1px solid var(--line);border-radius:7px;background:rgba(0,0,0,.3);color:var(--text);padding:5px 9px;outline:none;">
+          <input id="ytGenDesc" placeholder="視聴者層・特徴（任意）" style="width:100%;min-height:30px;font-size:11px;border:1px solid var(--line);border-radius:7px;background:rgba(0,0,0,.3);color:var(--text);padding:5px 9px;outline:none;">
+          <div style="display:flex;gap:5px;">
+            <select id="ytGenCount" style="min-height:32px;font-size:11px;border:1px solid var(--line);border-radius:7px;background:rgba(0,0,0,.3);color:var(--text);padding:3px 6px;"><option value="4">4人</option><option value="6" selected>6人</option><option value="8">8人</option></select>
+            <button onclick="genPersonasFromYT('ytGenUrl','ytGenDesc','ytGenCount','ytGenStatus')" style="flex:1;min-height:32px;font-size:11px;font-weight:900;border:1px solid rgba(100,210,255,.3);background:rgba(100,210,255,.08);color:#64d2ff;border-radius:7px;cursor:pointer;">✨ 生成</button>
+          </div>
+          <div id="ytGenStatus" style="font-size:10px;color:var(--muted);min-height:14px;"></div>
+        </div>
       </div>
     </details>
 
@@ -1100,20 +1110,22 @@ async function syncPersonas(){
   }catch(e){personas=loadPersonas();if(!personas.length)personas=defaultPersonas();if(st)st.textContent="キャッシュ "+personas.length+"人";}
 }
 function defaultPersonas(){return[
-  {name:"実況ファン",   roleType:"共感勢", catchphrase:"この場面すき！",        color:"#4fc3f7",words:["ゲーム","実況"]},
-  {name:"攻略wiki民",  roleType:"知識勢", catchphrase:"そこ裏ルートある",      color:"#57d68d",words:["攻略","ボス","クリア"]},
-  {name:"ホラー耐性0",  roleType:"共感勢", catchphrase:"ムリムリムリ",           color:"#ff7675",words:["ホラー","怖い"]},
-  {name:"全クリ応援団", roleType:"応援勢", catchphrase:"次のボスも勝てる！",     color:"#ffb74d",words:["クリア","ボス"]},
-  {name:"バックシート", roleType:"懐疑勢", catchphrase:"そっち行かないで",       color:"#c890d8",words:["ルート","選択"]},
-  {name:"初見さん",    roleType:"質問勢", catchphrase:"これどんなゲームですか？",color:"#a8d08d",words:["初見","ゲーム"]},
-  {name:"ネタ実況民",  roleType:"ネタ勢",  catchphrase:"草",                   color:"#7eb8ff",words:["ゲーム","笑い"]},
-  {name:"世界記録研究者",roleType:"知識勢",catchphrase:"TASだと3分で終わる",    color:"#ffd700",words:["スピードラン","RTA","攻略"]}
+  {name:"RAINYファン",      roleType:"共感勢",   catchphrase:"この配信ずっと待ってた",   color:"#4fc3f7", words:["配信","応援","好き"],     interests:["エンタメ","雑談"]},
+  {name:"徹夜ラジオさん",   roleType:"共感勢",   catchphrase:"深夜に聴きたい声",         color:"#a8d8ea", words:["深夜","ラジオ","雑談"],   interests:["音楽","配信"]},
+  {name:"攻略wiki民",       roleType:"知識勢",   catchphrase:"それ実は裏技がある",       color:"#57d68d", words:["攻略","知識","情報"],     interests:["ゲーム","分析"]},
+  {name:"不満足なソクラテス",roleType:"懐疑勢",   catchphrase:"その問いは面白い",         color:"#c890d8", words:["哲学","疑問","なぜ"],     interests:["学習","議論"]},
+  {name:"JALランキング",     roleType:"知識勢",   catchphrase:"これは上位入り不可避",     color:"#f2c14e", words:["ランキング","分析","比較"], interests:["経済","投資"]},
+  {name:"初見さん",          roleType:"初心者勢", catchphrase:"初めて来たけどわかりやすい",color:"#a8d08d", words:["初心者","初めて","入門"],  interests:["学習","雑談"]},
+  {name:"竜神王",            roleType:"応援勢",   catchphrase:"これぞ学びの王道よ",       color:"#ffd700", words:["応援","最高","好き"],     interests:["配信","学習"]},
+  {name:"自動化研究員",      roleType:"開発者勢", catchphrase:"そこ自動化できるのか",     color:"#7eb8ff", words:["AI","自動化","システム"], interests:["技術","開発"]},
+  {name:"投資家見習い",      roleType:"投資家勢", catchphrase:"リターン計算してた",       color:"#57c87c", words:["投資","NISA","株"],       interests:["経済","投資"]},
+  {name:"ネタ実況民",        roleType:"ネタ勢",   catchphrase:"草不可避",                 color:"#ff9f7f", words:["草","笑い","ネタ"],       interests:["ゲーム","エンタメ"]},
+  {name:"感動屋さん",        roleType:"共感勢",   catchphrase:"泣いてる",                 color:"#ff7eb3", words:["感動","泣ける","エモい"],  interests:["音楽","映画"]},
+  {name:"妄想研究家",        roleType:"妄想勢",   catchphrase:"10年後どうなってるんだろ", color:"#d8a8f0", words:["未来","想像","妄想"],     interests:["哲学","学習"]},
+  {name:"超質問マン",        roleType:"質問勢",   catchphrase:"もう少し詳しく教えて",     color:"#64d2ff", words:["質問","なぜ","どうやって"],interests:["学習","雑談"]},
+  {name:"昼寝配信民",        roleType:"応援勢",   catchphrase:"ゆっくり見てます",         color:"#a8c8d8", words:["まったり","ゆったり","癒し"],interests:["配信","音楽"]},
+  {name:"プロ視聴者",        roleType:"知識勢",   catchphrase:"このシリーズ全部見てる",   color:"#e8c14e", words:["配信","シリーズ","考察"],  interests:["分析","エンタメ"]}
 ];}
-function recentText(){
-  const g=document.getElementById("gameTitle")?.value.trim()||"";
-  const last=clips.slice(-1)[0];
-  return[g,last?.name,last?.type].filter(Boolean).join(" ");
-}
 function relevance(p,text){
   const hay=[p.name,p.roleType,p.catchphrase,...(p.words||[]),...(p.interests||[])].join(" ");
   let s=0;text.split(/[s、。,]+/).filter(w=>w.length>=2).forEach(w=>{if(hay.includes(w))s+=2;});
@@ -1215,6 +1227,46 @@ document.addEventListener("keydown",e=>{
   if(e.key==="m"||e.key==="M")toggleMini();
   if(e.key==="o"||e.key==="O")toggleObs();
 });
+// ── YouTube から人格生成 ──
+async function genPersonasFromYT(urlId, descId, countId, statusId){
+  const url=(document.getElementById(urlId)?.value||"").trim();
+  const desc=(document.getElementById(descId)?.value||"").trim();
+  const n=parseInt(document.getElementById(countId)?.value||"6")||6;
+  const st=document.getElementById(statusId);
+  if(!url){if(st)st.textContent="URLを入力してください";return;}
+  const apiKey=localStorage.getItem(typeof GEMINI_KEY_STORE!=="undefined"?GEMINI_KEY_STORE:"streaming_gemini_key_v1")||"";
+  if(!apiKey){if(st)st.textContent="Gemini APIキーが必要です（Dock内で設定）";return;}
+  if(st)st.textContent="⏳ Geminiで生成中…";
+  const prompt=`You create YouTube live chat personas for a Japanese streaming simulator.
+
+YouTube: ${url}
+${desc?"配信の特徴: "+desc:""}
+
+このチャンネル/動画の視聴者を${n}人のペルソナとして生成。JSONの配列のみ出力（他テキスト不要）。
+
+形式: {"name":"視聴者名(2-8文字)","roleType":"ロール","catchphrase":"口癖(8-25文字)","color":"#hex","words":["ワード1","ワード2","ワード3"],"interests":["興味1","興味2"],"tone":"話し方"}
+
+roleType: 共感勢|知識勢|質問勢|懐疑勢|応援勢|初心者勢|ネタ勢|妄想勢|開発者勢|投資家勢
+名前・口癖は日本語。色は人格ごとに異なる鮮やかな色。`;
+  try{
+    const res=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+      {method:"POST",headers:{"Content-Type":"application/json"},
+       body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{temperature:0.92,maxOutputTokens:2000}})});
+    if(!res.ok)throw new Error("API "+res.status);
+    const data=await res.json();
+    const text=(data.candidates?.[0]?.content?.parts?.[0]?.text||"");
+    const match=text.match(/\[[\s\S]*?\]/);
+    if(!match)throw new Error("JSON not found");
+    const generated=JSON.parse(match[0]).filter(p=>p&&p.name);
+    const key=typeof SHARED_PERSONA_KEY!=="undefined"?SHARED_PERSONA_KEY:(typeof GAME_PERSONA_KEY!=="undefined"?GAME_PERSONA_KEY:"rainybrain_personas_v1");
+    const existing=JSON.parse(localStorage.getItem(key)||"[]");
+    const merged=[...generated,...existing.filter(e=>!generated.find(g=>g.name===e.name))];
+    localStorage.setItem(key,JSON.stringify(merged));
+    personas=merged;
+    if(st)st.textContent=`✓ ${generated.length}人を生成・保存しました`;
+    if(document.getElementById(urlId))document.getElementById(urlId).value="";
+  }catch(e){if(st)st.textContent="エラー: "+e.message;}
+}
 </script>
 </body>
 </html>
