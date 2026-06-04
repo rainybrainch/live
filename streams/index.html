@@ -99,29 +99,72 @@ h1 { font-size:clamp(1.6rem,4vw,2.8rem); font-weight:900; letter-spacing:.06em; 
       <span class="hd-badge obs">📺 OBS オーバーレイ対応</span>
       <span class="hd-badge ai">🤖 Gemini AI コメント対応</span>
     </div>
+.card[data-color="adm-archive"]   { --card-color:#7ed8a4; }
+.card[data-color="works-archive"] { --card-color:#f2c14e; }
+.card[data-color="rb-game"]       { --card-color:#a0b4ff; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="hd">
+    <h1>RAINYBRAIN STREAMS</h1>
+    <p class="hd-sub">Channel OS — 配信画面を選ぶ</p>
+    <div class="hd-badge-row">
+      <span class="hd-badge obs">📺 OBS オーバーレイ対応</span>
+      <span class="hd-badge ai">🤖 Gemini AI コメント対応</span>
+    </div>
   </div>
 
-  <!-- ── 本・活字 ── -->
+  <!-- ── オール・ドメディア ── -->
   <section class="section">
-    <div class="section-label">本・活字</div>
+    <div class="section-label">オール・ドメディア</div>
     <div class="grid">
 
-      <a class="card" data-color="book" href="book.html">
-        <div class="card-icon">📚</div>
-        <div class="card-name">本紹介（全般）</div>
-        <div class="card-desc">Amazonアフィリエイトリンク付き。表紙画像・著者・コメント3トラック。マイク音声認識。</div>
+      <a class="card" data-color="game" href="game.html">
+        <div class="card-icon">🎮</div>
+        <div class="card-name">ゲーム実況</div>
+        <div class="card-desc">Clipメモ・AIコメント・Channel OS人格対応。キーボード操作(C/B/Space)。</div>
         <div class="card-footer">
-          <span class="card-tag">BOOK REVIEW</span>
+          <span class="card-tag">GAME STREAM</span>
           <span class="feat obs">OBS</span><span class="feat ai">AI</span>
         </div>
       </a>
 
-      <a class="card" data-color="literature" href="literature.html">
-        <div class="card-icon">🖋</div>
-        <div class="card-name">文学紹介</div>
-        <div class="card-desc">小説・詩・随筆。引用パッセージをステージに大きく表示。Amazon対応。</div>
+      <a class="card" data-color="singing" href="singing.html">
+        <div class="card-icon">🎤</div>
+        <div class="card-name">歌ってみた配信</div>
+        <div class="card-desc">セットリスト管理。歌詞・コメントフロー。Channel OS人格連動。OBSオーバーレイ対応。</div>
         <div class="card-footer">
-          <span class="card-tag">LITERATURE</span>
+          <span class="card-tag">SINGING LIVE</span>
+          <span class="feat obs">OBS</span>
+        </div>
+      </a>
+
+      <a class="card" data-color="adm-archive" href="adm-archive.html">
+        <div class="card-icon">🗃️</div>
+        <div class="card-name">ADM Archive</div>
+        <div class="card-desc">ゲーム実況・歌ってみた配信の記録管理。クリップメモ・振り返り・YouTube URL。</div>
+        <div class="card-footer">
+          <span class="card-tag">ADM ARCHIVE</span>
+          <span class="feat new">NEW</span>
+        </div>
+      </a>
+
+    </div>
+  </section>
+
+  <!-- ── 作品紹介 ── -->
+  <section class="section">
+    <div class="section-label">作品紹介</div>
+    <div class="grid">
+
+      <a class="card" data-color="book" href="book.html">
+        <div class="card-icon">📚</div>
+        <div class="card-name">本紹介</div>
+        <div class="card-desc">Amazonアフィリエイトリンク付き。表紙画像・著者・コメント3トラック。マイク音声認識。</div>
+        <div class="card-footer">
+          <span class="card-tag">BOOK REVIEW</span>
           <span class="feat obs">OBS</span><span class="feat ai">AI</span>
         </div>
       </a>
@@ -136,24 +179,6 @@ h1 { font-size:clamp(1.6rem,4vw,2.8rem); font-weight:900; letter-spacing:.06em; 
         </div>
       </a>
 
-    </div>
-  </section>
-
-  <!-- ── 映像・ゲーム ── -->
-  <section class="section">
-    <div class="section-label">映像・ゲーム</div>
-    <div class="grid">
-
-      <a class="card" data-color="game" href="game.html">
-        <div class="card-icon">🎮</div>
-        <div class="card-name">ゲーム実況</div>
-        <div class="card-desc">2キャラパネル。Clipメモ・AIコメント・Channel OS人格対応。キーボード操作(C/B/Space)。</div>
-        <div class="card-footer">
-          <span class="card-tag">GAME STREAM</span>
-          <span class="feat obs">OBS</span><span class="feat ai">AI</span>
-        </div>
-      </a>
-
       <a class="card" data-color="movie" href="movie.html">
         <div class="card-icon">🎬</div>
         <div class="card-name">映画紹介</div>
@@ -164,47 +189,57 @@ h1 { font-size:clamp(1.6rem,4vw,2.8rem); font-weight:900; letter-spacing:.06em; 
         </div>
       </a>
 
-    </div>
-  </section>
-
-  <!-- ── 教育・対話 ── -->
-  <section class="section">
-    <div class="section-label">教育・対話</div>
-    <div class="grid">
-
-      <a class="card" data-color="study" href="study.html">
-        <div class="card-icon">🧠</div>
-        <div class="card-name">学朱雨会</div>
-        <div class="card-desc">科目クイックタグ17種。キーポイントをステージ表示。マイク音声認識。</div>
+      <a class="card" data-color="works-archive" href="works-archive.html">
+        <div class="card-icon">📖</div>
+        <div class="card-name">作品紹介 Archive</div>
+        <div class="card-desc">本・漫画・映画レビューの記録管理。タイトル・感想・評価・Amazon/YouTube URL。</div>
         <div class="card-footer">
-          <span class="card-tag">GAKUSHUUKAI</span>
-          <span class="feat obs">OBS</span><span class="feat ai">AI</span>
-        </div>
-      </a>
-
-
-    </div>
-  </section>
-
-  <!-- ── 音楽 ── -->
-  <section class="section">
-    <div class="section-label">音楽</div>
-    <div class="grid">
-
-      <a class="card" data-color="singing" href="singing.html">
-        <div class="card-icon">🎤</div>
-        <div class="card-name">歌ってみた配信</div>
-        <div class="card-desc">セットリスト管理。歌詞・コメントフロー。Channel OS人格連動。OBSオーバーレイ対応。</div>
-        <div class="card-footer">
-          <span class="card-tag">SINGING LIVE</span>
-          <span class="feat obs">OBS</span>
+          <span class="card-tag">WORKS ARCHIVE</span>
+          <span class="feat new">NEW</span>
         </div>
       </a>
 
     </div>
   </section>
 
-  <!-- ── RB-Tree ── -->
+  <!-- ── RAINYBRAIN ── -->
+  <section class="section">
+    <div class="section-label">RAINYBRAIN</div>
+    <div class="grid">
+
+      <a class="card" data-color="radio" href="../radio/studio.html">
+        <div class="card-icon">🎙</div>
+        <div class="card-name">RAINY RADIO</div>
+        <div class="card-desc">RAINYBRAINの対談・ラジオ配信スタジオ。ホスト＋ゲストOBSオーバーレイ・AIコメント対応。通称 RR。</div>
+        <div class="card-footer">
+          <span class="card-tag">RR RADIO STUDIO</span>
+          <span class="feat duo">DUO</span><span class="feat ai">AI</span>
+        </div>
+      </a>
+
+      <a class="card" data-color="rb-game" href="rb-game.html">
+        <div class="card-icon">🎮</div>
+        <div class="card-name">RBゲーム配信</div>
+        <div class="card-desc">RAINYBRAIN専用ゲーム配信画面。RAINYBRAINアーカイブ連携・独自ブランディング。</div>
+        <div class="card-footer">
+          <span class="card-tag">RB GAME</span>
+          <span class="feat obs">OBS</span><span class="feat ai">AI</span><span class="feat new">NEW</span>
+        </div>
+      </a>
+
+      <a class="card" data-color="rb-archive" href="rb-archive.html">
+        <div class="card-icon">🌧️</div>
+        <div class="card-name">RAINYBRAIN Archive</div>
+        <div class="card-desc">RR・RBゲームなどRAINYBRAIN配信の記録管理。タイトル・説明・まとめ・YouTube URL。</div>
+        <div class="card-footer">
+          <span class="card-tag">RB ARCHIVE</span>
+        </div>
+      </a>
+
+    </div>
+  </section>
+
+  <!-- ── RB-Tree 公開学習 ── -->
   <section class="section">
     <div class="section-label">RB-Tree — 公開学習</div>
     <div class="grid">
@@ -212,40 +247,30 @@ h1 { font-size:clamp(1.6rem,4vw,2.8rem); font-weight:900; letter-spacing:.06em; 
       <a class="card" data-color="rbt-econ" href="economy.html">
         <div class="card-icon">🌳</div>
         <div class="card-name">RB-Tree経済</div>
-        <div class="card-desc">経済・金利・インフレを止めながら学ぶ。Seed 26種・タイマー・字幕・Gemini AI・Archive記録。キーボード17種で操作。</div>
+        <div class="card-desc">経済・金利・インフレを止めながら学ぶ。Seed 26種・タイマー・字幕・Gemini AI・Archive記録。</div>
         <div class="card-footer">
           <span class="card-tag">RB-TREE 経済</span>
-          <span class="feat obs">OBS</span><span class="feat ai">AI</span><span class="feat kb">17キー</span><span class="feat new">v2.0</span>
+          <span class="feat obs">OBS</span><span class="feat ai">AI</span><span class="feat kb">17キー</span>
         </div>
       </a>
 
       <a class="card" data-color="rbt-poli" href="politics.html">
         <div class="card-icon">🏛</div>
         <div class="card-name">RB-Tree政治</div>
-        <div class="card-desc">政治・選挙・国家・外交。三権分立から安全保障まで止めながら理解する。Seed記録・Archive搭載。</div>
+        <div class="card-desc">政治・選挙・国家・外交。三権分立から安全保障まで止めながら理解する。</div>
         <div class="card-footer">
           <span class="card-tag">RB-TREE 政治</span>
-          <span class="feat obs">OBS</span><span class="feat ai">AI</span><span class="feat kb">17キー</span><span class="feat new">v2.0</span>
+          <span class="feat obs">OBS</span><span class="feat ai">AI</span><span class="feat kb">17キー</span>
         </div>
       </a>
 
       <a class="card" data-color="rbt-invest" href="investment.html">
         <div class="card-icon">📈</div>
         <div class="card-name">RB-Tree投資</div>
-        <div class="card-desc">投資・NISA・ETF・複利・株。初心者と一緒に止めながら学ぶ。Seed記録・Archive搭載。</div>
+        <div class="card-desc">投資・NISA・ETF・複利・株。初心者と一緒に止めながら学ぶ。</div>
         <div class="card-footer">
           <span class="card-tag">RB-TREE 投資</span>
-          <span class="feat obs">OBS</span><span class="feat ai">AI</span><span class="feat kb">17キー</span><span class="feat new">v2.0</span>
-        </div>
-      </a>
-
-      <a class="card" data-color="radio" href="../radio/studio.html">
-        <div class="card-icon">🎙</div>
-        <div class="card-name">RAINY RADIO</div>
-        <div class="card-desc">RAINYBRAIN の対談・ラジオ配信スタジオ。ホスト＋ゲスト OBS オーバーレイ・AI コメント対応。通称 RR。</div>
-        <div class="card-footer">
-          <span class="card-tag">RR RADIO STUDIO</span>
-          <span class="feat duo">DUO</span><span class="feat ai">AI</span>
+          <span class="feat obs">OBS</span><span class="feat ai">AI</span><span class="feat kb">17キー</span>
         </div>
       </a>
 
@@ -262,22 +287,6 @@ h1 { font-size:clamp(1.6rem,4vw,2.8rem); font-weight:900; letter-spacing:.06em; 
     </div>
   </section>
 
-  <!-- ── RAINYBRAIN Archive ── -->
-  <section class="section">
-    <div class="section-label">RAINYBRAIN Archive</div>
-    <div class="grid">
-      <a class="card" data-color="rb-archive" href="rb-archive.html">
-        <div class="card-icon">🌧️</div>
-        <div class="card-name">RAINYBRAIN Archive</div>
-        <div class="card-desc">RR・ゲーム実況・歌ってみたなどエンタメ配信の記録管理。タイトル・説明・まとめ・YouTube URL。</div>
-        <div class="card-footer">
-          <span class="card-tag">RB ARCHIVE</span>
-          <span class="feat new">NEW</span>
-        </div>
-      </a>
-    </div>
-  </section>
-
   <!-- ── ツール ── -->
   <section class="section">
     <div class="section-label">ツール</div>
@@ -285,10 +294,10 @@ h1 { font-size:clamp(1.6rem,4vw,2.8rem); font-weight:900; letter-spacing:.06em; 
 
       <a class="card" data-color="channel-os" href="https://rainybrainch.github.io/comment-studio/ai-comment-personas.html" target="_blank">
         <div class="card-icon">🎭</div>
-        <div class="card-name">Channel OS</div>
-        <div class="card-desc">AIコメント人格を作成・管理。ここで作った人格が全配信画面のコメントに反映される。</div>
+        <div class="card-name">コメント人格</div>
+        <div class="card-desc">AIコメント人格を作成・管理する配信者専用スタジオ。作成した人格が全配信画面に自動反映。</div>
         <div class="card-footer">
-          <span class="card-tag">PERSONA STUDIO ↗</span>
+          <span class="card-tag">コメント人格 ↗</span>
           <span class="feat ext">外部</span>
         </div>
       </a>

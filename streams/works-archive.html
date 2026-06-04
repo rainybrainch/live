@@ -3,14 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>RAINYBRAIN Archive</title>
+<title>作品紹介 Archive</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;700&family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">
 <style>
 :root{
   --bg:#07080d;--bg2:#0c0e18;--panel:rgba(10,12,22,.94);
   --line:rgba(140,160,255,.12);--text:#e8eaff;
   --muted:rgba(180,190,255,.52);--faint:rgba(180,190,255,.28);
-  --rr:#a0b4ff;   --rr-rgb:160,180,255;
+  --rr:#f2c14e;   --rr-rgb:242,193,78;
   --game:#57d68d; --game-rgb:87,214,141;
   --sing:#e879a0; --sing-rgb:232,121,160;
   --other:#f2c14e;--other-rgb:242,193,78;
@@ -122,10 +122,10 @@ button,input,textarea,select{font:inherit;color:inherit;}
 <!-- HEADER -->
 <header class="header">
   <div class="logo">
-    <span class="logo-mark">🌧️</span>
+    <span class="logo-mark">📖</span>
     <div>
-      <div class="logo-name">RAINYBRAIN Archive</div>
-      <div class="logo-rb">CHANNEL OS — コンテンツ記録</div>
+      <div class="logo-name">作品紹介 Archive</div>
+      <div class="logo-rb">作品紹介 — レビュー記録</div>
     </div>
   </div>
   <div class="h-search">
@@ -142,13 +142,13 @@ button,input,textarea,select{font:inherit;color:inherit;}
   <button class="tab active" data-cat="" style="--tab-c:#a0b4ff" onclick="switchCat('')">
     <span class="tab-dot"></span> すべて
   </button>
-  <button class="tab" data-cat="rr" style="--tab-c:#a0b4ff" onclick="switchCat('rr')">
+  <button class="tab" data-cat="book" style="--tab-c:#f2c14e" onclick="switchCat('book')"><span class="tab-dot" style="background:#f2c14e"></span> 📚 本紹介</button>
     <span class="tab-dot" style="background:#a0b4ff"></span> 🎙 RAINY RADIO
   </button>
-  <button class="tab" data-cat="game" style="--tab-c:#57d68d" onclick="switchCat('game')">
+  <button class="tab" data-cat="manga" style="--tab-c:#f79f57" onclick="switchCat('manga')"><span class="tab-dot" style="background:#f79f57"></span> 🗺 漫画紹介</button>
     <span class="tab-dot" style="background:#57d68d"></span> 🎮 ゲーム実況
   </button>
-  <button class="tab" data-cat="singing" style="--tab-c:#e879a0" onclick="switchCat('singing')">
+  <button class="tab" data-cat="movie" style="--tab-c:#ff6b7a" onclick="switchCat('movie')"><span class="tab-dot" style="background:#ff6b7a"></span> 🎬 映画紹介</button>
     <span class="tab-dot" style="background:#e879a0"></span> 🎤 歌ってみた
   </button>
   <button class="tab" data-cat="other" style="--tab-c:#f2c14e" onclick="switchCat('other')">
@@ -206,9 +206,9 @@ button,input,textarea,select{font:inherit;color:inherit;}
     <div class="field">
       <label>カテゴリ</label>
       <select id="fCat">
-        <option value="rr">🎙 RAINY RADIO</option>
-        <option value="rbgame">🎮 RBゲーム</option>
-        <option value="rbother">📦 RBその他</option>
+        <option value="book">📚 本紹介</option>
+        <option value="manga">🗺 漫画紹介</option>
+        <option value="movie">🎬 映画紹介</option>
         <option value="other">📦 その他</option>
       </select>
     </div>
@@ -234,12 +234,12 @@ button,input,textarea,select{font:inherit;color:inherit;}
 
 <script>
 "use strict";
-const LS_KEY = "rainybrain_archive_v1";
+const LS_KEY = "works_archive_v1";
 
 const CAT = {
-  rr:      {label:"RAINY RADIO", icon:"🎙", color:"var(--rr)",   rgb:"160,180,255"},
-  game:    {label:"ゲーム実況",   icon:"🎮", color:"var(--game)", rgb:"87,214,141"},
-  singing: {label:"歌ってみた",   icon:"🎤", color:"var(--sing)", rgb:"232,121,160"},
+  book:  {label:"本紹介",   icon:"📚", color:"var(--rr)",   rgb:"242,193,78", icon:"🎙", color:"var(--rr)",   rgb:"160,180,255"},
+  manga: {label:"漫画紹介", icon:"🗺",  color:"var(--game)", rgb:"247,159,87",   icon:"🎮", color:"var(--game)", rgb:"87,214,141"},
+  movie: {label:"映画紹介", icon:"🎬", color:"var(--sing)", rgb:"255,107,122",   icon:"🎤", color:"var(--sing)", rgb:"232,121,160"},
   other:   {label:"その他",       icon:"📦", color:"var(--other)",rgb:"242,193,78"},
 };
 
