@@ -376,6 +376,15 @@ body[data-lv] .lv-badge{display:block;}
     <div class="setlist" id="setlistEl"></div>
 
     <div class="sp-stats" id="spStats"></div>
+    <div class="sp-persona-section">
+      <div class="sp-label" style="margin-top:12px;margin-bottom:6px;">🎭 コメント人格</div>
+      <div style="display:flex;gap:5px;margin-bottom:5px;">
+        <input id="singingPersonaUrl" placeholder="Channel OS CSV URL" style="flex:1;font-size:10px;border:1px solid rgba(232,121,160,.2);border-radius:7px;background:rgba(0,0,0,.3);color:var(--text);padding:6px 8px;outline:none;">
+        <button onclick="syncSingingPersonas()" style="white-space:nowrap;padding:0 9px;font-size:10px;font-weight:900;border:1px solid rgba(232,121,160,.3);background:rgba(232,121,160,.08);color:var(--acc);border-radius:7px;cursor:pointer;min-height:32px;">同期</button>
+      </div>
+      <span id="singingPersonaSt" style="font-size:9px;color:var(--muted);"></span>
+      <a href="https://rainybrainch.github.io/comment-studio/ai-comment-personas.html" target="_blank" style="display:block;margin-top:5px;text-align:center;padding:6px;border:1px solid rgba(224,160,255,.3);border-radius:7px;background:rgba(224,160,255,.06);color:#e0a0ff;font-size:10px;font-weight:900;text-decoration:none;">🎭 Channel OS ↗</a>
+    </div>
   </aside>
 
   <!-- CENTER -->
@@ -983,6 +992,51 @@ const COMMENT_POOL = [
   {icon:'📻', name:'深夜ラジオ民', texts:['この雰囲気最高すぎる','深夜に聴きたい声','眠れなくなっちゃう','沼った','ずっと歌って？？']},
 ];
 
+// === Channel OS 人格システム ===
+const SINGING_PERSONA_KEY = "rainybrain_personas_v1";
+const SINGING_SHEET_DEFAULT = "https://docs.google.com/spreadsheets/d/1YNQUnDv18WsMm7H84Ytg3lIgvWmetLZ3bqyMm3RCgkI/export?format=csv";
+
+function loadSingingPersonas(){
+  const result=[];
+  try{const p=JSON.parse(localStorage.getItem("all_domedia_personas_v5")||"[]");result.push(...p.filter(x=>x&&x.name&&x.enabled!==false));}catch{}
+  try{const ids=new Set(result.map(x=>x.id||x.name));const p=JSON.parse(localStorage.getItem(SINGING_PERSONA_KEY)||"[]");result.push(...p.filter(x=>x&&x.name&&!ids.has(x.id||x.name)));}catch{}
+  return result;
+}
+async function syncSingingPersonas(){
+  const url=document.getElementById("singingPersonaUrl")?.value.trim()||SINGING_SHEET_DEFAULT;
+  const st=document.getElementById("singingPersonaSt");
+  if(st)st.textContent="同期中…";
+  try{
+    const r=await fetch(url,{cache:"no-store"});if(!r.ok)throw new Error(r.status);
+    const csv=await r.text();
+    const lines=csv.split("
+").filter(l=>l.trim());
+    const header=lines[0].split(",").map(s=>s.trim().replace(/^"|"$/g,"").toLowerCase());
+    const imported=lines.slice(1).map(l=>{
+      const v=l.split(",").map(s=>s.trim().replace(/^"|"$/g,""));
+      const o={}; header.forEach((h,i)=>o[h]=v[i]||"");
+      return{name:o.name||o["名前"]||"",roleType:o.roletype||o["役割"]||"共感勢",catchphrase:o.catchphrase||o["口癖"]||"",color:o.color||"#e879a0",words:(o.words||o["キーワード"]||"").split(/[,、]+/).filter(Boolean),enabled:o.enabled!=="false"};
+    }).filter(p=>p.name&&p.enabled!==false);
+    localStorage.setItem(SINGING_PERSONA_KEY,JSON.stringify(imported));
+    if(st)st.textContent="✓ "+imported.length+"人同期";
+  }catch(e){if(st)st.textContent="エラー: "+e.message;}
+}
+function buildSingingComment(p,songTitle){
+  if(p.catchphrase&&Math.random()<.4)return{text:p.catchphrase.slice(0,40),icon:"💬",name:p.name,color:p.color||"#e879a0"};
+  const kw=songTitle||"この曲";
+  const map={
+    "共感勢":[kw+"好きすぎる","エモい…","声やばすぎ",kw+"泣ける"],
+    "応援勢":["最高！！！","がんばれー！","推せる！！","ずっと歌ってほしい"],
+    "知識勢":[kw+"の歌い方が好き","音域えぐい","この曲選択センスある","難曲なのに"],
+    "懐疑勢":["この高音出るの？","難しくない？","本当に生で歌ってる？","どこで練習してるの？"],
+    "質問勢":[kw+"何回練習した？","次は何の曲ですか？","リクエストできる？","好きな曲は？"],
+    "ネタ勢":["草","神","天才の所業","これは泣くわ"],
+    "妄想勢":["セトリが最高すぎる",kw+"フル聴きたい","アルバム出してほしい","ライブ行きたい"]
+  };
+  const pool=map[p.roleType]||map["共感勢"];
+  return{text:pool[Math.floor(Math.random()*pool.length)].slice(0,40),icon:"💬",name:p.name,color:p.color||"#e879a0"};
+}
+
 let commentsActive  = true;
 let commentInterval = null;
 const MAX_COMMENTS  = 5;
@@ -1009,26 +1063,35 @@ function spawnComment() {
   const wrap = document.getElementById('commentsWrap');
   if (!wrap) return;
 
-  const persona = COMMENT_POOL[Math.floor(Math.random() * COMMENT_POOL.length)];
-  const text    = persona.texts[Math.floor(Math.random() * persona.texts.length)];
+  const channelPersonas = loadSingingPersonas();
+  const nowPlaying = document.getElementById('npTitle')?.textContent;
+  const songTitle = (nowPlaying && nowPlaying !== '—') ? nowPlaying : null;
+
+  let icon, name, text, color;
+  if (channelPersonas.length > 0) {
+    const p = channelPersonas[Math.floor(Math.random() * channelPersonas.length)];
+    const r = buildSingingComment(p, songTitle);
+    icon = r.icon; name = r.name; text = r.text; color = r.color;
+  } else {
+    const persona = COMMENT_POOL[Math.floor(Math.random() * COMMENT_POOL.length)];
+    icon = persona.icon; name = persona.name; color = '#e879a0';
+    text = persona.texts[Math.floor(Math.random() * persona.texts.length)];
+  }
 
   const el = document.createElement('div');
   el.className = 'comment-item';
-
   const leftPct = randomBetween(3, 70);
   const dur = randomBetween(13000, 19000);
   el.style.cssText = `left:${leftPct}vw;bottom:70px;--cr-dur:${dur}ms;`;
-
+  el.style.setProperty('--ci-color', color||'#e879a0');
   el.innerHTML = `
-    <span class="ci-icon">${persona.icon}</span>
+    <span class="ci-icon">${icon}</span>
     <div class="ci-body">
-      <div class="ci-name">${persona.name}</div>
+      <div class="ci-name" style="color:${color||'#e879a0'};">${name}</div>
       <div class="ci-text">${text}</div>
     </div>`;
   wrap.appendChild(el);
   setTimeout(() => el.remove(), dur + 400);
-
-  // 次のコメントまでの間隔（lv が高いほど短い）
   if (commentInterval) {
     clearInterval(commentInterval);
     commentInterval = setInterval(spawnComment, getCommentInterval());

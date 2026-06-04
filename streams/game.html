@@ -452,6 +452,17 @@ body::after{width:42vw;height:38vh;right:4%;bottom:8%;background:radial-gradient
       <button class="btn-exp" onclick="clearSession()">🗑 クリア</button>
     </div>
 
+    <details style="border:1px solid rgba(255,255,255,.09);border-radius:10px;background:rgba(0,0,0,.14);">
+      <summary style="cursor:pointer;padding:10px 12px;font-size:12px;font-weight:900;color:var(--muted);display:flex;align-items:center;gap:7px;">🎭 コメント人格設定 <span id="gamePersonaSt" style="margin-left:auto;font-size:10px;"></span></summary>
+      <div style="padding:0 12px 12px;display:grid;gap:8px;">
+        <div style="display:flex;gap:6px;">
+          <input id="gamePersonaUrl" placeholder="Google Sheets CSV URL" style="flex:1;min-height:36px;font-size:11px;border:1px solid var(--line);border-radius:8px;background:rgba(0,0,0,.3);color:var(--text);padding:7px 10px;outline:none;">
+          <button onclick="syncPersonas()" style="white-space:nowrap;min-height:36px;padding:0 12px;font-size:11px;font-weight:900;border:1px solid rgba(79,195,247,.3);background:rgba(79,195,247,.08);color:#4fc3f7;border-radius:8px;cursor:pointer;">🔄 同期</button>
+        </div>
+        <a href="https://rainybrainch.github.io/comment-studio/ai-comment-personas.html" target="_blank" style="display:flex;align-items:center;justify-content:center;min-height:36px;border:1px solid rgba(224,160,255,.35);border-radius:8px;background:rgba(224,160,255,.07);color:#e0a0ff;font-size:11px;font-weight:900;text-decoration:none;">🎭 Channel OS で人格を作る ↗</a>
+      </div>
+    </details>
+
   </main>
 
   <!-- キャラB：パートナー/共演者 -->
@@ -1058,28 +1069,81 @@ function showToast(msg, cls = '') {
   requestAnimationFrame(() => t.classList.add('show'));
   toastTimer = setTimeout(() => t.classList.remove('show'), 2800);
 }
-// === Comment System ===
-let personas=(()=>{try{return JSON.parse(localStorage.getItem("rainybrain_personas_v1")||"[]");}catch{return[];}})();
-let commentsEnabled=true,commentSpeed="normal",commentTimer=null;
-function defaultPersonas(){return[
-  {name:"実況ファン",   roleType:"共感勢",catchphrase:"この場面すき",          color:"#4fc3f7"},
-  {name:"攻略wiki民",  roleType:"知識勢",catchphrase:"そこ裏ルートある",      color:"#57d68d"},
-  {name:"ホラー耐性0",  roleType:"共感勢",catchphrase:"ムリムリムリ",           color:"#ff7675"},
-  {name:"全クリ応援団", roleType:"応援勢",catchphrase:"次のボスも勝てる！",    color:"#ffb74d"},
-  {name:"バックシート", roleType:"懐疑勢",catchphrase:"そっち行かないで",      color:"#c890d8"},
-  {name:"初見さん",    roleType:"質問勢",catchphrase:"これどんなゲームですか？",color:"#a8d08d"}
-];}
-function buildComment(p){
-  const g=document.getElementById("gameTitle")?.value.trim()||"このゲーム";
-  const m={"共感勢":[g+"懐かしい","いいねいいね","好き！",p.catchphrase||"わかる"],
-           "知識勢":["攻略法あるよ","ここ罠だよ","詳しいです",p.catchphrase||"なるほど"],
-           "応援勢":["がんばれー！","いけいけ！","応援してます",p.catchphrase||"ファイト"],
-           "懐疑勢":["それ大丈夫？","ほんとに？","うーん…",p.catchphrase||"怪しい"],
-           "質問勢":["これどうするの？","難しい？","教えて",p.catchphrase||"質問"]};
-  const pool=m[p.roleType]||m["共感勢"];
-  return pool[Math.floor(Math.random()*pool.length)];
+// === Comment System (Channel OS connected) ===
+const GAME_PERSONA_KEY = "rainybrain_personas_v1";
+const GAME_SHEET_DEFAULT = "https://docs.google.com/spreadsheets/d/1YNQUnDv18WsMm7H84Ytg3lIgvWmetLZ3bqyMm3RCgkI/export?format=csv";
+let personas = loadPersonas();
+let commentsEnabled=true,commentSpeed="normal",commentTimer=null,commentCount=0;
+
+function loadPersonas(){
+  const result=[];
+  try{const p=JSON.parse(localStorage.getItem("all_domedia_personas_v5")||"[]");result.push(...p.filter(x=>x&&x.name&&x.enabled!==false));}catch{}
+  try{const ids=new Set(result.map(x=>x.id||x.name));const p=JSON.parse(localStorage.getItem(GAME_PERSONA_KEY)||"[]");result.push(...p.filter(x=>x&&x.name&&!ids.has(x.id||x.name)));}catch{}
+  return result;
 }
-function pickPersona(){const l=personas.length?personas:defaultPersonas();return l[Math.floor(Math.random()*l.length)];}
+async function syncPersonas(){
+  const url=document.getElementById("gamePersonaUrl")?.value.trim()||GAME_SHEET_DEFAULT;
+  const st=document.getElementById("gamePersonaSt");
+  if(st)st.textContent="同期中…";
+  try{
+    const csv=await(await fetch(url.includes("spreadsheets")?url.replace(//edit.*/,"/export?format=csv&id="+(url.match(//d/([^/]+)/)||["",""])[1]):url,{cache:"no-store"})).text();
+    const lines=csv.split("
+").filter(l=>l.trim());
+    const header=lines[0].split(",").map(s=>s.trim().replace(/^\"|\"$/g,"").toLowerCase());
+    personas=lines.slice(1).map(l=>{
+      const v=l.split(",").map(s=>s.trim().replace(/^\"|\"$/g,""));
+      const o={}; header.forEach((h,i)=>o[h]=v[i]||"")
+      return{name:o.name||o["名前"]||"",roleType:o.roletype||o["役割"]||"共感勢",catchphrase:o.catchphrase||o["口癖"]||"",color:o.color||"#4fc3f7",words:(o.words||o["キーワード"]||"").split(/[,、]+/).filter(Boolean),enabled:o.enabled!=="false"};
+    }).filter(p=>p.name&&p.enabled!==false);
+    localStorage.setItem(GAME_PERSONA_KEY,JSON.stringify(personas));
+    if(st)st.textContent="✓ "+personas.length+"人同期";
+  }catch(e){personas=loadPersonas();if(!personas.length)personas=defaultPersonas();if(st)st.textContent="キャッシュ "+personas.length+"人";}
+}
+function defaultPersonas(){return[
+  {name:"実況ファン",   roleType:"共感勢", catchphrase:"この場面すき！",        color:"#4fc3f7",words:["ゲーム","実況"]},
+  {name:"攻略wiki民",  roleType:"知識勢", catchphrase:"そこ裏ルートある",      color:"#57d68d",words:["攻略","ボス","クリア"]},
+  {name:"ホラー耐性0",  roleType:"共感勢", catchphrase:"ムリムリムリ",           color:"#ff7675",words:["ホラー","怖い"]},
+  {name:"全クリ応援団", roleType:"応援勢", catchphrase:"次のボスも勝てる！",     color:"#ffb74d",words:["クリア","ボス"]},
+  {name:"バックシート", roleType:"懐疑勢", catchphrase:"そっち行かないで",       color:"#c890d8",words:["ルート","選択"]},
+  {name:"初見さん",    roleType:"質問勢", catchphrase:"これどんなゲームですか？",color:"#a8d08d",words:["初見","ゲーム"]},
+  {name:"ネタ実況民",  roleType:"ネタ勢",  catchphrase:"草",                   color:"#7eb8ff",words:["ゲーム","笑い"]},
+  {name:"世界記録研究者",roleType:"知識勢",catchphrase:"TASだと3分で終わる",    color:"#ffd700",words:["スピードラン","RTA","攻略"]}
+];}
+function recentText(){
+  const g=document.getElementById("gameTitle")?.value.trim()||"";
+  const last=clips.slice(-1)[0];
+  return[g,last?.name,last?.type].filter(Boolean).join(" ");
+}
+function relevance(p,text){
+  const hay=[p.name,p.roleType,p.catchphrase,...(p.words||[]),...(p.interests||[])].join(" ");
+  let s=0;text.split(/[s、。,]+/).filter(w=>w.length>=2).forEach(w=>{if(hay.includes(w))s+=2;});
+  if(/ゲーム|実況|プレイ/.test(text)&&/ゲーム|エンタメ/.test(hay))s+=3;
+  if(/ボス|クリア|難しい|失敗/.test(text)&&/攻略|応援|共感/.test(hay))s+=2;
+  return s;
+}
+function buildComment(p){
+  if(p.catchphrase&&Math.random()<.35)return p.catchphrase.slice(0,40);
+  const g=document.getElementById("gameTitle")?.value.trim()||"このゲーム";
+  const lastClip=clips.slice(-1)[0];
+  const kw=lastClip?.name||g;
+  const map={
+    "共感勢":[kw+"好き！",g+"懐かしい","めちゃ楽しそう",p.catchphrase||"わかる"],
+    "知識勢":["ここ攻略法あるよ","この先ヤバいよ",kw+"の正解ルートは…",p.catchphrase||"なるほど"],
+    "応援勢":["がんばれー！","いけいけ！！",kw+"勝てる！",p.catchphrase||"応援してます"],
+    "懐疑勢":["それ大丈夫？","ルート合ってる？",kw+"は危険では？",p.catchphrase||"うーん"],
+    "質問勢":[kw+"どうやってクリアした？","このゲーム難しい？","何時間かかった？",p.catchphrase||"教えて"],
+    "ネタ勢":["草","w","それは草",p.catchphrase||"笑った"],
+    "妄想勢":["この先どうなるんだろ","ストーリー気になる",kw+"の続きは？",p.catchphrase||"気になる"],
+    "開発者勢":["グラフィックすごい","AIの動きが面白い","エンジン凝ってる",p.catchphrase||"技術力"]
+  };
+  const pool=map[p.roleType]||map["共感勢"];
+  return pool[Math.floor(Math.random()*pool.length)].slice(0,40);
+}
+function pickPersona(){
+  const list=personas.length?personas:defaultPersonas();
+  const text=recentText();
+  return list.map(p=>({p,s:relevance(p,text)+Math.random()*.4})).sort((a,b)=>b.s-a.s).slice(0,Math.min(list.length,6))[Math.floor(Math.random()*Math.min(list.length,6))].p;
+}
 function addComment(text,name,color){
   const n=document.createElement("article");
   n.className="comment";
