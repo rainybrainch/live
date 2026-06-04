@@ -712,6 +712,13 @@ body.timer-warning .comment-progress-fill{background:#ff6b7a;}
 }
 .arc-yt-link:hover{background:rgba(255,30,30,.22);color:#fff;}
 .arc-empty{font-size:11px;color:var(--faint);padding:10px;text-align:center;}
+/* -- ITER13: live theme sync + UX polish -- */
+.keyword-main.empty{color:rgba(255,255,255,.22);font-style:italic;}
+.keyword-hint{font-size:9px;color:rgba(255,255,255,.18);margin-top:6px;letter-spacing:.06em;}
+.keyword-hint.active{color:rgba(201,168,76,.4);}
+.section-title{transition:color .2s;}
+.dock-body .field label{font-size:9px;font-weight:900;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);}
+.dock-body input,.dock-body textarea,.dock-body select{font-size:12px;}
 </style>
 </head>
 <body>
@@ -751,12 +758,8 @@ body.timer-warning .comment-progress-fill{background:#ff6b7a;}
   <!-- Keyword card -->
   <section class="keyword-card">
     <div class="kicker" id="kicker">RB-TREE ECONOMICS</div>
-    <div class="keyword-main" id="keywordMain">今日のキーワード</div>
+    <div class="keyword-main empty" id="keywordMain">テーマ未設定</div>
     <div class="keyword-sub"  id="keywordSub">ここで学ぶ投資用語を設定してください</div>
-    <div class="keyword-agenda" id="agendaWrap">
-      <div class="agenda-label">本日の議題</div>
-      <div class="agenda-text" id="agendaText">—</div>
-    </div>
     <div class="keyword-footer">
       <a class="archive-link" id="archiveChip" href="https://rainybrainch.github.io/rb-tree-archive/investment.html" target="_blank" rel="noopener">
         🌲 RB-Tree Archive ↗
@@ -1109,10 +1112,9 @@ function init(){
 }
 
 function hydrate(){
-  $("keywordInput").value = state.keyword||"";
+  $("keywordInput").value = state.keyword||"";syncTheme();
   if($("subInput")) $("subInput").value = state.sub||"";
   if(state.seedDesc&&$("keywordSub"))$("keywordSub").textContent=state.seedDesc;
-  const _ag=$("agendaText"); if(_ag){_ag.textContent=state.sub||"—";if($("agendaWrap"))$("agendaWrap").style.display=state.sub?"":"none";}
   $("commentSpeed").value = state.commentSpeed||"normal";
   $("commentEngine").value= state.commentEngine||"template";
   $("personaSheetUrl").value = state.personaSheetUrl||"";
@@ -1136,7 +1138,7 @@ function bind(){
   $("openDock")?.addEventListener("click",()=>document.body.classList.remove("panel-hidden"));
   $("kbHelpBtn")?.addEventListener("click",toggleKbHelp);
   $("applyBtn")?.addEventListener("click",applyStage);
-  $("keywordInput")?.addEventListener("input",()=>{state.keyword=$("keywordInput").value;save();syncArchiveTheme();});
+  $("keywordInput")?.addEventListener("input",()=>{state.keyword=$("keywordInput").value;save();syncTheme();});
   $("subInput")?.addEventListener("input",()=>{state.sub=$("subInput").value;save();});
   $("stageFullscreenBtn")?.addEventListener("click",toggleFullscreen);
   $("dockFullscreenBtn")?.addEventListener("click",toggleFullscreen);
@@ -1413,19 +1415,19 @@ function bind(){
   });
 }
 
-function syncArchiveTheme(){
+function syncTheme(){
   const kw=$("keywordInput")?.value||"";
+  // Live update keyword card on stage
+  const km=$("keywordMain");
+  if(km){km.textContent=kw||"テーマ未設定";km.classList.toggle("empty",!kw);km.classList.remove("kw-flash");void km.offsetWidth;if(kw)km.classList.add("kw-flash");}
+  const hint=$("kwHint");
+  if(hint)hint.classList.toggle("active",!!kw);
+  state.keyword=kw; save();
+  // Sync archive theme
   const archKw=$("archiveKw");
   const badge=$("arcSyncBadge");
-  if(archKw&&(!archKw.value||archKw.dataset.autoSync==="1")){
-    archKw.value=kw;
-    archKw.dataset.autoSync="1";
-  }
-  if(badge){
-    const synced=archKw&&archKw.value===kw&&kw;
-    badge.textContent=synced?"✓ 同期中":"Section 1 と連動";
-    badge.classList.toggle("synced",!!synced);
-  }
+  if(archKw&&(!archKw.value||archKw.dataset.autoSync==="1")){archKw.value=kw;archKw.dataset.autoSync="1";}
+  if(badge){const synced=archKw&&archKw.value===kw&&kw;badge.textContent=synced?"✓ 同期中":"Section 1 と連動";badge.classList.toggle("synced",!!synced);}
 }
 
 
@@ -1434,8 +1436,6 @@ function toggleKbHelp(){
 }
 
 function selectStageByKey(stage){
-  const btn=document.querySelector(`.stage-sel-btn[data-stage="${stage}"]`);
-  if(!btn)return;
   document.querySelectorAll(".stage-sel-btn").forEach(b=>b.classList.toggle("active",b.dataset.stage===stage));
   state.currentStage=stage;save();updateStageBadge(stage);
   const keys={seed:"1",branch:"2",leaf:"3",tree:"4",forest:"5"};
@@ -1819,11 +1819,7 @@ function applyStage(){
   const _desc=state.seedDesc||sub;
   $("keywordSub").textContent=_desc;
   const _km=$("keywordMain");_km.classList.remove("kw-flash");void _km.offsetWidth;_km.classList.add("kw-flash");
-  const agEl=$("agendaText");
-  // Show agenda only if user entered something different from seed desc
-  const _showAg=sub&&sub!==(state.seedDesc||"");
-  if(agEl){agEl.textContent=sub||"—";$("agendaWrap").style.display=_showAg?"":"none";}
-  if(kw&&kw!=="今日のキーワード"&&$("archiveKw")&&!$("archiveKw").value)$("archiveKw").value=kw;
+  
   $("kicker").textContent="RB-TREE INVESTMENT";
   save();
 }
