@@ -156,6 +156,9 @@ body.obs-mode .dock,body.obs-mode .open-tab{display:none!important;}
 .title-card { transition:box-shadow .35s ease; }
 .title-card.flash { box-shadow:0 0 0 2px var(--accent), 0 8px 32px rgba(0,0,0,.28)!important; animation:card-glow .7s ease-out forwards; }
 @keyframes card-glow { 0%{box-shadow:0 0 0 3px var(--accent),0 0 40px color-mix(in srgb,var(--accent) 28%,transparent);} 100%{box-shadow:0 8px 32px rgba(0,0,0,.28);} }
+.freq-btn{padding:4px 8px;border-radius:6px;border:1px solid var(--line);background:rgba(255,255,255,.04);font-size:10px;font-weight:900;color:var(--muted);cursor:pointer;transition:all .15s;flex-shrink:0;}
+.freq-btn.active{border-color:rgba(87,200,124,.5);background:rgba(87,200,124,.12);color:#57c87c;}
+.freq-btn[data-freq="4"].active{border-color:rgba(255,80,80,.5);background:rgba(255,80,80,.1);color:#ff8080;}
 </style>
 </head>
 <body>
@@ -318,6 +321,7 @@ body.obs-mode .dock,body.obs-mode .open-tab{display:none!important;}
 </button>
 
 <script>
+const STREAM_GENRES=["漫画","アニメ","レビュー","エンタメ","コミック","キャラ"];
 (() => {
 "use strict";
 const SHARED_PERSONA_KEY = "rainybrain_personas_v1";
@@ -550,9 +554,11 @@ function pickPersona(){
 function _relevanceScore(p,text){
   if(!text)return 0;
   const hay=[p.name,p.roleType,p.reactionPattern,p.catchphrase,...(p.words||[]),...(p.interests||[]),p.tone||""].join(" ").toLowerCase();
-  const words=text.toLowerCase().split(/[\s、。,\n]+/).filter(w=>w.length>=2);
   let s=0;
-  words.forEach(w=>{if(hay.includes(w))s+=2;});
+  text.toLowerCase().split(/s|、|。|,/).filter(w=>w.length>=2).forEach(w=>{if(hay.includes(w))s+=2;});
+  const sg=typeof STREAM_GENRES!=="undefined"?STREAM_GENRES:[];
+  const pg=(p.genres||[]).concat(p.tags||[]);
+  s+=pg.filter(g=>sg.includes(g)).length*5;
   const boosts=typeof _domainBoosts!=="undefined"?_domainBoosts:[[/経済|金利|インフレ|為替/,/経済|知識|分析|投資/,5],[/ゲーム|攻略|ボス/,/ゲーム|エンタメ|応援/,4],[/映画|監督|シーン/,/映画|シネマ/,4],[/本|小説|作者/,/読書|文学|知識/,4],[/漫画|キャラ|作画/,/漫画|アニメ/,4],[/投資|株|NISA/,/投資|知識|分析/,5],[/草|笑/,/ネタ|共感/,3]];
   boosts.forEach(([a,b,sc])=>{if(a.test(text.toLowerCase())&&b.test(hay))s+=sc;});
   return s;
@@ -576,22 +582,25 @@ function _relevanceScore(p,text){
   const pool=map[role]||map["共感勢"];return pool[Math.floor(Math.random()*pool.length)].slice(0,40);
 }
 function defaultPersonas(){return[
-  {name:"RAINYファン",      roleType:"共感勢",   catchphrase:"この配信ずっと待ってた",   color:"#4fc3f7", words:["配信","応援","好き"],     interests:["エンタメ","雑談"]},
-  {name:"徹夜ラジオさん",   roleType:"共感勢",   catchphrase:"深夜に聴きたい声",         color:"#a8d8ea", words:["深夜","ラジオ","雑談"],   interests:["音楽","配信"]},
-  {name:"攻略wiki民",       roleType:"知識勢",   catchphrase:"それ実は裏技がある",       color:"#57d68d", words:["攻略","知識","情報"],     interests:["ゲーム","分析"]},
-  {name:"不満足なソクラテス",roleType:"懐疑勢",   catchphrase:"その問いは面白い",         color:"#c890d8", words:["哲学","疑問","なぜ"],     interests:["学習","議論"]},
-  {name:"JALランキング",     roleType:"知識勢",   catchphrase:"これは上位入り不可避",     color:"#f2c14e", words:["ランキング","分析","比較"], interests:["経済","投資"]},
-  {name:"初見さん",          roleType:"初心者勢", catchphrase:"初めて来たけどわかりやすい",color:"#a8d08d", words:["初心者","初めて","入門"],  interests:["学習","雑談"]},
-  {name:"竜神王",            roleType:"応援勢",   catchphrase:"これぞ学びの王道よ",       color:"#ffd700", words:["応援","最高","好き"],     interests:["配信","学習"]},
-  {name:"自動化研究員",      roleType:"開発者勢", catchphrase:"そこ自動化できるのか",     color:"#7eb8ff", words:["AI","自動化","システム"], interests:["技術","開発"]},
-  {name:"投資家見習い",      roleType:"投資家勢", catchphrase:"リターン計算してた",       color:"#57c87c", words:["投資","NISA","株"],       interests:["経済","投資"]},
-  {name:"ネタ実況民",        roleType:"ネタ勢",   catchphrase:"草不可避",                 color:"#ff9f7f", words:["草","笑い","ネタ"],       interests:["ゲーム","エンタメ"]},
-  {name:"感動屋さん",        roleType:"共感勢",   catchphrase:"泣いてる",                 color:"#ff7eb3", words:["感動","泣ける","エモい"],  interests:["音楽","映画"]},
-  {name:"妄想研究家",        roleType:"妄想勢",   catchphrase:"10年後どうなってるんだろ", color:"#d8a8f0", words:["未来","想像","妄想"],     interests:["哲学","学習"]},
-  {name:"超質問マン",        roleType:"質問勢",   catchphrase:"もう少し詳しく教えて",     color:"#64d2ff", words:["質問","なぜ","どうやって"],interests:["学習","雑談"]},
-  {name:"昼寝配信民",        roleType:"応援勢",   catchphrase:"ゆっくり見てます",         color:"#a8c8d8", words:["まったり","ゆったり","癒し"],interests:["配信","音楽"]},
-  {name:"プロ視聴者",        roleType:"知識勢",   catchphrase:"このシリーズ全部見てる",   color:"#e8c14e", words:["配信","シリーズ","考察"],  interests:["分析","エンタメ"]}
+  {name:"RAINYファン",       roleType:"共感勢",   catchphrase:"この配信ずっと待ってた",    color:"#4fc3f7", words:["配信","応援"],     genres:["配信","エンタメ","学習"],        tags:["応援系","配信好き"]},
+  {name:"徹夜ラジオさん",    roleType:"共感勢",   catchphrase:"深夜に聴きたい声",          color:"#a8d8ea", words:["深夜","ラジオ"],   genres:["音楽","配信","歌"],              tags:["深夜リスナー","音楽好き"]},
+  {name:"攻略wiki民",        roleType:"知識勢",   catchphrase:"それ実は裏技がある",        color:"#57d68d", words:["攻略","知識"],     genres:["ゲーム","実況","攻略"],          tags:["知識系","ゲーム好き"]},
+  {name:"不満足なソクラテス", roleType:"懐疑勢",   catchphrase:"その問いは面白い",          color:"#c890d8", words:["哲学","疑問"],     genres:["学習","哲学","公開学習"],        tags:["懐疑的","議論好き"]},
+  {name:"JALランキング",      roleType:"知識勢",   catchphrase:"これは上位入り不可避",      color:"#f2c14e", words:["ランキング","分析"],genres:["経済","投資","分析"],            tags:["分析好き","データ重視"]},
+  {name:"初見さん",           roleType:"初心者勢", catchphrase:"初めて来たけどわかりやすい",color:"#a8d08d", words:["初めて","入門"],   genres:["配信","エンタメ","学習"],        tags:["初心者","気軽"]},
+  {name:"竜神王",             roleType:"応援勢",   catchphrase:"これぞ学びの王道よ",        color:"#ffd700", words:["応援","最高"],     genres:["ゲーム","学習","配信"],          tags:["応援系","情熱的"]},
+  {name:"自動化研究員",       roleType:"開発者勢", catchphrase:"そこ自動化できるのか",      color:"#7eb8ff", words:["AI","自動化"],     genres:["技術","ゲーム","学習"],          tags:["エンジニア","技術好き"]},
+  {name:"投資家見習い",       roleType:"投資家勢", catchphrase:"リターン計算してた",        color:"#57c87c", words:["投資","NISA"],     genres:["投資","経済","学習"],            tags:["投資家","経済好き"]},
+  {name:"ネタ実況民",         roleType:"ネタ勢",   catchphrase:"草不可避",                  color:"#ff9f7f", words:["草","笑い"],       genres:["ゲーム","エンタメ","配信"],      tags:["ネタ好き","陽気"]},
+  {name:"感動屋さん",         roleType:"共感勢",   catchphrase:"泣いてる",                  color:"#ff7eb3", words:["感動","エモい"],   genres:["音楽","映画","本","文学","歌"],  tags:["エモ系","感情豊か"]},
+  {name:"妄想研究家",         roleType:"妄想勢",   catchphrase:"10年後どうなってるんだろ",  color:"#d8a8f0", words:["未来","想像"],     genres:["学習","映画","ゲーム","文学"],   tags:["妄想家","想像力豊か"]},
+  {name:"超質問マン",         roleType:"質問勢",   catchphrase:"もう少し詳しく教えて",      color:"#64d2ff", words:["質問","なぜ"],     genres:["学習","経済","配信","公開学習"],  tags:["好奇心旺盛","質問好き"]},
+  {name:"昼寝配信民",         roleType:"応援勢",   catchphrase:"ゆっくり見てます",          color:"#a8c8d8", words:["まったり","癒し"],  genres:["音楽","配信","歌","エンタメ"],   tags:["まったり","リラックス"]},
+  {name:"プロ視聴者",         roleType:"知識勢",   catchphrase:"このシリーズ全部見てる",    color:"#e8c14e", words:["配信","シリーズ"],  genres:["配信","学習","エンタメ"],       tags:["熱心","ファン"]}
 ];}
+// Frequency-scaled interval
+const _baseInterval=intervalRange;
+function intervalRange(){const[mn,mx]=_baseInterval();const d=_commentFreqLevel||1;return[Math.max(700,Math.round(mn/d)),Math.max(1200,Math.round(mx/d))];}
 </script>
 </body>
 </html>
