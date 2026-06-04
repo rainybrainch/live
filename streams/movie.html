@@ -598,7 +598,57 @@ function relevance(p,text){
   if(/音楽|サントラ|BGM/.test(text)&&/音楽|サントラ/.test(hay))s+=3;
   return s;
 }
+// ══ Advanced Comment Engine v2 ══
+const _RB_RECENT={};
+function _rbTrack(name,text){const r=_RB_RECENT[name]||(_RB_RECENT[name]=[]);r.unshift(text);if(r.length>10)r.pop();}
+function _rbPick(pool,name){const r=_RB_RECENT[name]||[];const f=pool.filter(t=>!r.includes(t));const s=f.length>0?f:pool;return s[Math.floor(Math.random()*s.length)];}
+function _buildTemplates(role,kw,p){
+  const w=(p.words||[]).concat(p.interests||[]);
+  const pw=w.length?w[Math.floor(Math.random()*w.length)]:kw;
+  const T={
+    "共感勢":[kw+"なるほど","今の話めっちゃわかる",kw+"ってそういうことか","今日初めて知った","深い","このシリーズ好き",kw+"もっと聞きたい","言語化ありがとう","ほんとそう思う",pw+"と繋がった","自分も同じ経験ある","何度も見返したい",kw+"が刺さった","うわそういうことか","聞いてよかった"],
+    "知識勢":[kw+"の見方が面白い","もっと掘り下げてほしい",kw+"と"+pw+"の関係が気になる","考察したくなる","この視点は新しい","専門書でも別の説がある","実はここ奥が深い",kw+"の歴史も気になる","文献漁りたくなった","研究者の意見も聞きたい","データと逆になることある","定義から確認したい","ここ諸説ある",pw+"目線だと違う","理論と実践の乖離がある"],
+    "質問勢":[kw+"はどこが入口？","もう少し詳しく","生活とどう繋がる？","初心者でもわかる？",kw+"と"+pw+"の違いは？","具体例があると助かる","どこで勉強した？","参考になる本ある？","次回のテーマは？","もう一度説明して","なんで"+kw+"が大事なの？","実生活での使い方が知りたい","初心者向けにまとめて",pw+"との関連も教えて","聞いていい？"],
+    "懐疑勢":[kw+"本当に合ってる？","別の見方もある","前提から確認したい","慎重に見た方がいい","反論もある","それだけじゃない","エビデンスは？",kw+"って定義が違う","100%そうとは言えない","ケースによる","留保が必要では","データ次第じゃない？","専門家も意見分かれる","前提が違うと結論変わる","鵜呑みにしない方がいい"],
+    "応援勢":["いい流れ！",kw+"のとこ好き","続けてください","この調子で","配信待ってた","いつも楽しみ","頑張れ","最高","ずっと応援してる","次回も来る",pw+"の話もいつか","毎回楽しみ","今日も良かった","モチベ上がる","ありがとう"],
+    "初心者勢":["なるほど！",kw+"初めて聞いた","わかりやすい","ありがとうございます","勉強になった","難しいけど面白い","もっと知りたい","メモしてます","初心者でもわかった",pw+"との違いがわかった","次回も見ます","初めて来たけどわかりやすい","好きになった","友達にも教えたい","全然知らなかった"],
+    "ネタ勢":["草","天才か",kw+"クセ強い","これは名言","待って笑う","草不可避","天才の発想","ほんと？笑","やばすぎ","なんでそうなった","それで笑う","好きすぎる","伝説の配信","歴史に残る","最高すぎ"],
+    "妄想勢":[kw+"から広がる世界が好き","次回の展開が気になる","別の角度で考えると","もしも"+kw+"がなかったら","10年後どうなってるんだろ",pw+"との掛け合わせが面白い","深掘りしたら無限に広がる","誰かと議論したくなった","自分なりの答え出てきた","違う分野にも繋がる","壮大だな","想像膨らむ","あとで調べる","もっと考えたい","ここから派生する話がある"],
+    "開発者勢":["実装してみたくなった","アーキテクチャが気になる","データ構造的に面白い","自動化できそう",kw+"をシステムで表すと","API設計に応用できる","アルゴリズム的な視点が好き","ここ最適化できそう","ツール作りたい","ロジックが綺麗","エンジニアとして共感","コードで書くと面白い","スケールするかな","設計が大事","技術的負債になりそう"],
+    "投資家勢":["リターン計算してた",kw+"のリスクは？","ポートフォリオ見直すか","タイミングが難しい","長期目線で見てる","短期と長期で違う","分散の重要性がわかる","NISAで試してる","損切りのタイミングって",pw+"との相関がある","経済指標と連動してる","配当狙いで","積み立て派なので","チャート見てた","ベンチマーク比較したい"]
+  };
+  return T[role]||T["共感勢"];
+}
 function buildComment(p){
+  const recentTxt=typeof recentText==="function"?recentText():"";
+  const kw=recentTxt.split(/[\s、。,，\n]+/).filter(w=>w.length>=2)[0]||(p.words||[])[0]||(typeof state!=="undefined"?(state.keyword||""):"")|| "今の話";
+  const role=p.roleType||"共感勢";
+  const name=p.name||"?";
+  if(p.catchphrase&&(p.catchphrase.length>3)&&Math.random()<.38)return p.catchphrase.slice(0,40);
+  const templates=_buildTemplates(role,kw,p);
+  const text=_rbPick(templates,name);
+  _rbTrack(name,text);
+  return text.slice(0,40);
+}
+function pickPersona(){
+  const list=personas.length?personas:defaultPersonas();
+  if(!list.length)return defaultPersonas()[0];
+  const text=typeof recentText==="function"?recentText():"";
+  const scored=list.map(p=>({p,s:_relevanceScore(p,text)+Math.random()*.4})).sort((a,b)=>b.s-a.s);
+  const topN=Math.min(scored.length,Math.max(3,Math.ceil(scored.length/2)));
+  return scored[Math.floor(Math.random()*topN)].p;
+}
+function _relevanceScore(p,text){
+  if(!text)return 0;
+  const hay=[p.name,p.roleType,p.reactionPattern,p.catchphrase,...(p.words||[]),...(p.interests||[]),p.tone||""].join(" ").toLowerCase();
+  const words=text.toLowerCase().split(/[\s、。,\n]+/).filter(w=>w.length>=2);
+  let s=0;
+  words.forEach(w=>{if(hay.includes(w))s+=2;});
+  const boosts=typeof _domainBoosts!=="undefined"?_domainBoosts:[[/経済|金利|インフレ|為替/,/経済|知識|分析|投資/,5],[/ゲーム|攻略|ボス/,/ゲーム|エンタメ|応援/,4],[/映画|監督|シーン/,/映画|シネマ/,4],[/本|小説|作者/,/読書|文学|知識/,4],[/漫画|キャラ|作画/,/漫画|アニメ/,4],[/投資|株|NISA/,/投資|知識|分析/,5],[/草|笑/,/ネタ|共感/,3]];
+  boosts.forEach(([a,b,sc])=>{if(a.test(text.toLowerCase())&&b.test(hay))s+=sc;});
+  return s;
+}
+// ══ End Advanced Comment Engine v2 ══
   if(p.catchphrase&&Math.random()<.36)return p.catchphrase.slice(0,40);
   const text=recentText(),kw=text.split(/[\s、。,]+/).filter(w=>w.length>=2)[0]||(p.words||[])[0]||"今のシーン";
   const role=p.roleType||"共感勢";

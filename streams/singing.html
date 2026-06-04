@@ -990,6 +990,11 @@ function spawnParticle() {
 // ════════════════════════════════════
 //  Comments
 // ════════════════════════════════════
+// ══ Anti-repetition Engine ══
+const _RB_RECENT={};
+function _rbTrack(name,text){const r=_RB_RECENT[name]||(_RB_RECENT[name]=[]);r.unshift(text);if(r.length>10)r.pop();}
+function _rbPick(pool,name){const r=_RB_RECENT[name]||[];const f=pool.filter(t=>!r.includes(t));const s=f.length>0?f:pool;return s[Math.floor(Math.random()*s.length)];}
+
 const COMMENT_POOL = [
   {icon:'🔥', name:'ガオル',      texts:['神すぎる！！！','声やばすぎ……','天才かよ','最強すぎて草','ずっと聴いてられる！！']},
   {icon:'🌙', name:'ルナ',        texts:['エモい…🥺','好きすぎる…','泣いちゃう','声がきれいすぎ','推し確定しました']},
@@ -1033,19 +1038,27 @@ async function syncSingingPersonas(){
   }catch(e){if(st)st.textContent="エラー: "+e.message;}
 }
 function buildSingingComment(p,songTitle){
-  if(p.catchphrase&&Math.random()<.4)return{text:p.catchphrase.slice(0,40),icon:"💬",name:p.name,color:p.color||"#e879a0"};
+  if(p.catchphrase&&(p.catchphrase.length>3)&&Math.random()<.4)return{text:p.catchphrase.slice(0,40),icon:"💬",name:p.name,color:p.color||"#e879a0"};
   const kw=songTitle||"この曲";
+  const w=(p.words||[]).concat(p.interests||[]);
+  const pw=w.length?w[Math.floor(Math.random()*w.length)]:kw;
+  const name=p.name||"?";
   const map={
-    "共感勢":[kw+"好きすぎる","エモい…","声やばすぎ",kw+"泣ける"],
-    "応援勢":["最高！！！","がんばれー！","推せる！！","ずっと歌ってほしい"],
-    "知識勢":[kw+"の歌い方が好き","音域えぐい","この曲選択センスある","難曲なのに"],
-    "懐疑勢":["この高音出るの？","難しくない？","本当に生で歌ってる？","どこで練習してるの？"],
-    "質問勢":[kw+"何回練習した？","次は何の曲ですか？","リクエストできる？","好きな曲は？"],
-    "ネタ勢":["草","神","天才の所業","これは泣くわ"],
-    "妄想勢":["セトリが最高すぎる",kw+"フル聴きたい","アルバム出してほしい","ライブ行きたい"]
+    "共感勢":[kw+"好きすぎる","エモい…","声やばすぎ",kw+"泣ける","ずっと聴いてられる","声が綺麗",pw+"のこと思い出した",kw+"また聴きたい","ここ特に好き","沁みる…","最高だった","リピートしてる","余韻が抜けない","感情が追いつかない","これ好きすぎる"],
+    "応援勢":["最高！！！","がんばれー！","推せる！！","ずっと歌ってほしい","いつも応援してます","配信来てよかった","また聴きに来ます","才能の塊","絶対うまくなってる","声好きすぎる","今日も最高","続けてください","応援してる","ありがとう","毎回楽しみ"],
+    "知識勢":[kw+"の歌い方が好き","音域えぐい","この曲選択センスある","難曲なのに","ブレスのとこが好き","音程が安定してる","この表現好き","感情の乗せ方が上手い",kw+"の原曲との違いが好き","歌い込んでるのがわかる","技巧的に面白い","ビブラートがきれい","語尾の処理が上手い","声量のコントロールが","この転調好きだわ"],
+    "懐疑勢":["この高音出るの？","難しくない？","本当に生で歌ってる？","どこで練習してるの？","配信で歌うのは勇気いる","音程大丈夫？","この部分難しそう","ライブだと変わるよね","緊張してない？","調子はいい？","声の調子による","今日難しい選曲","原曲キー？","練習見せてほしい","裏声と地声の境目が"],
+    "質問勢":[kw+"何回練習した？","次は何の曲ですか？","リクエストできる？","好きな曲は？","カラオケでも歌う？","この曲いつから好き？","歌い始めたきっかけは？","このアーティスト好きなの？","次回のセトリは？","リクエストいいですか？","楽器もやるの？","どこで練習してる？","録音はしてる？","配信頻度増やせる？","他にも歌える曲ある？"],
+    "ネタ勢":["草","神","天才の所業","これは泣くわ","声が綺麗すぎて蒸発しそう","草不可避","伝説の配信","優勝","天才か","これは反則","やばすぎる","草生える","声で殴られてる","ちょっと待ってほしい","魂が震えた"],
+    "妄想勢":["セトリが最高すぎる",kw+"フル聴きたい","アルバム出してほしい","ライブ行きたい","この声でコラボしてほしい","MVあったら見たい","自分の曲作ったら聴きたい","サブスク出してほしい","続きが気になる","カバーアルバム出して","もっと聴きたい世界線",pw+"も歌ってほしい","この組み合わせまた聴きたい","テーマ縛りセトリ見たい","次の選曲も楽しみ"]
   };
   const pool=map[p.roleType]||map["共感勢"];
-  return{text:pool[Math.floor(Math.random()*pool.length)].slice(0,40),icon:"💬",name:p.name,color:p.color||"#e879a0"};
+  const recent=_RB_RECENT[name]||[];
+  const fresh=pool.filter(t=>!recent.includes(t));
+  const src=fresh.length>0?fresh:pool;
+  const text=src[Math.floor(Math.random()*src.length)].slice(0,40);
+  _rbTrack(name,text);
+  return{text,icon:"💬",name:p.name,color:p.color||"#e879a0"};
 }
 
 let commentsActive  = true;
