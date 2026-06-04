@@ -771,50 +771,13 @@ body.timer-warning .comment-progress-fill{background:#ff6b7a;}
   <div class="comment-progress-track"><div class="comment-progress-fill" id="commentProgressFill"></div></div>
   <div class="dock-body">
 
-    <!-- Step 1: キーワード + ステージ -->
+    <!-- Step 1: 今日のテーマ -->
     <section class="section">
-      <div class="section-title"><span class="step">1</span>今日の学習設定</div>
+      <div class="section-title"><span class="step">1</span>今日のテーマ</div>
       <div class="field">
-        <label>今日のSeed <span id="seedLevelTag" style="font-size:9px;padding:1px 7px;border-radius:999px;border:1px solid rgba(255,255,255,.1);margin-left:4px;color:var(--muted);">未選択</span><button id="randomSeedBtn" class="random-seed-btn" type="button" title="ランダムSeedを選択">🎲</button></label>
-        <div class="seed-progress-bar"><div class="seed-progress-fill" id="seedProgressFill" style="width:0%"></div></div>
-        <div class="seed-progress-label" id="seedProgressLabel">0 / 0 完了</div>
-        <div id="seedPicker"></div>
-        <!-- Seed reference card (shows when seed selected) -->
-        <div class="seed-ref" id="seedRef"></div>
-      </div>
-      <div class="field">
-        <label>今日のキーワード</label>
-        <input id="keywordInput" placeholder="例: 金利、インフレ、為替" value="今日のキーワード">
-      </div>
-      <div class="field">
-        <label>本日の議題</label>
-        <input id="subInput" placeholder="例: なぜ紙切れに価値があるのか？">
-      </div>
-      <div class="field">
-        <label>学習ステージ</label>
-        <div class="stage-selector" id="stageSelector">
-          <button class="stage-sel-btn active" data-stage="seed" data-icon="🌱" data-en="まず知る" title="Seed — まず知る [1]">
-            <span class="ico">🌱</span>Seed<span class="kb-num">1</span>
-          </button>
-          <button class="stage-sel-btn " data-stage="branch" data-icon="🌿" data-en="繋げる" title="Branch — 繋げる [2]">
-            <span class="ico">🌿</span>Branch<span class="kb-num">2</span>
-          </button>
-          <button class="stage-sel-btn " data-stage="leaf" data-icon="🍃" data-en="記録する" title="Leaf — 記録する [3]">
-            <span class="ico">🍃</span>Leaf<span class="kb-num">3</span>
-          </button>
-          <button class="stage-sel-btn " data-stage="tree" data-icon="🌳" data-en="体系化" title="Tree — 体系化 [4]">
-            <span class="ico">🌳</span>Tree<span class="kb-num">4</span>
-          </button>
-          <button class="stage-sel-btn " data-stage="forest" data-icon="🌲" data-en="教材化" title="Forest — 教材化 [5]">
-            <span class="ico">🌲</span>Forest<span class="kb-num">5</span>
-          </button>
-        </div>
-      </div>
-      <div class="actions">
-        <button id="applyBtn" class="primary wide" type="button">ステージに反映</button>
+        <input id="keywordInput" placeholder="今日のテーマを入力…" style="width:100%">
       </div>
     </section>
-
     <!-- Step 2: タイマー設定・字幕 -->
     <section class="section collapsed">
       <div class="section-title"><span class="step">2</span>タイマー設定・字幕</div>
@@ -1072,7 +1035,7 @@ function init(){
 
 function hydrate(){
   $("keywordInput").value = state.keyword||"";
-  $("subInput").value     = state.sub||"";
+  if($("subInput")) $("subInput").value = state.sub||"";
   if(state.seedDesc&&$("keywordSub"))$("keywordSub").textContent=state.seedDesc;
   const _ag=$("agendaText"); if(_ag){_ag.textContent=state.sub||"—";if($("agendaWrap"))$("agendaWrap").style.display=state.sub?"":"none";}
   $("commentSpeed").value = state.commentSpeed||"normal";
@@ -1758,7 +1721,7 @@ function xss(s){ return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;")
 
 function applyStage(){
   const kw=state.keyword=$("keywordInput").value||"今日のキーワード";
-  const sub=state.sub=$("subInput").value||"";
+  const sub=state.sub=($("subInput")?.value)||"";
   $("keywordMain").textContent=kw;
   // keyword-sub shows seed description; agenda shows user's custom question
   const _desc=state.seedDesc||sub;
