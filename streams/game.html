@@ -237,6 +237,37 @@ body.mini .mini-view{display:flex!important;}
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:rgba(8,14,28,.95);border:1px solid var(--line);border-radius:10px;padding:9px 18px;font-size:12px;font-weight:700;color:var(--text);pointer-events:none;opacity:0;transition:all .3s;z-index:200;white-space:nowrap;}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
 .toast.milestone{border-color:rgba(79,195,247,.4);color:var(--acc);}
+/* ORBS */
+body::before,body::after{content:'';position:fixed;pointer-events:none;border-radius:50%;filter:blur(88px);z-index:0;}
+body::before{width:52vw;height:46vh;left:8%;top:6%;background:radial-gradient(circle,rgba(79,195,247,.08),transparent 70%);animation:orb1 30s ease-in-out infinite alternate;}
+body::after{width:42vw;height:38vh;right:4%;bottom:8%;background:radial-gradient(circle,rgba(87,214,141,.06),transparent 70%);animation:orb2 38s ease-in-out infinite alternate;}
+@keyframes orb1{from{transform:translate(0,0);}to{transform:translate(8vw,10vh) scale(1.2);}}
+@keyframes orb2{from{transform:translate(0,0);}to{transform:translate(-6vw,-8vh) scale(0.85);}}
+.header,.layout,.mini-view{position:relative;z-index:1;}
+/* COMMENT STREAM */
+.comment-stream{position:fixed;left:240px;top:52px;width:calc(100% - 480px);height:calc(100vh - 52px);pointer-events:none;z-index:10;overflow:hidden;}
+@media(max-width:900px){.comment-stream{left:0;width:100%;}}
+.comment{position:absolute;right:0;bottom:10px;max-width:280px;padding:7px 11px;border-radius:10px;background:rgba(4,9,16,.85);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.09);animation:cm-rise var(--life,16s) linear forwards;}
+.comment .c-user{color:var(--uc,#4fc3f7);font-size:10px;font-weight:900;}
+.comment .c-text{font-size:12px;font-weight:700;line-height:1.5;display:block;margin-top:2px;}
+@keyframes cm-rise{0%{opacity:0;transform:translateY(16px) scale(.97);}8%{opacity:1;transform:none;}78%{opacity:1;}100%{opacity:0;transform:translateY(calc(-100vh + 60px));}}
+/* HEADER CC */
+.hdr-cc-row{display:flex;align-items:center;gap:4px;margin-left:auto;}
+.cc-btn{padding:5px 10px;border-radius:7px;border:1px solid rgba(79,195,247,.3);background:rgba(79,195,247,.08);color:#4fc3f7;font-size:11px;font-weight:900;cursor:pointer;min-height:32px;transition:all .15s;flex-shrink:0;}
+.cc-btn.off{border-color:var(--line);background:rgba(255,255,255,.04);color:var(--muted);}
+.spd-btn-sm{width:26px;height:26px;min-height:26px;padding:0;display:grid;place-items:center;border-radius:6px;border:1px solid var(--line);background:rgba(255,255,255,.04);font-size:10px;cursor:pointer;color:var(--muted);transition:all .12s;}
+.spd-btn-sm.active{border-color:rgba(79,195,247,.45);background:rgba(79,195,247,.1);color:#4fc3f7;}
+.burst-btn-sm{padding:3px 8px;border-radius:6px;border:1px solid rgba(255,183,77,.25);background:rgba(255,183,77,.07);color:#ffb74d;font-size:10px;font-weight:900;cursor:pointer;min-height:26px;transition:all .12s;flex-shrink:0;}
+.burst-btn-sm:hover{background:rgba(255,183,77,.18);}
+/* CLIP TYPE COLORS */
+.clip-item[data-type="名場面"]{border-left:3px solid #ffd700;}
+.clip-item[data-type="発見"]{border-left:3px solid #4fc3f7;}
+.clip-item[data-type="失敗"]{border-left:3px solid #e05555;}
+.clip-item[data-type="攻略"]{border-left:3px solid #57d68d;}
+.clip-item[data-type="謎"]{border-left:3px solid #c890d8;}
+.clip-item[data-type="笑い"]{border-left:3px solid #ffb74d;}
+.clip-item[data-type="感動"]{border-left:3px solid #ff7eb3;}
+.clip-item[data-type="裏技"]{border-left:3px solid #7eb8ff;}
 </style>
 </head>
 <body>
@@ -257,7 +288,17 @@ body.mini .mini-view{display:flex!important;}
     <button class="btn-hd" onclick="toggleObs()"  id="btnObs">OBS</button>
     <a class="h-back" href="index.html">← 配信ハブ</a>
   </div>
+  <div class="hdr-cc-row">
+    <button class="cc-btn" id="ccBtn" onclick="toggleComments()">💬 ON</button>
+    <button class="spd-btn-sm" data-speed="slow" onclick="setCommentSpeed('slow')" title="低速">🐢</button>
+    <button class="spd-btn-sm active" data-speed="normal" onclick="setCommentSpeed('normal')" title="普通">▷</button>
+    <button class="spd-btn-sm" data-speed="fast" onclick="setCommentSpeed('fast')" title="高速">🔥</button>
+    <button class="burst-btn-sm" onclick="spawnComment()" title="C">×1</button>
+    <button class="burst-btn-sm" onclick="burstComments(3)" title="B">×3</button>
+  </div>
 </header>
+
+<div class="comment-stream" id="commentStream"></div>
 
 <div class="layout">
 
@@ -560,6 +601,7 @@ document.addEventListener('DOMContentLoaded', () => {
   renderTags('rpg');
   renderCurrentStep(); renderDots();
   startSessionTimer();
+  scheduleComment();
 });
 
 function escHtml(s) {
@@ -865,7 +907,7 @@ function renderClips() {
   if (empty) empty.style.display = clips.length === 0 ? 'block' : 'none';
   clips.forEach(c => {
     const el = document.createElement('div');
-    el.className = 'clip-item';
+    el.className = 'clip-item'; el.dataset.type = c.type;
     const st = CLIP_STAGES[c.stage] || CLIP_STAGES.moment;
     el.innerHTML = `
       <span class="ci-stage" onclick="stageUp('${c.id}')" title="クリックで成長">${st.label}</span>
@@ -1016,6 +1058,71 @@ function showToast(msg, cls = '') {
   requestAnimationFrame(() => t.classList.add('show'));
   toastTimer = setTimeout(() => t.classList.remove('show'), 2800);
 }
+// === Comment System ===
+let personas=(()=>{try{return JSON.parse(localStorage.getItem("rainybrain_personas_v1")||"[]");}catch{return[];}})();
+let commentsEnabled=true,commentSpeed="normal",commentTimer=null;
+function defaultPersonas(){return[
+  {name:"実況ファン",   roleType:"共感勢",catchphrase:"この場面すき",          color:"#4fc3f7"},
+  {name:"攻略wiki民",  roleType:"知識勢",catchphrase:"そこ裏ルートある",      color:"#57d68d"},
+  {name:"ホラー耐性0",  roleType:"共感勢",catchphrase:"ムリムリムリ",           color:"#ff7675"},
+  {name:"全クリ応援団", roleType:"応援勢",catchphrase:"次のボスも勝てる！",    color:"#ffb74d"},
+  {name:"バックシート", roleType:"懐疑勢",catchphrase:"そっち行かないで",      color:"#c890d8"},
+  {name:"初見さん",    roleType:"質問勢",catchphrase:"これどんなゲームですか？",color:"#a8d08d"}
+];}
+function buildComment(p){
+  const g=document.getElementById("gameTitle")?.value.trim()||"このゲーム";
+  const m={"共感勢":[g+"懐かしい","いいねいいね","好き！",p.catchphrase||"わかる"],
+           "知識勢":["攻略法あるよ","ここ罠だよ","詳しいです",p.catchphrase||"なるほど"],
+           "応援勢":["がんばれー！","いけいけ！","応援してます",p.catchphrase||"ファイト"],
+           "懐疑勢":["それ大丈夫？","ほんとに？","うーん…",p.catchphrase||"怪しい"],
+           "質問勢":["これどうするの？","難しい？","教えて",p.catchphrase||"質問"]};
+  const pool=m[p.roleType]||m["共感勢"];
+  return pool[Math.floor(Math.random()*pool.length)];
+}
+function pickPersona(){const l=personas.length?personas:defaultPersonas();return l[Math.floor(Math.random()*l.length)];}
+function addComment(text,name,color){
+  const n=document.createElement("article");
+  n.className="comment";
+  n.style.setProperty("--uc",color||"#4fc3f7");
+  n.style.setProperty("--life",(text.length>20?18:14)+"s");
+  n.style.right=Math.floor(Math.random()*60)+"px";
+  n.innerHTML="<span class=\"c-user\">@"+escHtml(name)+"</span><span class=\"c-text\">"+escHtml(text)+"</span>";
+  const s=document.getElementById("commentStream");if(s)s.appendChild(n);
+  n.addEventListener("animationend",()=>n.remove());
+}
+function spawnComment(){const p=pickPersona();addComment(buildComment(p),p.name,p.color||"#4fc3f7");}
+function burstComments(n){for(let i=0;i<n;i++)setTimeout(()=>spawnComment(),i*500);}
+function intervalRange(){
+  if(commentSpeed==="fast")return[1500,3000];
+  if(commentSpeed==="slow")return[7000,12000];
+  return[3500,7000];
+}
+function scheduleComment(){
+  clearTimeout(commentTimer);
+  if(!commentsEnabled)return;
+  const[mn,mx]=intervalRange();
+  commentTimer=setTimeout(()=>{spawnComment();scheduleComment();},mn+Math.random()*(mx-mn));
+}
+function toggleComments(){
+  commentsEnabled=!commentsEnabled;
+  const b=document.getElementById("ccBtn");
+  if(b){b.textContent=commentsEnabled?"💬 ON":"💬 OFF";b.classList.toggle("off",!commentsEnabled);}
+  if(commentsEnabled)scheduleComment();else clearTimeout(commentTimer);
+}
+function setCommentSpeed(spd){
+  commentSpeed=spd;
+  document.querySelectorAll(".spd-btn-sm").forEach(b=>b.classList.toggle("active",b.dataset.speed===spd));
+  if(commentsEnabled)scheduleComment();
+}
+document.addEventListener("keydown",e=>{
+  const ae=document.activeElement;
+  if(ae&&(ae.tagName==="INPUT"||ae.tagName==="TEXTAREA"||ae.tagName==="SELECT"))return;
+  if(e.key===" "){e.preventDefault();document.getElementById("btnStop")?.click();}
+  if(e.key==="c"||e.key==="C")spawnComment();
+  if(e.key==="b"||e.key==="B")burstComments(3);
+  if(e.key==="m"||e.key==="M")toggleMini();
+  if(e.key==="o"||e.key==="O")toggleObs();
+});
 </script>
 </body>
 </html>
