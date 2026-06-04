@@ -335,6 +335,17 @@ body.obs-mode .dock,body.obs-mode .open-tab{display:none!important;}
 .spd-btn.active[data-speed="slow"]{border-color:rgba(100,210,255,.4);background:rgba(100,210,255,.08);color:#64d2ff;}
 .spd-btn.active[data-speed="normal"]{border-color:rgba(87,200,124,.4);background:rgba(87,200,124,.08);color:#57c87c;}
 .spd-btn.active[data-speed="fast"]{border-color:rgba(255,107,122,.4);background:rgba(255,107,122,.08);color:#ff6b7a;}
+/* -- UI2: collapsible + polish -- */
+.section { cursor:pointer; transition:background .12s; }
+.section-title { cursor:pointer; user-select:none; }
+.section-toggle { margin-left:auto; font-size:11px; color:rgba(255,255,255,.35); transition:transform .22s; pointer-events:none; }
+.section.collapsed .section-toggle { transform:rotate(-90deg); }
+.section.collapsed > *:not(.section-title) { display:none; }
+.section:hover { background:rgba(255,255,255,.045)!important; }
+.section:nth-child(1){border-left:3px solid var(--accent);}
+.section:nth-child(2){border-left:3px solid rgba(100,210,255,.6);}
+.section:nth-child(3){border-left:3px solid rgba(87,200,124,.6);}
+.field label { font-size:9px!important; font-weight:900!important; letter-spacing:.1em!important; text-transform:uppercase; }
 </style>
 </head>
 <body>
@@ -398,7 +409,7 @@ body.obs-mode .dock,body.obs-mode .open-tab{display:none!important;}
   <div class="dock-body">
 
     <section class="section">
-      <div class="section-title"><span class="step">1</span>本の情報</div>
+      <div class="section-title"><span class="step">1</span>本の情報<span class="section-toggle">▾</span></div>
       <div class="field">
         <label for="bookTitle">タイトル</label>
         <input id="bookTitle" placeholder="例: 嫌われる勇気">
@@ -423,7 +434,7 @@ body.obs-mode .dock,body.obs-mode .open-tab{display:none!important;}
     </section>
 
     <section class="section">
-      <div class="section-title"><span class="step">2</span>収録タイマー</div>
+      <div class="section-title"><span class="step">2</span>収録タイマー<span class="section-toggle">▾</span></div>
       <div class="grid2">
         <div class="field">
           <label for="timerMinutes">分</label>
@@ -446,7 +457,7 @@ body.obs-mode .dock,body.obs-mode .open-tab{display:none!important;}
     </section>
 
     <section class="section">
-      <div class="section-title"><span class="step">3</span>文字起こし</div>
+      <div class="section-title"><span class="step">3</span>文字起こし<span class="section-toggle">▾</span></div>
       <div class="transcript-plan-row">
         <button class="plan-btn active" id="planFreeBtn" type="button">無料<span class="plan-tag">Web Speech</span></button>
         <button class="plan-btn pro"    id="planProBtn"  type="button">Pro<span class="plan-tag">Whisper API</span><span class="plan-soon">準備中</span></button>
@@ -578,6 +589,7 @@ body.obs-mode .dock,body.obs-mode .open-tab{display:none!important;}
     applyStage();
     startClock();
     scheduleComment();
+    initCollapsible();
   }
 
   function hydrate() {
@@ -924,9 +936,9 @@ body.obs-mode .dock,body.obs-mode .open-tab{display:none!important;}
   }
 
   function intervalRange() {
-    if (state.commentSpeed==="fast") return [3000,7000];
-    if (state.commentSpeed==="slow") return [10000,18000];
-    return [6000,12000];
+    if (state.commentSpeed==="fast") return [1500,3000];
+    if (state.commentSpeed==="slow") return [7000,12000];
+    return [3500,7000];
   }
   function scheduleComment() {
     clearTimeout(commentTimer);

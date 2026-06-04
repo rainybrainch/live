@@ -1777,7 +1777,7 @@ function saveSeedToArchive(sk){
   const entry={
     id:`rbt_${sk}_stream_${Date.now()}`,
     category:"economics",stage:state.currentStage,
-    keyword:s.kw, body, branches, sources:[],
+    keyword:s.kw, theme:s.kw, description:"", body, summary:body, branches, sources:[], refUrls:[], youtubeUrl:"",
     session:`RB-Tree Economics 配信 — ${s.name}`,
     sessionUrl:"",
     createdAt:new Date().toISOString().slice(0,10),

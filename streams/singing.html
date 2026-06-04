@@ -316,6 +316,11 @@ body[data-lv] .lv-badge{display:block;}
 .toast.show{opacity:1;}
 
 @media(max-width:680px){.layout{grid-template-columns:1fr;height:auto;}.setlist-panel{display:none;}}
+/* -- CC controls -- */
+.hdr-cc-wrap{display:flex;align-items:center;gap:4px;}
+.hdr-spd{width:24px;height:24px;min-height:24px;padding:0;display:grid;place-items:center;border-radius:6px;border:1px solid var(--line);background:rgba(255,255,255,.04);font-size:10px;cursor:pointer;color:var(--muted);transition:all .12s;}
+.hdr-spd.active{border-color:rgba(232,121,160,.5);background:rgba(232,121,160,.1);color:var(--acc);}
+.hdr-burst{padding:3px 7px;border-radius:6px;border:1px solid rgba(255,183,77,.25);background:rgba(255,183,77,.07);color:#ffb74d;font-size:10px;font-weight:900;cursor:pointer;min-height:24px;transition:all .12s;}
 </style>
 </head>
 <body>
@@ -350,6 +355,12 @@ body[data-lv] .lv-badge{display:block;}
     <span class="countdown-display" id="cdDisplay">4:00</span>
   </div>
 
+  <div class="hdr-cc-wrap">
+    <button class="hdr-spd" data-speed="slow"   onclick="setSingingSpeed('slow')"   title="低速">🐢</button>
+    <button class="hdr-spd active" data-speed="normal" onclick="setSingingSpeed('normal')" title="普通">▷</button>
+    <button class="hdr-spd" data-speed="fast"   onclick="setSingingSpeed('fast')"   title="高速">🔥</button>
+    <button class="hdr-burst" onclick="for(let i=0;i  <div class="header-btns">lt;3;i++)setTimeout(()=>spawnComment(),i*400)" title="バースト">×3</button>
+  </div>
   <div class="header-btns">
     <button class="btn-hd" id="btnFullscreen" onclick="toggleFullscreen()">⛶ 全画面</button>
     <button class="btn-hd" id="btnMini" onclick="toggleMini()">⬜ ミニ</button>
@@ -1098,7 +1109,16 @@ function spawnComment() {
   }
 }
 
+function setSingingSpeed(spd){
+  document.querySelectorAll(".hdr-spd").forEach(b=>b.classList.toggle("active",b.dataset.speed===spd));
+  singingSpeedOverride=spd;
+  if(commentsActive){stopComments();startComments();}
+}
+let singingSpeedOverride=null;
+
 function getCommentInterval() {
+  if(singingSpeedOverride==="fast") return randomBetween(800,2000);
+  if(singingSpeedOverride==="slow") return randomBetween(8000,14000);
   const bases = [5000, 3700, 2600, 1700, 1000];
   const vars  = [1000,  750,  600,  500,  400];
   const l = Math.max(0, Math.min(4, Math.max(lv, cdBoostLv)));
