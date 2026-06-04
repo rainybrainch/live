@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>RAINYBRAIN Archive</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;700&family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#07080d;--bg2:#0c0e18;--panel:rgba(10,12,22,.94);
+  --line:rgba(140,160,255,.12);--text:#e8eaff;
+  --muted:rgba(180,190,255,.52);--faint:rgba(180,190,255,.28);
+  --rr:#a0b4ff;   --rr-rgb:160,180,255;
+  --game:#57d68d; --game-rgb:87,214,141;
+  --sing:#e879a0; --sing-rgb:232,121,160;
+  --other:#f2c14e;--other-rgb:242,193,78;
+  --acc:#a0b4ff;
+  --font:"Noto Sans JP",sans-serif;--serif:"Noto Serif JP",serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;font-family:var(--font);color:var(--text);background:var(--bg);}
+button,input,textarea,select{font:inherit;color:inherit;}
+.app{display:flex;flex-direction:column;height:100vh;}
+
+/* HEADER */
+.header{flex-shrink:0;display:flex;align-items:center;gap:12px;padding:0 18px;height:52px;border-bottom:1px solid var(--line);background:rgba(7,8,13,.96);backdrop-filter:blur(12px);z-index:20;}
+.logo{display:flex;align-items:center;gap:9px;white-space:nowrap;flex-shrink:0;}
+.logo-mark{font-size:20px;}
+.logo-name{font-family:var(--serif);font-size:14px;font-weight:700;letter-spacing:.06em;}
+.logo-rb{font-size:9px;color:var(--muted);letter-spacing:.16em;margin-top:1px;}
+.h-search{flex:1;max-width:400px;display:flex;align-items:center;gap:7px;padding:5px 11px;border:1px solid var(--line);border-radius:999px;background:rgba(0,0,0,.32);transition:border-color .2s;}
+.h-search:focus-within{border-color:rgba(160,180,255,.4);}
+.h-search input{flex:1;background:0;border:0;outline:0;font-size:12px;}
+.h-search input::placeholder{color:var(--faint);}
+.h-right{margin-left:auto;display:flex;gap:7px;align-items:center;}
+.add-btn-h{display:flex;align-items:center;gap:5px;padding:6px 13px;border-radius:8px;border:1px solid rgba(160,180,255,.4);background:rgba(160,180,255,.1);cursor:pointer;font-size:12px;font-weight:900;color:var(--rr);transition:background .15s;}
+.add-btn-h:hover{background:rgba(160,180,255,.2);}
+
+/* TABS */
+.tabs{flex-shrink:0;display:flex;align-items:center;gap:0;border-bottom:1px solid var(--line);background:rgba(7,8,13,.94);padding:0 18px;overflow-x:auto;scrollbar-width:none;}
+.tabs::-webkit-scrollbar{display:none;}
+.tab{display:flex;align-items:center;gap:7px;padding:10px 16px;border:0;background:0;cursor:pointer;font-size:12px;font-weight:900;letter-spacing:.04em;color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap;transition:all .15s;}
+.tab:hover{color:var(--text);}
+.tab.active{color:var(--text);border-bottom-color:var(--tab-c,var(--rr));}
+.tab-dot{width:7px;height:7px;border-radius:999px;background:var(--tab-c,var(--rr));}
+
+/* CONTENT */
+.content{flex:1;overflow:hidden;position:relative;}
+.view{position:absolute;inset:0;overflow:auto;display:none;}
+.view.active{display:block;}
+
+/* CARDS VIEW */
+#cardView{padding:16px 20px;background:var(--bg);}
+.cards-header{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
+.result-count{font-size:12px;color:var(--muted);font-weight:700;}
+.cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;}
+.card{border:1px solid var(--line);border-radius:10px;background:rgba(10,12,22,.88);padding:14px;cursor:pointer;display:flex;flex-direction:column;gap:7px;transition:border-color .18s,transform .12s,box-shadow .18s;}
+.card:hover{border-color:rgba(var(--ccat-rgb,160,180,255),.5);transform:translateY(-1px);box-shadow:0 6px 20px rgba(0,0,0,.3);}
+.card-top{display:flex;align-items:center;gap:7px;}
+.card-icon-lg{font-size:18px;line-height:1;}
+.card-cat{font-size:9px;font-weight:900;letter-spacing:.1em;padding:2px 7px;border-radius:999px;}
+.card-title{font-family:var(--serif);font-size:15px;font-weight:700;line-height:1.25;overflow-wrap:anywhere;}
+.card-desc{font-size:11px;color:var(--muted);line-height:1.55;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.card-footer{display:flex;align-items:center;gap:7px;margin-top:auto;}
+.card-yt{font-size:9px;color:#ff8080;font-weight:900;}
+.card-date{font-size:9px;color:var(--faint);margin-left:auto;}
+
+/* EMPTY STATE */
+.empty-state{padding:60px 20px;text-align:center;color:var(--faint);font-size:14px;line-height:1.8;}
+.empty-state-icon{font-size:3rem;display:block;margin-bottom:12px;}
+
+/* MODAL */
+.overlay{position:fixed;inset:0;z-index:50;background:rgba(0,0,0,.65);backdrop-filter:blur(8px);display:none;align-items:center;justify-content:center;}
+.overlay.open{display:flex;}
+.modal{background:var(--bg2);border:1px solid var(--line);border-radius:14px;width:min(560px,95vw);max-height:90vh;overflow-y:auto;padding:24px;display:flex;flex-direction:column;gap:14px;box-shadow:0 32px 80px rgba(0,0,0,.6);}
+.m-close{position:absolute;top:12px;right:12px;background:rgba(255,255,255,.07);border:1px solid var(--line);border-radius:8px;width:32px;height:32px;cursor:pointer;display:grid;place-items:center;font-size:14px;}
+.m-close:hover{background:rgba(255,255,255,.14);}
+.m-cat-badge{display:inline-block;font-size:10px;font-weight:900;letter-spacing:.08em;padding:3px 10px;border-radius:999px;}
+.m-title{font-family:var(--serif);font-size:22px;font-weight:700;line-height:1.3;overflow-wrap:anywhere;}
+.m-slabel{font-size:10px;font-weight:900;letter-spacing:.14em;color:var(--faint);text-transform:uppercase;margin-bottom:6px;}
+.m-body{font-size:13px;line-height:1.8;color:var(--text);white-space:pre-wrap;overflow-wrap:break-word;}
+.m-desc{font-size:12px;line-height:1.7;color:var(--muted);font-style:italic;}
+.m-yt-link{display:inline-flex;align-items:center;gap:7px;padding:8px 14px;border-radius:8px;background:rgba(255,50,50,.1);border:1px solid rgba(255,80,80,.25);color:#ff8080;font-size:12px;font-weight:900;text-decoration:none;transition:background .15s;}
+.m-yt-link:hover{background:rgba(255,50,50,.22);}
+.m-ref-link{font-size:12px;color:var(--rr);word-break:break-all;text-underline-offset:3px;}
+.m-tags{display:flex;flex-wrap:wrap;gap:5px;}
+.m-tag{font-size:10px;padding:2px 8px;border-radius:999px;border:1px solid var(--line);color:var(--muted);}
+.m-actions{display:flex;gap:7px;padding-top:4px;border-top:1px solid var(--line);margin-top:auto;}
+.btn{padding:8px 14px;border-radius:8px;border:1px solid var(--line);background:rgba(255,255,255,.06);cursor:pointer;font-size:12px;font-weight:900;transition:all .15s;}
+.btn:hover{background:rgba(255,255,255,.12);}
+.btn.primary{border-color:rgba(160,180,255,.5);background:rgba(160,180,255,.16);color:var(--rr);}
+.btn.danger{border-color:rgba(224,85,85,.4);background:rgba(224,85,85,.1);color:#e05555;}
+.btn.sm{padding:6px 11px;font-size:11px;}
+
+/* FORM */
+.form-ov{position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.7);backdrop-filter:blur(10px);display:none;align-items:center;justify-content:center;}
+.form-ov.open{display:flex;}
+.form-panel{background:var(--bg2);border:1px solid var(--line);border-radius:14px;width:min(540px,95vw);max-height:90vh;overflow-y:auto;padding:24px;display:flex;flex-direction:column;gap:12px;box-shadow:0 32px 80px rgba(0,0,0,.6);}
+.f-title{font-family:var(--serif);font-size:18px;font-weight:700;}
+.field{display:grid;gap:5px;}
+.field label{font-size:9px;font-weight:900;letter-spacing:.12em;color:var(--faint);text-transform:uppercase;}
+.field input,.field select,.field textarea{padding:9px 11px;border:1px solid var(--line);border-radius:8px;background:rgba(0,0,0,.3);outline:none;font-size:13px;transition:border-color .15s;}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:rgba(160,180,255,.4);}
+.field textarea{min-height:80px;resize:vertical;line-height:1.6;}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.f-actions{display:flex;gap:8px;justify-content:flex-end;padding-top:4px;}
+.tags-input-wrap{display:flex;flex-wrap:wrap;gap:4px;padding:7px 9px;border:1px solid var(--line);border-radius:8px;background:rgba(0,0,0,.3);cursor:text;min-height:40px;}
+.tags-input-wrap input{flex:1;background:0;border:0;outline:0;font-size:12px;min-width:80px;}
+.tag-chip{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:999px;background:rgba(160,180,255,.1);border:1px solid rgba(160,180,255,.2);font-size:11px;color:var(--rr);}
+.tag-chip-del{cursor:pointer;opacity:.5;font-size:10px;}
+.tag-chip-del:hover{opacity:1;}
+
+/* TOAST */
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);padding:9px 18px;border-radius:8px;background:rgba(10,12,22,.96);border:1px solid rgba(160,180,255,.3);color:var(--rr);font-size:12px;font-weight:900;z-index:100;pointer-events:none;opacity:0;transition:opacity .22s;white-space:nowrap;}
+.toast.show{opacity:1;}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- HEADER -->
+<header class="header">
+  <div class="logo">
+    <span class="logo-mark">🌧️</span>
+    <div>
+      <div class="logo-name">RAINYBRAIN Archive</div>
+      <div class="logo-rb">CHANNEL OS — コンテンツ記録</div>
+    </div>
+  </div>
+  <div class="h-search">
+    <span style="color:var(--faint);font-size:13px;">🔍</span>
+    <input id="searchInput" placeholder="タイトル・タグで検索…" oninput="onSearch(this.value)">
+  </div>
+  <div class="h-right">
+    <button class="add-btn-h" onclick="openForm()">＋ 記録を追加</button>
+  </div>
+</header>
+
+<!-- TABS -->
+<div class="tabs" id="tabs">
+  <button class="tab active" data-cat="" style="--tab-c:#a0b4ff" onclick="switchCat('')">
+    <span class="tab-dot"></span> すべて
+  </button>
+  <button class="tab" data-cat="rr" style="--tab-c:#a0b4ff" onclick="switchCat('rr')">
+    <span class="tab-dot" style="background:#a0b4ff"></span> 🎙 RAINY RADIO
+  </button>
+  <button class="tab" data-cat="game" style="--tab-c:#57d68d" onclick="switchCat('game')">
+    <span class="tab-dot" style="background:#57d68d"></span> 🎮 ゲーム実況
+  </button>
+  <button class="tab" data-cat="singing" style="--tab-c:#e879a0" onclick="switchCat('singing')">
+    <span class="tab-dot" style="background:#e879a0"></span> 🎤 歌ってみた
+  </button>
+  <button class="tab" data-cat="other" style="--tab-c:#f2c14e" onclick="switchCat('other')">
+    <span class="tab-dot" style="background:#f2c14e"></span> 📦 その他
+  </button>
+</div>
+
+<!-- CONTENT -->
+<div class="content">
+  <div class="view active" id="cardView">
+    <div class="cards-header">
+      <span class="result-count" id="resultCount">0 件</span>
+    </div>
+    <div class="cards-grid" id="cardsGrid"></div>
+  </div>
+</div>
+
+</div><!-- /.app -->
+
+<!-- DETAIL MODAL -->
+<div class="overlay" id="detailOv" onclick="if(event.target===this)closeDetail()">
+  <div class="modal" style="position:relative">
+    <button class="m-close" onclick="closeDetail()">✕</button>
+    <span class="m-cat-badge" id="mCatBadge"></span>
+    <div class="m-title" id="mTitle"></div>
+    <div id="mDescWrap"><div class="m-desc" id="mDesc"></div></div>
+    <div id="mBodyWrap">
+      <div class="m-slabel">🍃 まとめ</div>
+      <div class="m-body" id="mBody"></div>
+    </div>
+    <div id="mRefWrap">
+      <div class="m-slabel">📎 参考資料</div>
+      <div id="mRefList"></div>
+    </div>
+    <div id="mYtWrap">
+      <div class="m-slabel">▶ YouTube</div>
+      <div id="mYt"></div>
+    </div>
+    <div id="mTagsWrap">
+      <div class="m-slabel">🏷 タグ</div>
+      <div class="m-tags" id="mTagsList"></div>
+    </div>
+    <div class="m-actions">
+      <button class="btn primary sm" id="mEditBtn">編集</button>
+      <button class="btn danger sm" id="mDeleteBtn">削除</button>
+      <button class="btn sm" style="margin-left:auto" onclick="closeDetail()">閉じる</button>
+    </div>
+  </div>
+</div>
+
+<!-- FORM -->
+<div class="form-ov" id="formOv" onclick="if(event.target===this)closeForm()">
+  <div class="form-panel">
+    <div class="f-title" id="fTitle">新規記録</div>
+    <div class="field">
+      <label>カテゴリ</label>
+      <select id="fCat">
+        <option value="rr">🎙 RAINY RADIO</option>
+        <option value="game">🎮 ゲーム実況</option>
+        <option value="singing">🎤 歌ってみた</option>
+        <option value="other">📦 その他</option>
+      </select>
+    </div>
+    <div class="field"><label>タイトル</label><input id="fTitle2" placeholder="例: RR #001 — 深夜の雑談" maxlength="80"></div>
+    <div class="field"><label>説明（一言で）</label><textarea id="fDesc" rows="2" placeholder="この回の概要を一言で…" style="min-height:60px;"></textarea></div>
+    <div class="field"><label>まとめ</label><textarea id="fBody" rows="4" placeholder="話した内容・気づき・感想…"></textarea></div>
+    <div class="field"><label>📎 参考資料 URL（1行1件）</label><textarea id="fRefUrls" rows="2" placeholder="https://…"></textarea></div>
+    <div class="field"><label>▶ YouTube URL</label><input id="fYtUrl" placeholder="https://youtube.com/watch?v=…" type="url"></div>
+    <div class="field">
+      <label>🏷 タグ（Enterで追加）</label>
+      <div class="tags-input-wrap" id="tagsWrap" onclick="document.getElementById('tagInput').focus()">
+        <input id="tagInput" placeholder="タグを入力…" onkeydown="onTagKey(event)">
+      </div>
+    </div>
+    <div class="f-actions">
+      <button class="btn sm" id="fCancelBtn" onclick="closeForm()">キャンセル</button>
+      <button class="btn primary sm" id="fSaveBtn" onclick="saveForm()">保存</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+const LS_KEY = "rainybrain_archive_v1";
+
+const CAT = {
+  rr:      {label:"RAINY RADIO", icon:"🎙", color:"var(--rr)",   rgb:"160,180,255"},
+  game:    {label:"ゲーム実況",   icon:"🎮", color:"var(--game)", rgb:"87,214,141"},
+  singing: {label:"歌ってみた",   icon:"🎤", color:"var(--sing)", rgb:"232,121,160"},
+  other:   {label:"その他",       icon:"📦", color:"var(--other)",rgb:"242,193,78"},
+};
+
+let entries = load();
+let filter = {cat:"", q:""};
+let selectedId = null;
+let editId = null;
+let formTags = [];
+
+function load(){try{return JSON.parse(localStorage.getItem(LS_KEY)||"[]");}catch{return[];}}
+function save(){localStorage.setItem(LS_KEY,JSON.stringify(entries));}
+function esc(s){return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
+function toast(msg,ms=2600){const t=document.getElementById("toast");t.textContent=msg;t.classList.add("show");setTimeout(()=>t.classList.remove("show"),ms);}
+
+// ── Filter ──
+function filtered(){
+  return entries.filter(e=>{
+    if(filter.cat && e.category!==filter.cat) return false;
+    if(filter.q){
+      const q=filter.q.toLowerCase();
+      const hay=[e.title,e.description,e.summary,...(e.tags||[])].join(" ").toLowerCase();
+      if(!hay.includes(q)) return false;
+    }
+    return true;
+  });
+}
+function switchCat(cat){
+  filter.cat=cat;
+  document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("active",t.dataset.cat===cat));
+  renderCards();
+}
+function onSearch(q){filter.q=q;renderCards();}
+
+// ── Render cards ──
+function renderCards(){
+  const list=filtered();
+  const grid=document.getElementById("cardsGrid");
+  document.getElementById("resultCount").textContent=list.length+" 件";
+  if(!list.length){
+    grid.innerHTML=`<div class="empty-state" style="grid-column:1/-1"><span class="empty-state-icon">📭</span>まだ記録がありません<br><small style="color:var(--faint)">「＋ 記録を追加」から配信の記録を残そう</small></div>`;
+    return;
+  }
+  grid.innerHTML=list.map(e=>{
+    const cm=CAT[e.category]||CAT.other;
+    const tags=(e.tags||[]).slice(0,3).map(t=>`<span class="m-tag">${esc(t)}</span>`).join("");
+    const preview=e.description||(e.summary||"").slice(0,80)+((e.summary||"").length>80?"…":"");
+    return `<div class="card" data-id="${e.id}" style="--ccat-rgb:${cm.rgb}">
+      <div class="card-top">
+        <span class="card-icon-lg">${cm.icon}</span>
+        <span class="card-cat" style="background:rgba(${cm.rgb},.18);color:${cm.color};border:1px solid rgba(${cm.rgb},.3)">${cm.label}</span>
+        ${e.youtubeUrl?'<span class="card-yt" style="margin-left:auto">▶</span>':""}
+      </div>
+      <div class="card-title">${esc(e.title||"—")}</div>
+      ${preview?`<div class="card-desc">${esc(preview)}</div>`:""}
+      <div class="card-footer">
+        <div style="display:flex;gap:4px;flex-wrap:wrap;">${tags}</div>
+        <span class="card-date">${(e.updatedAt||e.createdAt||"").slice(0,10)}</span>
+      </div>
+    </div>`;
+  }).join("");
+  grid.querySelectorAll(".card").forEach(el=>el.addEventListener("click",()=>openDetail(el.dataset.id)));
+}
+
+// ── Detail ──
+function openDetail(id){
+  const e=entries.find(x=>x.id===id);if(!e)return;
+  selectedId=id;
+  const cm=CAT[e.category]||CAT.other;
+  const badge=document.getElementById("mCatBadge");
+  badge.textContent=cm.icon+" "+cm.label;
+  badge.style.cssText=`background:rgba(${cm.rgb},.18);color:${cm.color};border:1px solid rgba(${cm.rgb},.3);border-radius:999px;padding:4px 12px;font-size:10px;font-weight:900;display:inline-block;`;
+  document.getElementById("mTitle").textContent=e.title||"—";
+  const descEl=document.getElementById("mDesc");
+  const descWrap=document.getElementById("mDescWrap");
+  if(e.description){descEl.textContent=e.description;descWrap.style.display="";}else descWrap.style.display="none";
+  const bodyWrap=document.getElementById("mBodyWrap");
+  document.getElementById("mBody").textContent=e.summary||"";
+  bodyWrap.style.display=e.summary?"":"none";
+  const refs=(e.refUrls||[]).filter(Boolean);
+  const refWrap=document.getElementById("mRefWrap");
+  if(refs.length){refWrap.style.display="";document.getElementById("mRefList").innerHTML=refs.map(u=>`<a class="m-ref-link" href="${esc(u)}" target="_blank" rel="noopener">${esc(u)}</a>`).join("<br>");}else refWrap.style.display="none";
+  const ytWrap=document.getElementById("mYtWrap");
+  if(e.youtubeUrl){ytWrap.style.display="";document.getElementById("mYt").innerHTML=`<a class="m-yt-link" href="${esc(e.youtubeUrl)}" target="_blank" rel="noopener">▶ 動画を見る</a>`;}else ytWrap.style.display="none";
+  const tags=(e.tags||[]);
+  const tagsWrap=document.getElementById("mTagsWrap");
+  if(tags.length){tagsWrap.style.display="";document.getElementById("mTagsList").innerHTML=tags.map(t=>`<span class="m-tag">${esc(t)}</span>`).join("");}else tagsWrap.style.display="none";
+  document.getElementById("mEditBtn").onclick=()=>{closeDetail();openForm(e);};
+  document.getElementById("mDeleteBtn").onclick=()=>deleteEntry(id);
+  document.getElementById("detailOv").classList.add("open");
+}
+function closeDetail(){document.getElementById("detailOv").classList.remove("open");selectedId=null;}
+
+// ── Form ──
+function openForm(entry=null){
+  editId=entry?entry.id:null;
+  formTags=entry?[...(entry.tags||[])]:[];
+  document.getElementById("fTitle").textContent=entry?"記録を編集":"新規記録";
+  document.getElementById("fCat").value=entry?.category||"rr";
+  document.getElementById("fTitle2").value=entry?.title||"";
+  document.getElementById("fDesc").value=entry?.description||"";
+  document.getElementById("fBody").value=entry?.summary||"";
+  document.getElementById("fRefUrls").value=(entry?.refUrls||[]).join("\n");
+  document.getElementById("fYtUrl").value=entry?.youtubeUrl||"";
+  renderTagChips();
+  document.getElementById("formOv").classList.add("open");
+  setTimeout(()=>document.getElementById("fTitle2").focus(),100);
+}
+function closeForm(){document.getElementById("formOv").classList.remove("open");editId=null;formTags=[];}
+
+function renderTagChips(){
+  const wrap=document.getElementById("tagsWrap");
+  wrap.querySelectorAll(".tag-chip").forEach(el=>el.remove());
+  const inp=document.getElementById("tagInput");
+  formTags.forEach(t=>{
+    const chip=document.createElement("span");chip.className="tag-chip";
+    chip.innerHTML=`${esc(t)}<span class="tag-chip-del" data-t="${esc(t)}">✕</span>`;
+    chip.querySelector(".tag-chip-del").onclick=(ev)=>{ev.stopPropagation();formTags=formTags.filter(x=>x!==t);renderTagChips();};
+    wrap.insertBefore(chip,inp);
+  });
+}
+function onTagKey(e){
+  if(e.key==="Enter"||e.key===","||e.key==="、"){
+    e.preventDefault();
+    const v=document.getElementById("tagInput").value.trim().replace(/,|、/g,"");
+    if(v&&!formTags.includes(v)){formTags.push(v);renderTagChips();}
+    document.getElementById("tagInput").value="";
+  }
+}
+
+function saveForm(){
+  const title=document.getElementById("fTitle2").value.trim();
+  if(!title){toast("タイトルは必須です");return;}
+  const now=new Date().toISOString().slice(0,10);
+  const patch={
+    category:document.getElementById("fCat").value,
+    title,
+    description:document.getElementById("fDesc").value.trim(),
+    summary:document.getElementById("fBody").value.trim(),
+    refUrls:document.getElementById("fRefUrls").value.split("\n").map(s=>s.trim()).filter(Boolean),
+    youtubeUrl:document.getElementById("fYtUrl").value.trim(),
+    tags:[...formTags],
+    updatedAt:now
+  };
+  if(editId){
+    entries=entries.map(e=>e.id===editId?{...e,...patch}:e);
+    toast("更新しました");
+  }else{
+    entries.unshift({id:"rb_"+Date.now()+"_"+Math.random().toString(36).slice(2,5),createdAt:now,...patch});
+    toast("追加しました");
+  }
+  save();closeForm();renderCards();
+}
+
+function deleteEntry(id){
+  if(!confirm("この記録を削除しますか？"))return;
+  entries=entries.filter(e=>e.id!==id);
+  save();closeDetail();renderCards();toast("削除しました");
+}
+
+// ── Init ──
+renderCards();
+</script>
+</body>
+</html>
