@@ -826,29 +826,36 @@ body.timer-warning .comment-progress-fill{background:#ff6b7a;}
       <div id="transcriptLog" class="log">まだ文字起こしはありません。</div>
     </section>
 
-    <!-- Step 4: Archive に追加 -->
+    <!-- Step 4: Archive に記録 -->
     <section class="section collapsed">
       <div class="section-title"><span class="step">4</span>Archive に記録</div>
       <div class="archive-form">
-        <div class="archive-form-title">🌲 学びを RB-Tree Archive へ保存</div>
         <div class="field">
-          <label>キーワード</label>
-          <input id="archiveKw" placeholder="例: 金利">
+          <label>テーマ</label>
+          <input id="archiveKw" placeholder="今日のテーマ…">
         </div>
         <div class="field">
-          <label>学んだこと（自分の言葉で）</label>
-          <textarea id="archiveBody" rows="3" placeholder="金利とはお金を借りる価格。上がると借金しにくくなり景気を冷ます…"></textarea>
+          <label>参考資料 URL</label>
+          <input id="archiveRefUrl" placeholder="https://…">
         </div>
         <div class="field">
-          <label>関連キーワード（カンマ区切り）</label>
-          <input id="archiveBranches" placeholder="例: 中央銀行, 国債, 為替">
+          <label>説明文</label>
+          <textarea id="archiveDesc" rows="2" placeholder="内容の概要を一言で…"></textarea>
+        </div>
+        <div class="field">
+          <label>まとめ</label>
+          <textarea id="archiveBody" rows="4" placeholder="学んだこと・気づきを自分の言葉でまとめる…"></textarea>
+        </div>
+        <div class="field">
+          <label>YouTube URL</label>
+          <input id="archiveYtUrl" placeholder="https://youtube.com/watch?v=…">
         </div>
         <div class="actions" style="grid-template-columns:1fr 1fr;">
-          <button id="draftFromTranscriptBtn" class="draft-btn" type="button" title="最近の文字起こしを本文に追加">📄 文字起こし</button>
-          <button id="archiveSaveBtn" class="primary" type="button">🌱 Archive に追加</button>
+          <button id="draftFromTranscriptBtn" class="draft-btn" type="button" title="文字起こしをまとめに追加">📄 文字起こし</button>
+          <button id="archiveSaveBtn" class="primary" type="button">🌱 記録する</button>
         </div>
       </div>
-      <a href="https://rainybrainch.github.io/rb-tree-archive/" target="_blank" rel="noopener"
+      <a href="https://rainybrainch.github.io/rb-tree-archive/economics.html" target="_blank" rel="noopener"
          style="display:flex;align-items:center;justify-content:center;min-height:40px;
                 border:1px solid rgba(201,168,76,.35);border-radius:8px;
                 background:rgba(201,168,76,.1);color:var(--acc);
@@ -860,7 +867,6 @@ body.timer-warning .comment-progress-fill{background:#ff6b7a;}
         <div id="archiveRecentList"><div class="arc-empty">まだ記録がありません</div></div>
       </div>
     </section>
-
     <!-- コメント履歴 -->
     <details>
       <summary class="comment-log-summary">💬 コメント履歴 <span id="commentLogCount">(0件)</span><button class="clr-btn" id="clearCommentLogBtn" type="button" title="履歴をクリア">クリア</button></summary>
@@ -1334,7 +1340,7 @@ function bind(){
       if(!document.fullscreenElement)document.body.classList.remove("panel-hidden");
     }
     if(inInput&&e.key==="Enter"&&(ae.id==="keywordInput"||ae.id==="subInput")){applyStage();e.preventDefault();}
-    if(inInput&&e.key==="Enter"&&(ae.id==="archiveKw"||ae.id==="archiveBranches")){$("archiveSaveBtn")?.click();e.preventDefault();}
+    if(inInput&&e.key==="Enter"&&(ae.id==="archiveKw"||ae.id==="archiveRefUrl")){$("archiveSaveBtn")?.click();e.preventDefault();}
   });
 }
 
@@ -1480,12 +1486,12 @@ function renderRecentArchive(){
   const el=$("archiveRecentList");if(!el)return;
   try{
     const arr=JSON.parse(localStorage.getItem(ARCHIVE_KEY)||"[]").slice(0,5);
-    if(!arr.length){el.innerHTML='<div class="arc-empty">まだ記録がありません</div>';return;}
-    const icons={seed:"🌱",branch:"🌿",leaf:"🍃",tree:"🌳",forest:"🌲"};
-    el.innerHTML=arr.map(e=>'<div class="arc-item">'+
-      '<span class="arc-kw">'+xss(e.keyword||"—")+'</span>'+
-      '<span class="arc-stage">'+(icons[e.stage]||"")+' '+xss(e.createdAt||"")+'</span>'+
-      '</div>').join("");
+    if(!arr.length){el.innerHTML="<div class=\"arc-empty\">まだ記録がありません</div>";return;}
+    el.innerHTML=arr.map(e=>{
+      const theme=xss(e.theme||e.keyword||"—");
+      const ytLink=e.youtubeUrl?"<a href=\""+xss(e.youtubeUrl)+"\" target=\"_blank\" rel=\"noopener\" style=\"font-size:10px;color:#ff6b6b;text-decoration:none;\">▶ YT</a>":"";
+      return "<div class=\"arc-item\"><span class=\"arc-kw\">"+theme+"</span><span class=\"arc-stage\">"+xss(e.createdAt||"")+"</span>"+ytLink+"</div>";
+    }).join("");
   }catch{el.innerHTML="";}
 }
 
@@ -1574,12 +1580,8 @@ function selectSeed(num){
       // Auto-fill archive from seed data
       const _sk="E"+String(s.num).padStart(3,"0");
       const _db=window.SEED_DB&&window.SEED_DB[_sk];
-      const _akw=$("archiveKw"),_abr=$("archiveBranches");
+      const _akw=$("archiveKw");
       if(_akw&&!_akw.value){_akw.value=s.kw;_akw.classList.add("fill-flash");setTimeout(()=>_akw.classList.remove("fill-flash"),700);}
-      if(_abr&&!_abr.value){
-        const _terms=_db?.glossTerms?.slice(0,6).map(t=>typeof t==="string"?t:t.word)||[];
-        if(_terms.length){_abr.value=_terms.join(", ");_abr.classList.add("fill-flash");setTimeout(()=>_abr.classList.remove("fill-flash"),700);}
-      }
     }
   } else {
     updateSeedUI();
@@ -1757,24 +1759,29 @@ function updateStageBadge(stage){
 // ── Archive ──
 function saveToArchive(){
   const kw=($("archiveKw")?.value||"").trim();
-  const body=($("archiveBody")?.value||"").trim();
-  if(!kw){setStatus("キーワードは必須です");return;}
-  const branches=($("archiveBranches")?.value||"").split(/[,、，]+/).map(s=>s.trim()).filter(Boolean);
+  if(!kw){setStatus("テーマは必須です");return;}
   const now=new Date().toISOString().slice(0,10);
   const entry={
     id:"rbt_"+Date.now()+"_"+Math.random().toString(36).slice(2,5),
-    category:"economics",stage:state.currentStage,
-    keyword:kw,body,branches,sources:[],
-    session:"RB-Tree経済",sessionUrl:"",
+    category:"economics",
+    theme:kw,
+    description:($("archiveDesc")?.value||"").trim(),
+    summary:($("archiveBody")?.value||"").trim(),
+    refUrls:[($("archiveRefUrl")?.value||"").trim()].filter(Boolean),
+    youtubeUrl:($("archiveYtUrl")?.value||"").trim(),
     createdAt:now,updatedAt:now
   };
   try{
     const existing=JSON.parse(localStorage.getItem(ARCHIVE_KEY)||"[]");
     existing.unshift(entry);
     localStorage.setItem(ARCHIVE_KEY,JSON.stringify(existing));
-    $("archiveKw").value="";$("archiveBody").value="";$("archiveBranches").value="";
+    $("archiveKw").value="";
+    if($("archiveDesc"))$("archiveDesc").value="";
+    if($("archiveBody"))$("archiveBody").value="";
+    if($("archiveRefUrl"))$("archiveRefUrl").value="";
+    if($("archiveYtUrl"))$("archiveYtUrl").value="";
     renderRecentArchive();
-    setStatus(`🌱「${kw}」を Archive に追加 ✓`);
+    setStatus("🌱\""+kw+"\"を Archive に記録 ✓");
   }catch{setStatus("Archive への保存に失敗しました");}
 }
 
