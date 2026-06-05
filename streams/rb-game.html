@@ -7,213 +7,375 @@
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;700&family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">
 <style>
 :root {
-  --bg:    #090612;
-  --bg2:   #100a20;
-  --line:  rgba(160,140,255,.11);
-  --text:  #e0d8f8;
-  --muted: rgba(148,194,228,.52);
-  --faint: rgba(148,194,228,.2);
-  --acc:   #a0b4ff;
-  --green: #57d68d;
-  --stop:  #e05555;
-  --blue:  #7eb8ff;
+  --bg:      #05090f;
+  --panel:   rgba(8,14,22,.88);
+  --line:    rgba(79,195,247,.13);
+  --text:    #e0eeff;
+  --muted:   rgba(160,200,240,.55);
+  --faint:   rgba(160,200,240,.2);
+  --acc:     #4fc3f7;
+  --green:   #57d68d;
+  --stop:    #e05555;
+  --warn:    #f2c14e;
   --a-color: #c9a84c;
-  --b-color: #ff7675;
-  --font:  "Noto Sans JP", sans-serif;
-  --serif: "Noto Serif JP", serif;
+  --font:    "Noto Sans JP", sans-serif;
+  --serif:   "Noto Serif JP", serif;
   color-scheme: dark;
 }
 *{box-sizing:border-box;margin:0;padding:0;}
-html,body{height:100%;font-family:var(--font);color:var(--text);background:var(--bg);}
+html,body{width:100%;height:100%;overflow:hidden;font-family:var(--font);color:var(--text);background:var(--bg);}
 button,input,textarea,select{font:inherit;color:inherit;}
+input,select,textarea{border:1px solid var(--line);border-radius:8px;background:rgba(0,0,0,.35);padding:7px 10px;outline:none;width:100%;}
+input:focus,select:focus,textarea:focus{border-color:rgba(79,195,247,.45);}
 
-/* HEADER */
-.header{position:sticky;top:0;z-index:30;display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:0 18px;min-height:52px;background:rgba(4,9,16,.97);backdrop-filter:blur(14px);border-bottom:1px solid var(--line);}
-.logo{display:flex;align-items:center;gap:8px;white-space:nowrap;flex-shrink:0;}
-.logo-mark{font-size:18px;}
-.logo-name{font-family:var(--serif);font-size:13px;font-weight:700;}
-.logo-sub{font-size:9px;color:var(--muted);letter-spacing:.12em;}
-.session-timer{font-family:var(--serif);font-size:13px;font-weight:700;color:var(--muted);padding:4px 11px;border:1px solid var(--line);border-radius:8px;min-width:58px;text-align:center;flex-shrink:0;}
-.btn-stop{padding:6px 16px;border-radius:8px;border:1px solid rgba(224,85,85,.4);background:rgba(224,85,85,.1);color:var(--stop);font-size:12px;font-weight:900;cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;gap:5px;flex-shrink:0;}
-.btn-stop:hover{background:rgba(224,85,85,.2);}
-.btn-resume{padding:6px 16px;border-radius:8px;border:1px solid rgba(87,200,124,.4);background:rgba(87,200,124,.1);color:var(--green);font-size:12px;font-weight:900;cursor:pointer;transition:all .15s;display:none;align-items:center;gap:5px;flex-shrink:0;}
-.btn-resume:hover{background:rgba(87,200,124,.2);}
-.header-btns{margin-left:auto;display:flex;gap:6px;align-items:center;flex-shrink:0;}
-.btn-hd{padding:5px 12px;border-radius:7px;border:1px solid var(--line);background:rgba(255,255,255,.04);font-size:11px;font-weight:900;color:var(--muted);cursor:pointer;transition:all .15s;}
-.btn-hd:hover{border-color:rgba(79,195,247,.3);color:var(--acc);}
-.btn-hd.active{border-color:rgba(79,195,247,.4);background:rgba(79,195,247,.1);color:var(--acc);}
-.h-back{font-size:11px;color:var(--muted);text-decoration:none;white-space:nowrap;transition:color .15s;}
-.h-back:hover{color:var(--text);}
+/* ══ STAGE ══ */
+.stage{
+  position:fixed;inset:0;z-index:0;
+  background:
+    linear-gradient(90deg,rgba(79,195,247,.04) 1px,transparent 1px) 0 0/48px 48px,
+    linear-gradient(0deg,rgba(79,195,247,.03) 1px,transparent 1px) 0 0/48px 48px,
+    radial-gradient(ellipse at 20% 20%,rgba(79,195,247,.16),transparent 34rem),
+    radial-gradient(ellipse at 80% 80%,rgba(87,214,141,.1),transparent 28rem),
+    linear-gradient(135deg,#03060c,#07110d 60%,#05090f);
+}
+.stage::after{
+  content:'';position:absolute;inset:0;
+  background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(79,195,247,.012) 3px,rgba(79,195,247,.012) 4px);
+  pointer-events:none;
+}
 
-/* LAYOUT */
-.layout{display:grid;grid-template-columns:240px 1fr 240px;height:calc(100vh - 52px);overflow:hidden;}
+/* ══ TITLE WIDGET ══ */
+.title-widget{
+  position:fixed;top:18px;left:20px;z-index:10;
+  display:flex;align-items:center;gap:10px;
+  padding:10px 16px 10px 12px;
+  border:1px solid rgba(79,195,247,.28);
+  border-radius:12px;
+  background:rgba(5,10,18,.82);
+  backdrop-filter:blur(16px);
+  max-width:min(700px,calc(100vw - 300px));
+}
+.tw-badge{
+  font-size:10px;font-weight:900;letter-spacing:.1em;
+  padding:3px 8px;border-radius:999px;
+  background:rgba(79,195,247,.18);color:var(--acc);
+  border:1px solid rgba(79,195,247,.35);
+  white-space:nowrap;flex-shrink:0;
+}
+.tw-title{font-family:var(--serif);font-size:15px;font-weight:700;line-height:1.3;word-break:break-all;}
 
-/* CHARACTER PANELS */
-.char-panel{display:flex;flex-direction:column;border-right:1px solid var(--line);background:var(--bg2);overflow:hidden;}
-.char-panel.right{border-right:none;border-left:1px solid var(--line);}
-.char-header{padding:14px 14px 12px;border-bottom:1px solid var(--line);}
-.char-avatar-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
-.char-avatar{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.4rem;flex-shrink:0;border:2px solid transparent;transition:all .2s;}
-.char-avatar.speaking{animation:glow 1.2s ease-in-out infinite;}
-@keyframes glow{0%,100%{box-shadow:0 0 0 0 transparent}50%{box-shadow:0 0 0 6px currentColor;opacity:.6}}
-.char-name-input{width:100%;background:0;border:0;font-size:14px;font-weight:900;color:var(--text);outline:none;padding:0;font-family:var(--serif);}
-.char-name-input:focus{color:var(--acc);}
-.char-role{font-size:10px;font-weight:900;letter-spacing:.1em;text-transform:uppercase;margin-top:2px;}
-.role-a{color:var(--a-color);}
-.role-b{color:var(--b-color);}
-.char-color-row{display:flex;align-items:center;gap:6px;margin-bottom:8px;}
-.char-color-lbl{font-size:9px;color:var(--muted);}
-.char-color-input{width:32px;height:22px;border:1px solid var(--line);border-radius:4px;cursor:pointer;background:0;padding:1px;}
-.speak-btn{width:100%;padding:9px;border-radius:8px;border:1px solid var(--line);background:rgba(255,255,255,.03);font-size:11px;font-weight:900;color:var(--muted);cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:5px;}
-.char-panel.a .speak-btn.on{border-color:rgba(201,168,76,.45);background:rgba(201,168,76,.1);color:var(--a-color);}
-.char-panel.b .speak-btn.on{border-color:rgba(255,118,117,.45);background:rgba(255,118,117,.1);color:var(--b-color);}
-.char-body{flex:1;overflow-y:auto;padding:12px;}
-.char-section-lbl{font-size:9px;font-weight:900;letter-spacing:.16em;color:var(--muted);text-transform:uppercase;padding-bottom:5px;border-bottom:1px solid var(--line);margin-bottom:8px;}
-.char-note{width:100%;background:rgba(0,0,0,.25);border:1px solid var(--line);border-radius:7px;padding:8px 10px;font-size:11px;color:var(--text);outline:none;min-height:80px;line-height:1.6;resize:none;transition:border-color .15s;}
-.char-note:focus{border-color:rgba(79,195,247,.35);}
-.char-clips{display:flex;flex-direction:column;gap:4px;margin-top:10px;}
-.char-clip-card{padding:6px 9px;border-radius:6px;background:rgba(255,255,255,.02);border:1px solid var(--line);font-size:11px;}
-.char-clip-title{font-weight:700;color:var(--text);}
-.char-clip-note{font-size:10px;color:var(--muted);margin-top:1px;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+/* ══ TIMER WIDGET ══ */
+.timer-widget{
+  position:fixed;top:18px;right:260px;z-index:10;
+  display:flex;align-items:center;gap:10px;
+  padding:8px 16px;
+  border:1px solid rgba(79,195,247,.22);
+  border-radius:12px;
+  background:rgba(5,10,18,.82);
+  backdrop-filter:blur(16px);
+}
+.timer-display{font-family:var(--serif);font-size:26px;font-weight:700;letter-spacing:.08em;color:var(--text);}
+.timer-btns{display:flex;gap:4px;}
+.timer-btn{width:30px;height:30px;min-height:30px;padding:0;display:flex;align-items:center;justify-content:center;border-radius:8px;border:1px solid var(--line);background:rgba(255,255,255,.05);font-size:13px;cursor:pointer;transition:all .15s;}
+.timer-btn:hover{background:rgba(79,195,247,.15);border-color:var(--acc);}
+.timer-btn.stop-active{border-color:rgba(224,85,85,.5);background:rgba(224,85,85,.15);color:var(--stop);}
 
-/* CENTER */
-.center{overflow-y:auto;padding:16px 20px 40px;display:flex;flex-direction:column;gap:14px;}
+/* ══ LIVE CHAT PANEL (on stage) ══ */
+.live-chat-panel{
+  position:fixed;top:0;right:0;bottom:0;z-index:10;
+  width:240px;
+  display:flex;flex-direction:column;
+  border-left:1px solid rgba(79,195,247,.18);
+  background:rgba(5,10,18,.78);
+  backdrop-filter:blur(18px);
+}
+.lc-header{
+  padding:14px 14px 12px;
+  border-bottom:1px solid var(--line);
+  display:flex;align-items:center;gap:8px;flex-shrink:0;
+}
+.lc-live-dot{
+  width:8px;height:8px;border-radius:50%;
+  background:var(--green);box-shadow:0 0 8px var(--green);
+  animation:lc-pulse 2s ease-in-out infinite;flex-shrink:0;
+}
+@keyframes lc-pulse{0%,100%{opacity:1}50%{opacity:.35}}
+.lc-title{font-size:11px;font-weight:900;letter-spacing:.14em;color:var(--text);text-transform:uppercase;flex:1;}
+.lc-toggle-btn{
+  padding:3px 9px;border-radius:999px;
+  border:1px solid rgba(87,214,141,.4);background:rgba(87,214,141,.1);
+  color:var(--green);font-size:10px;font-weight:900;cursor:pointer;transition:all .15s;
+}
+.lc-toggle-btn.off{border-color:var(--line);background:rgba(255,255,255,.02);color:var(--muted);}
+.lc-messages{flex:1;overflow-y:auto;padding:10px 12px;display:flex;flex-direction:column;gap:7px;}
+.lc-messages::-webkit-scrollbar{width:3px;}
+.lc-messages::-webkit-scrollbar-thumb{background:rgba(79,195,247,.2);border-radius:2px;}
+.lc-msg{
+  padding:7px 10px;border-radius:9px;
+  background:rgba(255,255,255,.04);border:1px solid rgba(79,195,247,.12);
+  animation:lc-in .25s ease-out;
+}
+@keyframes lc-in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.lc-msg-name{font-size:9px;font-weight:900;letter-spacing:.05em;margin-bottom:3px;opacity:.7;}
+.lc-msg-text{font-size:11px;line-height:1.55;color:var(--text);}
+.lc-footer{
+  padding:8px 12px;border-top:1px solid var(--line);
+  display:flex;align-items:center;gap:8px;flex-shrink:0;
+}
+.lc-count{font-size:10px;color:var(--muted);flex:1;}
+.lc-speed{
+  background:rgba(0,0,0,.3);border:1px solid var(--line);
+  border-radius:6px;padding:3px 6px;font-size:10px;color:var(--muted);
+  outline:none;cursor:pointer;width:auto;
+}
 
-/* Game info bar */
-.game-bar{border:1px solid var(--line);border-radius:10px;overflow:hidden;background:rgba(255,255,255,.018);}
-.game-row{padding:10px 14px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--line);}
-.game-label{font-size:9px;font-weight:900;letter-spacing:.14em;color:var(--muted);text-transform:uppercase;white-space:nowrap;}
-.game-input{flex:1;background:0;border:0;font-size:14px;font-weight:700;color:var(--text);outline:none;font-family:var(--serif);}
-.game-input::placeholder{color:var(--faint);}
-.stop-timer-inline{font-family:var(--serif);font-size:13px;color:var(--stop);font-weight:700;white-space:nowrap;display:none;}
-.stop-timer-inline.show{display:block;}
-.meta-row{padding:8px 14px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
-.meta-lbl{font-size:9px;font-weight:900;letter-spacing:.1em;color:var(--faint);text-transform:uppercase;white-space:nowrap;}
-.cat-select{background:rgba(0,0,0,.3);border:1px solid var(--line);border-radius:6px;padding:4px 8px;font-size:11px;font-weight:700;color:var(--text);outline:none;cursor:pointer;}
-.diff-btns{display:flex;gap:4px;}
-.diff-btn{padding:3px 10px;border-radius:999px;border:1px solid var(--line);background:0;font-size:10px;font-weight:900;color:var(--muted);cursor:pointer;transition:all .15s;}
-.diff-btn.active.easy{border-color:rgba(87,200,124,.45);background:rgba(87,200,124,.1);color:var(--green);}
-.diff-btn.active.normal{border-color:rgba(79,195,247,.45);background:rgba(79,195,247,.1);color:var(--acc);}
-.diff-btn.active.hard{border-color:rgba(224,85,85,.4);background:rgba(224,85,85,.08);color:var(--stop);}
-.mode-btn{padding:3px 10px;border-radius:999px;border:1px solid var(--line);background:0;font-size:10px;font-weight:900;color:var(--muted);cursor:pointer;transition:all .15s;}
-.mode-btn.active{border-color:rgba(79,195,247,.45);background:rgba(79,195,247,.1);color:var(--acc);}
+/* ══ COMMENT TRACKS (floating) ══ */
+.comment-tracks{
+  position:fixed;top:64px;left:0;right:240px;z-index:9;
+  pointer-events:none;
+}
+.c-track{height:36px;position:relative;overflow:hidden;}
+.comment-h{
+  position:absolute;top:0;left:0;height:100%;
+  display:inline-flex;align-items:center;gap:7px;
+  padding:0 18px 0 10px;
+  border-left:3px solid var(--user-color,#4fc3f7);
+  background:rgba(0,0,0,.6);backdrop-filter:blur(8px);
+  border-radius:0 999px 999px 0;
+  font-size:clamp(12px,1.1vw,16px);font-weight:700;
+  text-shadow:0 1px 3px rgba(0,0,0,.8);
+  transform:translateX(100vw);
+  animation:fly-left var(--speed,14s) linear forwards;
+  white-space:nowrap;
+}
+.comment-h .user{color:var(--user-color,#4fc3f7);font-weight:900;font-size:.82em;}
+.comment-h .text{color:#f7f8fb;}
+@keyframes fly-left{from{transform:translateX(100vw);}to{transform:translateX(calc(-100% - 20px));}}
 
-/* Stats */
-.stats-row{display:flex;gap:0;border:1px solid var(--line);border-radius:10px;overflow:hidden;}
-.stat{flex:1;padding:9px 10px;text-align:center;border-right:1px solid var(--line);background:rgba(255,255,255,.018);}
-.stat:last-child{border-right:0;}
-.stat-n{font-family:var(--serif);font-size:20px;font-weight:700;line-height:1;}
-.stat-n.s{color:var(--stop);}
-.stat-n.g{color:var(--acc);}
-.stat-n.h{color:var(--green);}
-.stat-l{font-size:9px;color:var(--muted);font-weight:900;letter-spacing:.06em;margin-top:3px;}
+/* ══ CAPTION BAR ══ */
+.caption-bar{
+  position:fixed;bottom:20px;left:20px;right:260px;z-index:10;
+  padding:10px 16px;
+  border:1px solid rgba(79,195,247,.2);
+  border-radius:10px;
+  background:rgba(5,10,18,.8);backdrop-filter:blur(14px);
+  font-size:14px;font-weight:700;color:var(--muted);
+  pointer-events:none;
+  display:none;
+}
+.caption-bar.show{display:block;}
 
-/* Step flow */
-.step-section{border:1px solid var(--line);border-radius:12px;overflow:hidden;}
-.step-head{padding:11px 15px;background:rgba(255,255,255,.025);border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px;}
-.step-lbl{font-size:10px;font-weight:900;letter-spacing:.12em;color:var(--muted);text-transform:uppercase;}
-.step-prog{margin-left:auto;font-size:10px;color:var(--muted);font-weight:700;}
-.step-mode-badge{font-size:10px;padding:2px 9px;border-radius:999px;background:rgba(79,195,247,.1);color:var(--acc);border:1px solid rgba(79,195,247,.22);}
-.step-reset{padding:3px 10px;border-radius:6px;background:0;border:1px solid var(--line);font-size:10px;color:var(--muted);cursor:pointer;transition:all .15s;}
-.step-reset:hover{border-color:rgba(79,195,247,.3);color:var(--acc);}
-.step-current{padding:18px 18px 14px;}
-.sc-meta{display:flex;align-items:center;gap:8px;margin-bottom:10px;}
-.sc-num{font-family:var(--serif);font-size:32px;font-weight:700;color:var(--acc);line-height:1;}
-.sc-of{font-size:12px;color:var(--muted);margin-top:6px;}
-.speaker-badge{font-size:10px;font-weight:900;padding:3px 10px;border-radius:999px;border:1px solid transparent;}
+/* ══ SETTINGS BUTTON ══ */
+.settings-btn{
+  position:fixed;bottom:20px;right:260px;z-index:20;
+  padding:10px 18px;
+  border-radius:10px;
+  border:1px solid rgba(79,195,247,.35);
+  background:rgba(5,10,18,.85);backdrop-filter:blur(12px);
+  color:var(--acc);font-size:12px;font-weight:900;
+  cursor:pointer;transition:all .2s;
+  display:flex;align-items:center;gap:7px;
+}
+.settings-btn:hover{background:rgba(79,195,247,.15);border-color:rgba(79,195,247,.6);}
+
+/* ══ DOCK (draggable) ══ */
+.dock{
+  position:fixed;
+  top:80px;left:20px;
+  z-index:30;
+  width:340px;
+  max-height:calc(100vh - 100px);
+  border:1px solid rgba(79,195,247,.22);
+  border-radius:14px;
+  background:rgba(6,11,20,.94);
+  backdrop-filter:blur(24px);
+  box-shadow:0 24px 60px rgba(0,0,0,.5),0 0 0 1px rgba(79,195,247,.08);
+  display:flex;flex-direction:column;
+  overflow:hidden;
+  display:none;
+}
+.dock.open{display:flex;}
+.dock-handle{
+  padding:10px 14px 8px;
+  border-bottom:1px solid var(--line);
+  display:flex;align-items:center;gap:8px;
+  cursor:grab;flex-shrink:0;
+  background:rgba(79,195,247,.05);
+}
+.dock-handle:active{cursor:grabbing;}
+.dock-drag-icon{font-size:12px;color:var(--faint);letter-spacing:2px;}
+.dock-title{font-size:12px;font-weight:900;letter-spacing:.06em;color:var(--acc);flex:1;}
+.dock-close{
+  width:26px;height:26px;min-height:26px;padding:0;
+  display:flex;align-items:center;justify-content:center;
+  border-radius:7px;border:1px solid var(--line);
+  background:rgba(255,255,255,.04);font-size:13px;
+  cursor:pointer;transition:all .15s;color:var(--muted);
+}
+.dock-close:hover{background:rgba(224,85,85,.15);border-color:rgba(224,85,85,.4);color:var(--stop);}
+.dock-body{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:10px;}
+.dock-body::-webkit-scrollbar{width:3px;}
+.dock-body::-webkit-scrollbar-thumb{background:rgba(79,195,247,.2);border-radius:2px;}
+
+/* dock section */
+.dock-sec{display:flex;flex-direction:column;gap:6px;}
+.dock-sec-lbl{font-size:9px;font-weight:900;letter-spacing:.14em;color:var(--muted);text-transform:uppercase;}
+
+/* ══ GAME BAR (in dock) ══ */
+.game-title-input{font-size:13px;font-weight:700;font-family:var(--serif);}
+.genre-row{display:flex;gap:5px;flex-wrap:wrap;}
+.genre-btn{
+  padding:4px 10px;border-radius:999px;
+  border:1px solid var(--line);background:rgba(255,255,255,.04);
+  font-size:10px;font-weight:900;color:var(--muted);cursor:pointer;transition:all .15s;
+}
+.genre-btn.active{
+  border-color:rgba(79,195,247,.5);background:rgba(79,195,247,.12);color:var(--acc);
+}
+.diff-row{display:flex;gap:4px;}
+.diff-btn{
+  flex:1;padding:5px 0;border-radius:7px;
+  border:1px solid var(--line);background:rgba(255,255,255,.04);
+  font-size:10px;font-weight:900;color:var(--muted);cursor:pointer;transition:all .15s;
+}
+.diff-btn.active.easy{border-color:rgba(87,214,141,.5);background:rgba(87,214,141,.12);color:var(--green);}
+.diff-btn.active.normal{border-color:rgba(79,195,247,.5);background:rgba(79,195,247,.12);color:var(--acc);}
+.diff-btn.active.hard{border-color:rgba(224,85,85,.45);background:rgba(224,85,85,.1);color:var(--stop);}
+.mode-row{display:flex;gap:4px;}
+.mode-btn{
+  flex:1;padding:5px 0;border-radius:7px;
+  border:1px solid var(--line);background:rgba(255,255,255,.04);
+  font-size:10px;font-weight:900;color:var(--muted);cursor:pointer;transition:all .15s;
+}
+.mode-btn.active{border-color:rgba(79,195,247,.5);background:rgba(79,195,247,.12);color:var(--acc);}
+
+/* ══ STOP BUTTON (in dock) ══ */
+.stop-btn-main{
+  width:100%;padding:11px;border-radius:9px;
+  border:1px solid rgba(224,85,85,.4);background:rgba(224,85,85,.1);
+  color:var(--stop);font-size:13px;font-weight:900;cursor:pointer;transition:all .2s;
+  display:flex;align-items:center;justify-content:center;gap:7px;
+}
+.stop-btn-main:hover{background:rgba(224,85,85,.2);}
+.stop-btn-main.resume{border-color:rgba(87,214,141,.45);background:rgba(87,214,141,.1);color:var(--green);}
+.stop-timer-disp{font-size:11px;font-family:var(--serif);font-weight:700;}
+
+/* ══ STEP FLOW (in dock) ══ */
+.step-card{
+  border:1px solid rgba(79,195,247,.18);border-radius:10px;overflow:hidden;
+}
+.step-card-head{
+  padding:8px 12px;background:rgba(79,195,247,.06);
+  border-bottom:1px solid rgba(79,195,247,.12);
+  display:flex;align-items:center;gap:8px;
+}
+.step-lbl{font-size:10px;font-weight:900;letter-spacing:.1em;color:var(--muted);text-transform:uppercase;flex:1;}
+.step-mode-badge{font-size:10px;padding:2px 8px;border-radius:999px;background:rgba(79,195,247,.1);color:var(--acc);border:1px solid rgba(79,195,247,.2);}
+.step-prog{font-size:10px;color:var(--muted);font-weight:700;}
+.step-reset{padding:3px 8px;border-radius:6px;background:transparent;border:1px solid var(--line);font-size:10px;color:var(--muted);cursor:pointer;transition:all .15s;}
+.step-reset:hover{border-color:var(--acc);color:var(--acc);}
+.step-current{padding:12px;}
+.sc-meta{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+.sc-num{font-family:var(--serif);font-size:28px;font-weight:700;color:var(--acc);line-height:1;}
+.sc-of{font-size:11px;color:var(--muted);margin-top:5px;}
+.speaker-badge{font-size:9px;font-weight:900;padding:3px 9px;border-radius:999px;border:1px solid transparent;}
 .speaker-a{background:rgba(201,168,76,.12);color:var(--a-color);border-color:rgba(201,168,76,.28);}
-.speaker-b{background:rgba(255,118,117,.1);color:var(--b-color);border-color:rgba(255,118,117,.28);}
-.speaker-both{background:rgba(87,200,124,.08);color:var(--green);border-color:rgba(87,200,124,.22);}
-.sc-title{font-family:var(--serif);font-size:20px;font-weight:700;margin-bottom:6px;line-height:1.3;}
-.sc-desc{font-size:12px;color:var(--muted);line-height:1.7;}
-.sc-input{width:100%;margin-top:10px;padding:9px 12px;border-radius:8px;border:1px solid var(--line);background:rgba(0,0,0,.3);font-size:12px;color:var(--text);outline:none;transition:border-color .15s;}
+.speaker-both{background:rgba(87,214,141,.08);color:var(--green);border-color:rgba(87,214,141,.22);}
+.sc-title{font-family:var(--serif);font-size:15px;font-weight:700;margin-bottom:4px;line-height:1.3;}
+.sc-desc{font-size:11px;color:var(--muted);line-height:1.7;}
+.sc-input{width:100%;margin-top:8px;padding:7px 10px;border-radius:7px;border:1px solid var(--line);background:rgba(0,0,0,.3);font-size:11px;color:var(--text);outline:none;transition:border-color .15s;}
 .sc-input:focus{border-color:rgba(79,195,247,.4);}
-.sc-textarea{width:100%;margin-top:10px;padding:9px 12px;border-radius:8px;border:1px solid var(--line);background:rgba(0,0,0,.3);font-size:12px;color:var(--text);outline:none;transition:border-color .15s;min-height:70px;resize:vertical;line-height:1.6;}
+.sc-textarea{width:100%;margin-top:8px;padding:7px 10px;border-radius:7px;border:1px solid var(--line);background:rgba(0,0,0,.3);font-size:11px;color:var(--text);outline:none;transition:border-color .15s;min-height:60px;resize:vertical;line-height:1.6;}
 .sc-textarea:focus{border-color:rgba(79,195,247,.4);}
-.step-nav-row{padding:10px 18px;border-top:1px solid var(--line);background:rgba(255,255,255,.01);display:flex;gap:6px;align-items:center;}
+.step-nav-row{padding:8px 12px;border-top:1px solid var(--line);background:rgba(0,0,0,.1);display:flex;gap:6px;align-items:center;}
 .step-list{display:flex;gap:4px;flex-wrap:wrap;flex:1;}
-.step-dot{width:28px;height:28px;border-radius:50%;border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:900;color:var(--muted);cursor:pointer;transition:all .2s;flex-shrink:0;}
-.step-dot.done{background:rgba(87,200,124,.18);border-color:rgba(87,200,124,.45);color:var(--green);}
+.step-dot{width:26px;height:26px;border-radius:50%;border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:900;color:var(--muted);cursor:pointer;transition:all .2s;flex-shrink:0;}
+.step-dot.done{background:rgba(87,214,141,.18);border-color:rgba(87,214,141,.45);color:var(--green);}
 .step-dot.active{background:rgba(79,195,247,.18);border-color:rgba(79,195,247,.45);color:var(--acc);}
-.btn-step-next{padding:7px 16px;border-radius:7px;border:1px solid rgba(79,195,247,.3);background:rgba(79,195,247,.1);color:var(--acc);font-size:11px;font-weight:900;cursor:pointer;transition:all .15s;white-space:nowrap;flex-shrink:0;}
+.btn-step-next{padding:6px 14px;border-radius:7px;border:1px solid rgba(79,195,247,.3);background:rgba(79,195,247,.1);color:var(--acc);font-size:11px;font-weight:900;cursor:pointer;transition:all .15s;white-space:nowrap;flex-shrink:0;}
 .btn-step-next:hover{background:rgba(79,195,247,.2);}
 .btn-step-next:disabled{opacity:.3;cursor:default;}
 
-/* Clip section */
-.clip-section{border:1px solid rgba(79,195,247,.22);border-radius:12px;overflow:hidden;background:rgba(79,195,247,.02);}
-.clip-head{padding:11px 15px;background:rgba(79,195,247,.06);border-bottom:1px solid rgba(79,195,247,.14);display:flex;align-items:center;gap:8px;}
-.clip-lbl{font-size:10px;font-weight:900;letter-spacing:.12em;color:var(--acc);text-transform:uppercase;}
-.clip-cnt{margin-left:auto;font-family:var(--serif);font-size:13px;font-weight:700;color:var(--acc);}
-.clip-form{padding:13px 15px;display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;}
-.cf-main{flex:1;min-width:180px;display:flex;flex-direction:column;gap:7px;}
-.cf-input{width:100%;padding:8px 11px;border-radius:8px;border:1px solid var(--line);background:rgba(0,0,0,.35);font-size:12px;outline:none;transition:border-color .15s;color:var(--text);}
-.cf-input:focus{border-color:rgba(79,195,247,.45);}
-.cf-row{display:flex;gap:6px;}
-.cf-type{flex:1;padding:7px 10px;border-radius:8px;border:1px solid var(--line);background:rgba(0,0,0,.3);font-size:11px;font-weight:700;color:var(--text);outline:none;cursor:pointer;}
-.btn-clip-save{padding:9px 14px;border-radius:8px;background:rgba(79,195,247,.14);border:1px solid rgba(79,195,247,.32);color:var(--acc);font-size:12px;font-weight:900;cursor:pointer;transition:all .15s;white-space:nowrap;align-self:flex-end;}
+/* ══ CLIP (in dock) ══ */
+.clip-form-row{display:flex;gap:6px;}
+.clip-type-sel{width:auto;padding:7px 8px;font-size:11px;font-weight:700;}
+.btn-clip-save{padding:7px 14px;border-radius:8px;background:rgba(79,195,247,.14);border:1px solid rgba(79,195,247,.32);color:var(--acc);font-size:11px;font-weight:900;cursor:pointer;transition:all .15s;white-space:nowrap;flex-shrink:0;width:auto;}
 .btn-clip-save:hover{background:rgba(79,195,247,.24);}
-.tag-row{padding:0 15px 11px;display:flex;flex-wrap:wrap;gap:5px;}
+.tag-row{display:flex;flex-wrap:wrap;gap:4px;}
 .tag-btn{padding:3px 9px;border-radius:999px;border:1px solid rgba(79,195,247,.2);background:rgba(79,195,247,.05);color:var(--acc);font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;}
-.tag-btn:hover{background:rgba(79,195,247,.18);border-color:rgba(79,195,247,.4);}
-.clip-history{border-top:1px solid rgba(79,195,247,.1);padding:10px 15px;display:flex;flex-direction:column;gap:5px;max-height:200px;overflow-y:auto;}
-.sh-lbl{font-size:9px;font-weight:900;letter-spacing:.15em;color:var(--muted);text-transform:uppercase;margin-bottom:4px;}
-.clip-item{display:flex;align-items:flex-start;gap:7px;padding:7px 9px;border-radius:7px;border:1px solid var(--line);background:rgba(255,255,255,.015);}
+.tag-btn:hover{background:rgba(79,195,247,.18);}
+.clip-history{max-height:140px;overflow-y:auto;display:flex;flex-direction:column;gap:4px;}
+.clip-item{display:flex;align-items:flex-start;gap:6px;padding:6px 8px;border-radius:7px;border:1px solid var(--line);background:rgba(255,255,255,.015);}
 .ci-stage{font-size:9px;padding:2px 6px;border-radius:999px;background:rgba(79,195,247,.1);color:var(--acc);border:1px solid rgba(79,195,247,.18);white-space:nowrap;flex-shrink:0;margin-top:2px;cursor:pointer;transition:all .15s;user-select:none;}
 .ci-stage:hover{background:rgba(79,195,247,.28);}
 .ci-body{flex:1;min-width:0;}
-.ci-title{font-size:12px;font-weight:700;}
+.ci-title{font-size:11px;font-weight:700;}
 .ci-note{font-size:10px;color:var(--muted);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .ci-meta{font-size:9px;color:var(--faint);margin-top:2px;}
 .ci-del{background:0;border:0;padding:2px 4px;font-size:10px;color:var(--muted);cursor:pointer;opacity:.4;transition:opacity .15s;flex-shrink:0;}
 .ci-del:hover{opacity:1;}
-.empty-msg{padding:12px;text-align:center;font-size:11px;color:var(--faint);}
 
-/* Note log */
-.note-bar{border:1px solid rgba(126,184,255,.15);border-radius:10px;padding:10px 14px;background:rgba(126,184,255,.03);display:flex;flex-direction:column;gap:8px;}
-.note-bar-head{display:flex;align-items:center;gap:8px;}
-.note-bar-lbl{font-size:9px;font-weight:900;letter-spacing:.14em;color:var(--blue);text-transform:uppercase;}
-.note-bar-cnt{font-size:9px;padding:1px 6px;border-radius:999px;background:rgba(126,184,255,.12);color:var(--blue);border:1px solid rgba(126,184,255,.2);}
-.note-input-row{display:flex;gap:6px;}
-.note-input{flex:1;padding:7px 10px;border-radius:7px;border:1px solid rgba(126,184,255,.18);background:rgba(0,0,0,.3);font-size:11px;color:var(--text);outline:none;transition:border-color .15s;}
-.note-input:focus{border-color:rgba(126,184,255,.4);}
-.note-add{padding:7px 10px;border-radius:7px;border:1px solid rgba(126,184,255,.22);background:rgba(126,184,255,.08);color:var(--blue);font-size:12px;font-weight:900;cursor:pointer;transition:all .15s;}
-.note-add:hover{background:rgba(126,184,255,.16);}
-.note-list{display:flex;flex-direction:column;gap:3px;max-height:100px;overflow-y:auto;}
-.note-item{display:flex;align-items:flex-start;gap:5px;padding:5px 8px;border-radius:6px;background:rgba(126,184,255,.05);border:1px solid rgba(126,184,255,.1);}
-.note-item.done{opacity:.5;}
+/* ══ STATS ROW ══ */
+.stats-row{display:flex;gap:6px;}
+.stat{flex:1;padding:8px 10px;text-align:center;border-radius:8px;border:1px solid var(--line);background:rgba(255,255,255,.02);}
+.stat-n{font-family:var(--serif);font-size:18px;font-weight:700;line-height:1;}
+.stat-n.s{color:var(--stop);}
+.stat-n.g{color:var(--acc);}
+.stat-n.h{color:var(--green);}
+.stat-l{font-size:9px;color:var(--muted);font-weight:900;letter-spacing:.05em;margin-top:2px;}
+
+/* ══ NOTE (in dock) ══ */
+.note-input-row{display:flex;gap:5px;}
+.note-add{padding:7px 12px;border-radius:8px;border:1px solid rgba(79,195,247,.22);background:rgba(79,195,247,.08);color:var(--acc);font-size:13px;font-weight:900;cursor:pointer;transition:all .15s;width:auto;flex-shrink:0;}
+.note-add:hover{background:rgba(79,195,247,.16);}
+.note-list{max-height:100px;overflow-y:auto;display:flex;flex-direction:column;gap:3px;}
+.note-item{display:flex;align-items:flex-start;gap:5px;padding:4px 7px;border-radius:6px;background:rgba(79,195,247,.05);border:1px solid rgba(79,195,247,.1);}
+.note-item.done{opacity:.4;}
 .note-item.done .note-text{text-decoration:line-through;}
 .note-text{flex:1;font-size:10px;color:var(--muted);line-height:1.4;}
 .note-check,.note-del{background:0;border:0;padding:1px 3px;font-size:9px;color:var(--muted);cursor:pointer;opacity:.45;transition:opacity .15s;}
 .note-check:hover,.note-del:hover{opacity:1;}
 
-/* Export */
-.export-bar{border:1px solid var(--line);border-radius:10px;padding:11px 14px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
-.export-lbl{font-size:11px;color:var(--muted);flex:1;}
-.btn-exp{padding:6px 13px;border-radius:7px;border:1px solid var(--line);background:rgba(255,255,255,.03);font-size:11px;font-weight:900;color:var(--muted);cursor:pointer;transition:all .15s;}
+/* ══ CC CONTROLS (in dock) ══ */
+.cc-row{display:flex;gap:4px;align-items:center;}
+.cc-btn{padding:5px 12px;border-radius:7px;border:1px solid rgba(79,195,247,.3);background:rgba(79,195,247,.08);color:var(--acc);font-size:11px;font-weight:900;cursor:pointer;min-height:32px;transition:all .15s;flex-shrink:0;width:auto;}
+.cc-btn.off{border-color:var(--line);background:rgba(255,255,255,.04);color:var(--muted);}
+.spd-btn-sm{width:34px;height:32px;min-height:32px;padding:0;display:flex;align-items:center;justify-content:center;border-radius:7px;border:1px solid var(--line);background:rgba(255,255,255,.04);font-size:13px;cursor:pointer;transition:all .15s;color:var(--muted);}
+.spd-btn-sm.active{border-color:rgba(79,195,247,.4);background:rgba(79,195,247,.1);color:var(--acc);}
+.burst-btn-sm{width:34px;height:32px;min-height:32px;padding:0;display:flex;align-items:center;justify-content:center;border-radius:7px;border:1px solid rgba(201,168,76,.25);background:rgba(201,168,76,.07);color:var(--warn);font-size:11px;font-weight:900;cursor:pointer;transition:all .15s;}
+.burst-btn-sm:hover{background:rgba(201,168,76,.15);}
+.freq-btn{padding:4px 8px;border-radius:6px;border:1px solid var(--line);background:rgba(255,255,255,.04);font-size:10px;font-weight:900;color:var(--muted);cursor:pointer;transition:all .15s;flex-shrink:0;width:auto;}
+.freq-btn.active{border-color:rgba(87,200,124,.5);background:rgba(87,200,124,.12);color:var(--green);}
+.freq-btn[data-freq="4"].active{border-color:rgba(255,80,80,.5);background:rgba(255,80,80,.1);color:#ff8080;}
+
+/* ══ EXPORT ══ */
+.export-row{display:flex;gap:6px;}
+.btn-exp{flex:1;padding:7px;border-radius:8px;border:1px solid var(--line);background:rgba(255,255,255,.03);font-size:11px;font-weight:900;color:var(--muted);cursor:pointer;transition:all .15s;}
 .btn-exp:hover{border-color:rgba(79,195,247,.3);color:var(--acc);}
 
-/* OBS */
-body.obs-mode{background:transparent!important;}
-body.obs-mode .header{background:rgba(4,9,16,.82);}
-body.obs-mode .char-panel{background:rgba(4,9,16,.7);}
-body.obs-mode .center{background:transparent;}
-body.obs-mode .game-bar,body.obs-mode .stats-row,body.obs-mode .clip-section,body.obs-mode .note-bar,body.obs-mode .export-bar{background:rgba(4,9,16,.82)!important;backdrop-filter:blur(8px);}
-body.obs-mode .step-section{background:rgba(4,9,16,.85);backdrop-filter:blur(8px);}
+/* ══ OBS MODE ══ */
+body.obs-mode .dock,
+body.obs-mode .settings-btn,
+body.obs-mode .timer-widget .timer-btns{display:none!important;}
 
-/* Mini */
-body.mini .layout{display:none!important;}
-body.mini .mini-view{display:flex!important;}
-.mini-view{display:none;flex-direction:column;gap:10px;height:calc(100vh - 52px);overflow:hidden;padding:12px 14px;max-width:300px;margin:0 auto;}
+/* ══ TOAST ══ */
+.toast{position:fixed;bottom:70px;left:50%;transform:translateX(-50%) translateY(20px);background:rgba(6,12,22,.97);border:1px solid var(--line);border-radius:10px;padding:9px 18px;font-size:12px;font-weight:700;color:var(--text);pointer-events:none;opacity:0;transition:all .3s;z-index:200;white-space:nowrap;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+.toast.milestone{border-color:rgba(79,195,247,.4);color:var(--acc);}
+
+/* ══ MINI VIEW ══ */
+.mini-view{display:none;position:fixed;inset:0;z-index:50;flex-direction:column;gap:10px;padding:14px;max-width:300px;margin:0 auto;background:rgba(5,9,15,.95);}
+body.mini .live-chat-panel,body.mini .title-widget,body.mini .timer-widget,body.mini .comment-tracks,body.mini .settings-btn,body.mini .stage{display:none!important;}
+body.mini .mini-view{display:flex;}
 .mini-char-row{display:flex;gap:6px;}
 .mini-char-pill{flex:1;padding:7px 10px;border-radius:8px;border:2px solid transparent;background:rgba(255,255,255,.025);display:flex;align-items:center;gap:6px;cursor:pointer;transition:all .2s;}
 .mini-char-pill.a{border-color:rgba(201,168,76,.35);}
 .mini-char-pill.b{border-color:rgba(255,118,117,.35);}
-.mini-char-pill.speaking{opacity:.95;}
 .mcp-avatar{font-size:1.2rem;}
 .mcp-name{font-size:12px;font-weight:900;font-family:var(--serif);}
 .mcp-role{font-size:9px;color:var(--muted);}
 .mini-stop-btn{padding:10px;border-radius:10px;border:1px solid rgba(224,85,85,.4);background:rgba(224,85,85,.1);color:var(--stop);font-size:12px;font-weight:900;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px;}
-.mini-stop-btn.resume{border-color:rgba(87,200,124,.4);background:rgba(87,200,124,.1);color:var(--green);}
+.mini-stop-btn.resume{border-color:rgba(87,214,141,.4);background:rgba(87,214,141,.1);color:var(--green);}
 .mini-step-card{border:1px solid var(--line);border-radius:10px;padding:12px 14px;background:rgba(255,255,255,.02);opacity:.5;transition:opacity .3s;}
 .mini-step-card.on{opacity:1;}
 .mini-step-num-row{display:flex;align-items:center;gap:6px;margin-bottom:6px;}
@@ -228,168 +390,101 @@ body.mini .mini-view{display:flex!important;}
 .mini-nav-btn:disabled{opacity:.25;cursor:default;}
 .mini-clip-panel{background:rgba(79,195,247,.04);border:1px solid rgba(79,195,247,.15);border-radius:8px;padding:8px 10px;}
 .mini-clip-lbl{font-size:9px;font-weight:900;letter-spacing:.14em;color:var(--acc);text-transform:uppercase;margin-bottom:6px;}
-.mini-clip-input{width:100%;padding:6px 9px;border-radius:6px;border:1px solid rgba(79,195,247,.2);background:rgba(0,0,0,.3);font-size:11px;color:var(--text);outline:none;margin-bottom:5px;}
+.mini-clip-input{margin-bottom:5px;}
 .mini-clip-save{width:100%;padding:7px;border-radius:7px;border:1px solid rgba(79,195,247,.3);background:rgba(79,195,247,.1);color:var(--acc);font-size:11px;font-weight:900;cursor:pointer;}
 .mini-footer{display:flex;justify-content:space-between;align-items:center;padding:4px 0;}
 .mini-stats{display:flex;gap:12px;font-size:11px;color:var(--muted);}
-
-/* LIVE CHAT panel */
-.live-chat-panel{display:flex;flex-direction:column;border-left:1px solid var(--line);background:var(--bg2);overflow:hidden;}
-.lc-header{padding:12px 14px 10px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:7px;flex-shrink:0;}
-.lc-live-dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green);animation:lc-pulse 2s ease-in-out infinite;flex-shrink:0;}
-@keyframes lc-pulse{0%,100%{opacity:1}50%{opacity:.4}}
-.lc-title{font-size:11px;font-weight:900;letter-spacing:.12em;color:var(--text);text-transform:uppercase;}
-.lc-toggle-btn{margin-left:auto;padding:3px 10px;border-radius:999px;border:1px solid rgba(87,200,124,.4);background:rgba(87,200,124,.1);color:var(--green);font-size:10px;font-weight:900;cursor:pointer;transition:all .15s;}
-.lc-toggle-btn.off{border-color:var(--line);background:rgba(255,255,255,.02);color:var(--muted);}
-.lc-messages{flex:1;overflow-y:auto;padding:10px 12px;display:flex;flex-direction:column;gap:7px;}
-.lc-msg{padding:7px 10px;border-radius:8px;background:rgba(255,255,255,.025);border:1px solid var(--line);animation:lc-in .25s ease-out;}
-@keyframes lc-in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
-.lc-msg-name{font-size:9px;font-weight:900;letter-spacing:.06em;margin-bottom:3px;opacity:.65;}
-.lc-msg-text{font-size:12px;line-height:1.5;color:var(--text);}
-.lc-footer{padding:8px 12px;border-top:1px solid var(--line);display:flex;align-items:center;gap:8px;flex-shrink:0;}
-.lc-count{font-size:10px;color:var(--muted);flex:1;}
-.lc-speed{background:rgba(0,0,0,.3);border:1px solid var(--line);border-radius:5px;padding:3px 7px;font-size:10px;color:var(--muted);outline:none;cursor:pointer;}
-
-/* Toast */
-.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:rgba(8,14,28,.95);border:1px solid var(--line);border-radius:10px;padding:9px 18px;font-size:12px;font-weight:700;color:var(--text);pointer-events:none;opacity:0;transition:all .3s;z-index:200;white-space:nowrap;}
-.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
-.toast.milestone{border-color:rgba(79,195,247,.4);color:var(--acc);}
-/* ORBS */
-body::before,body::after{content:'';position:fixed;pointer-events:none;border-radius:50%;filter:blur(88px);z-index:0;}
-body::before{width:52vw;height:46vh;left:8%;top:6%;background:radial-gradient(circle,rgba(79,195,247,.08),transparent 70%);animation:orb1 30s ease-in-out infinite alternate;}
-body::after{width:42vw;height:38vh;right:4%;bottom:8%;background:radial-gradient(circle,rgba(87,214,141,.06),transparent 70%);animation:orb2 38s ease-in-out infinite alternate;}
-@keyframes orb1{from{transform:translate(0,0);}to{transform:translate(8vw,10vh) scale(1.2);}}
-@keyframes orb2{from{transform:translate(0,0);}to{transform:translate(-6vw,-8vh) scale(0.85);}}
-.header,.layout,.mini-view{position:relative;z-index:1;}
-/* COMMENT STREAM */
-.comment-stream{position:fixed;left:240px;top:52px;width:calc(100% - 480px);height:calc(100vh - 52px);pointer-events:none;z-index:10;overflow:hidden;}
-@media(max-width:900px){.comment-stream{left:0;width:100%;}}
-.comment{position:absolute;right:0;bottom:10px;max-width:280px;padding:7px 11px;border-radius:10px;background:rgba(4,9,16,.85);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.09);animation:cm-rise var(--life,16s) linear forwards;}
-.comment .c-user{color:var(--uc,#4fc3f7);font-size:10px;font-weight:900;}
-.comment .c-text{font-size:12px;font-weight:700;line-height:1.5;display:block;margin-top:2px;}
-@keyframes cm-rise{0%{opacity:0;transform:translateY(16px) scale(.97);}8%{opacity:1;transform:none;}78%{opacity:1;}100%{opacity:0;transform:translateY(calc(-100vh + 60px));}}
-/* HEADER CC */
-.hdr-cc-row{display:flex;align-items:center;gap:4px;margin-left:auto;}
-.cc-btn{padding:5px 10px;border-radius:7px;border:1px solid rgba(79,195,247,.3);background:rgba(79,195,247,.08);color:#4fc3f7;font-size:11px;font-weight:900;cursor:pointer;min-height:32px;transition:all .15s;flex-shrink:0;}
-.cc-btn.off{border-color:var(--line);background:rgba(255,255,255,.04);color:var(--muted);}
-.spd-btn-sm{width:26px;height:26px;min-height:26px;padding:0;display:grid;place-items:center;border-radius:6px;border:1px solid var(--line);background:rgba(255,255,255,.04);font-size:10px;cursor:pointer;color:var(--muted);transition:all .12s;}
-.spd-btn-sm.active{border-color:rgba(79,195,247,.45);background:rgba(79,195,247,.1);color:#4fc3f7;}
-.burst-btn-sm{padding:3px 8px;border-radius:6px;border:1px solid rgba(255,183,77,.25);background:rgba(255,183,77,.07);color:#ffb74d;font-size:10px;font-weight:900;cursor:pointer;min-height:26px;transition:all .12s;flex-shrink:0;}
-.burst-btn-sm:hover{background:rgba(255,183,77,.18);}
-/* CLIP TYPE COLORS */
-.clip-item[data-type="名場面"]{border-left:3px solid #ffd700;}
-.clip-item[data-type="発見"]{border-left:3px solid #4fc3f7;}
-.clip-item[data-type="失敗"]{border-left:3px solid #e05555;}
-.clip-item[data-type="攻略"]{border-left:3px solid #57d68d;}
-.clip-item[data-type="謎"]{border-left:3px solid #c890d8;}
-.clip-item[data-type="笑い"]{border-left:3px solid #ffb74d;}
-.clip-item[data-type="感動"]{border-left:3px solid #ff7eb3;}
-.clip-item[data-type="裏技"]{border-left:3px solid #7eb8ff;}
-/* Unified horizontal comment tracks */
-.comment-tracks{position:absolute;left:0;right:0;bottom:0;height:108px;overflow:hidden;pointer-events:none;z-index:8;background:linear-gradient(0deg,rgba(0,0,0,.38),transparent);}
-.c-track{height:36px;position:relative;overflow:hidden;border-bottom:1px solid rgba(255,255,255,.04);}
-.comment-h{position:absolute;top:0;left:0;height:100%;display:inline-flex;align-items:center;gap:7px;padding:0 18px 0 10px;border-left:3px solid var(--user-color,#4fc3f7);background:rgba(0,0,0,.55);backdrop-filter:blur(8px);border-radius:0 999px 999px 0;font-size:clamp(13px,1.2vw,17px);font-weight:700;text-shadow:0 1px 2px rgba(0,0,0,.7);transform:translateX(100vw);animation:fly-left var(--speed,14s) linear forwards;white-space:nowrap;}
-.comment-h .user{color:var(--user-color,#4fc3f7);font-weight:900;font-size:.82em;}
-.comment-h .text{color:#f7f8fb;}
-@keyframes fly-left{from{transform:translateX(100vw);}to{transform:translateX(calc(-100% - 20px));}}
-.freq-btn{padding:4px 8px;border-radius:6px;border:1px solid var(--line);background:rgba(255,255,255,.04);font-size:10px;font-weight:900;color:var(--muted);cursor:pointer;transition:all .15s;flex-shrink:0;}
-.freq-btn.active{border-color:rgba(87,200,124,.5);background:rgba(87,200,124,.12);color:#57c87c;}
-.freq-btn[data-freq="4"].active{border-color:rgba(255,80,80,.5);background:rgba(255,80,80,.1);color:#ff8080;}
 </style>
 </head>
 <body>
 
-<header class="header">
-  <div class="logo">
-    <span class="logo-mark">🎮</span>
-    <div>
-      <div class="logo-name">RBゲーム配信</div>
-      <div class="logo-sub">RAINYBRAIN</div>
-    </div>
-  </div>
-  <div class="session-timer" id="sessionTimer">00:00</div>
-  <button class="btn-stop"   id="btnStop"   onclick="toggleStop()">⏸ 止める</button>
-  <button class="btn-resume" id="btnResume" onclick="toggleStop()">▶ 再開</button>
-  <div class="header-btns">
-    <button class="btn-hd" onclick="toggleMini()" id="btnMini">ミニ</button>
-    <button class="btn-hd" onclick="toggleObs()"  id="btnObs">OBS</button>
-    <a class="h-back" href="index.html">← 配信ハブ</a>
-  </div>
-  <div class="hdr-cc-row">
-    <button class="cc-btn" id="ccBtn" onclick="toggleComments()">💬 ON</button>
-    <button class="spd-btn-sm" data-speed="slow" onclick="setCommentSpeed('slow')" title="低速">🐢</button>
-    <button class="spd-btn-sm active" data-speed="normal" onclick="setCommentSpeed('normal')" title="普通">▷</button>
-    <button class="spd-btn-sm" data-speed="fast" onclick="setCommentSpeed('fast')" title="高速">🔥</button>
-    <button class="burst-btn-sm" onclick="spawnComment()" title="C">×1</button>
-    <button class="burst-btn-sm" onclick="burstComments(3)" title="B">×3</button>
-  </div>
-</header>
-<div class="comment-tracks" id="commentTracks" style="position:fixed;"><div class="c-track" id="track0"></div><div class="c-track" id="track1"></div><div class="c-track" id="track2"></div></div>
+<!-- STAGE BACKGROUND -->
+<div class="stage"></div>
 
+<!-- COMMENT TRACKS -->
+<div class="comment-tracks" id="commentTracks">
+  <div class="c-track" id="track0"></div>
+  <div class="c-track" id="track1"></div>
+  <div class="c-track" id="track2"></div>
+</div>
 
-<div class="layout">
+<!-- TITLE WIDGET -->
+<div class="title-widget" id="titleWidget">
+  <span class="tw-badge" id="twBadge">GAME</span>
+  <span class="tw-title" id="twTitle">ゲームタイトルを設定してください</span>
+</div>
 
-  <!-- キャラA：服牢 実況主 -->
-  <div class="char-panel a">
-    <div class="char-header">
-      <div class="char-avatar-row">
-        <div class="char-avatar" id="avatarA" style="background:rgba(201,168,76,.12);color:var(--a-color);">🦁</div>
-        <div>
-          <input class="char-name-input" id="nameA" value="服牢" oninput="syncNames()">
-          <div class="char-role role-a">実況主</div>
-        </div>
-      </div>
-      <div class="char-color-row">
-        <span class="char-color-lbl">カラー</span>
-        <input type="color" class="char-color-input" value="#c9a84c" oninput="setCharColor('a',this.value)">
-      </div>
-      <button class="speak-btn" id="speakBtnA" onclick="toggleSpeak('a')">🎙 話す</button>
-    </div>
-    <div class="char-body">
-      <div class="char-section-lbl">メモ</div>
-      <textarea class="char-note" id="noteA" placeholder="服牢のメモ・実況準備…"></textarea>
-      <div style="margin-top:12px;">
-        <div class="char-section-lbl">Clipログ</div>
-        <div class="char-clips" id="clipsA"></div>
-      </div>
-    </div>
+<!-- TIMER WIDGET -->
+<div class="timer-widget">
+  <div class="timer-display" id="sessionTimer">00:00</div>
+  <div class="timer-btns">
+    <button class="timer-btn" id="btnStop" onclick="toggleStop()" title="止める">⏸</button>
+    <button class="timer-btn" id="btnMini" onclick="toggleMini()" title="ミニ">⊡</button>
+    <button class="timer-btn" id="btnObs"  onclick="toggleObs()"  title="OBS">◉</button>
+    <a class="timer-btn" href="index.html" title="配信ハブへ" style="text-decoration:none;display:flex;align-items:center;justify-content:center;">⌂</a>
   </div>
+</div>
 
-  <!-- CENTER -->
-  <main class="center">
+<!-- LIVE CHAT PANEL -->
+<div class="live-chat-panel">
+  <div class="lc-header">
+    <span class="lc-live-dot"></span>
+    <span class="lc-title">LIVE CHAT</span>
+    <button class="lc-toggle-btn" id="lcToggleBtn" onclick="toggleChat()">ON</button>
+  </div>
+  <div class="lc-messages" id="lcMessages"></div>
+  <div class="lc-footer">
+    <span class="lc-count" id="lcCount">0 コメント</span>
+    <select class="lc-speed" id="lcSpeed" onchange="saveLcSpeed()">
+      <option value="slow">遅め</option>
+      <option value="normal" selected>普通</option>
+      <option value="fast">速め</option>
+    </select>
+  </div>
+</div>
+
+<!-- SETTINGS BUTTON -->
+<button class="settings-btn" onclick="toggleDock()">⚙ 設定</button>
+
+<!-- DRAGGABLE DOCK -->
+<div class="dock" id="dock">
+  <div class="dock-handle" id="dockHandle">
+    <span class="dock-drag-icon">⠿⠿</span>
+    <span class="dock-title">🎮 RBゲーム配信 コントロール</span>
+    <button class="dock-close" onclick="toggleDock()">✕</button>
+  </div>
+  <div class="dock-body">
 
     <!-- ゲーム情報 -->
-    <div class="game-bar">
-      <div class="game-row">
-        <span class="game-label">ゲームタイトル</span>
-        <input class="game-input" id="gameTitle" placeholder="例: Elden Ring / DARK SOULS III" oninput="updateStats()">
-        <span class="stop-timer-inline" id="stopTimerInline">停止中 0:00</span>
+    <div class="dock-sec">
+      <div class="dock-sec-lbl">ゲーム情報</div>
+      <input class="game-title-input" id="gameTitle" placeholder="ゲームタイトル" oninput="onGameTitleChange()">
+      <div class="genre-row" id="genreRow">
+        <button class="genre-btn active" data-genre="rpg" onclick="onGenreChange('rpg')">RPG</button>
+        <button class="genre-btn" data-genre="fps" onclick="onGenreChange('fps')">FPS</button>
+        <button class="genre-btn" data-genre="adv" onclick="onGenreChange('adv')">ADV</button>
+        <button class="genre-btn" data-genre="pzl" onclick="onGenreChange('pzl')">パズル</button>
+        <button class="genre-btn" data-genre="ftg" onclick="onGenreChange('ftg')">格闘</button>
+        <button class="genre-btn" data-genre="hor" onclick="onGenreChange('hor')">ホラー</button>
+        <button class="genre-btn" data-genre="sim" onclick="onGenreChange('sim')">シミュ</button>
+        <button class="genre-btn" data-genre="all" onclick="onGenreChange('all')">その他</button>
       </div>
-      <div class="meta-row">
-        <span class="meta-lbl">ジャンル</span>
-        <select class="cat-select" id="genreSelect" onchange="onGenreChange(this.value)">
-          <option value="rpg">RPG</option>
-          <option value="fps">FPS</option>
-          <option value="adv">ADV</option>
-          <option value="pzl">パズル</option>
-          <option value="ftg">格闘</option>
-          <option value="hor">ホラー</option>
-          <option value="sim">シミュ</option>
-          <option value="all">その他</option>
-        </select>
-        <span class="meta-lbl">難易度</span>
-        <div class="diff-btns" id="diffBtns">
-          <button class="diff-btn easy active" onclick="setDiff(this,'Easy')">Easy</button>
-          <button class="diff-btn normal"      onclick="setDiff(this,'Normal')">Normal</button>
-          <button class="diff-btn hard"        onclick="setDiff(this,'Hard')">Hard</button>
-        </div>
-        <span class="meta-lbl">モード</span>
-        <div style="display:flex;gap:4px;">
-          <button class="mode-btn active" id="modePlayBtn"   onclick="setMode('play')">▶ プレイ</button>
-          <button class="mode-btn"        id="modeReviewBtn" onclick="setMode('review')">⏮ 振り返り</button>
-        </div>
+      <div class="diff-row" id="diffBtns">
+        <button class="diff-btn easy active" onclick="setDiff(this,'Easy')">Easy</button>
+        <button class="diff-btn normal"      onclick="setDiff(this,'Normal')">Normal</button>
+        <button class="diff-btn hard"        onclick="setDiff(this,'Hard')">Hard</button>
+      </div>
+      <div class="mode-row">
+        <button class="mode-btn active" id="modePlayBtn"   onclick="setMode('play')">▶ プレイ</button>
+        <button class="mode-btn"        id="modeReviewBtn" onclick="setMode('review')">⏮ 振り返り</button>
       </div>
     </div>
+
+    <!-- 停止ボタン -->
+    <button class="stop-btn-main" id="dockStopBtn" onclick="toggleStop()">
+      ⏸ 場面を止める
+      <span class="stop-timer-disp" id="stopTimerInline" style="display:none;"></span>
+    </button>
 
     <!-- 統計 -->
     <div class="stats-row">
@@ -399,8 +494,8 @@ body::after{width:42vw;height:38vh;right:4%;bottom:8%;background:radial-gradient
     </div>
 
     <!-- 実況フロー -->
-    <div class="step-section">
-      <div class="step-head">
+    <div class="step-card">
+      <div class="step-card-head">
         <span class="step-lbl">実況フロー</span>
         <span class="step-mode-badge" id="stepModeBadge">▶ プレイ</span>
         <span class="step-prog" id="stepProg">0/6</span>
@@ -425,102 +520,91 @@ body::after{width:42vw;height:38vh;right:4%;bottom:8%;background:radial-gradient
     </div>
 
     <!-- Clip記録 -->
-    <div class="clip-section">
-      <div class="clip-head">
-        <span class="clip-lbl">🎬 Clip を記録</span>
-        <span class="clip-cnt" id="clipCount">0 clips</span>
-      </div>
-      <div class="clip-form">
-        <div class="cf-main">
-          <input class="cf-input" id="clipName" placeholder="場面名 * (例: 初ボス登場 / 謎解きで詰まった)">
-          <div class="cf-row">
-            <select class="cf-type" id="clipType">
-              <option value="名場面">🏆 名場面</option>
-              <option value="発見">💡 発見</option>
-              <option value="失敗">💀 失敗</option>
-              <option value="攻略">🎯 攻略</option>
-              <option value="謎">❓ 謎</option>
-              <option value="笑い">😂 笑い</option>
-              <option value="感動">😭 感動</option>
-              <option value="裏技">🔑 裏技</option>
-            </select>
-            <input class="cf-input" id="clipNote" placeholder="メモ・攻略法…" style="flex:2;">
-          </div>
-        </div>
-        <button class="btn-clip-save" onclick="saveClip()">🎬 記録</button>
+    <div class="dock-sec">
+      <div class="dock-sec-lbl">🎬 Clip記録 <span id="clipCount" style="font-size:10px;font-weight:400;letter-spacing:0;text-transform:none;opacity:.7;margin-left:4px;"></span></div>
+      <input id="clipName" placeholder="場面名 * (例: 初ボス登場 / 謎解きで詰まった)">
+      <div class="clip-form-row">
+        <select class="clip-type-sel" id="clipType">
+          <option value="名場面">🏆 名場面</option>
+          <option value="発見">💡 発見</option>
+          <option value="失敗">💀 失敗</option>
+          <option value="攻略">🎯 攻略</option>
+          <option value="謎">❓ 謎</option>
+          <option value="笑い">😂 笑い</option>
+          <option value="感動">😭 感動</option>
+          <option value="裏技">🔑 裏技</option>
+        </select>
+        <input id="clipNote" placeholder="メモ…" style="flex:2;">
+        <button class="btn-clip-save" onclick="saveClip()">記録</button>
       </div>
       <div class="tag-row" id="tagRow"></div>
       <div class="clip-history" id="clipHistory">
-        <div class="sh-lbl">このセッションのClip</div>
-        <div class="empty-msg" id="clipEmpty">まだ記録がありません</div>
+        <div style="font-size:10px;color:var(--faint);padding:4px 0;" id="clipEmpty">まだ記録がありません</div>
       </div>
     </div>
 
-    <!-- 配信ネタログ -->
-    <div class="note-bar">
-      <div class="note-bar-head">
-        <span class="note-bar-lbl">📝 配信ネタ</span>
-        <span class="note-bar-cnt" id="noteCount">0</span>
-      </div>
+    <!-- 配信ネタ -->
+    <div class="dock-sec">
+      <div class="dock-sec-lbl">📝 配信ネタ <span id="noteCount" style="font-size:10px;font-weight:400;letter-spacing:0;text-transform:none;opacity:.7;margin-left:4px;"></span></div>
       <div class="note-input-row">
-        <input class="note-input" id="noteInput" placeholder="ネタ・視聴者への問いかけ・やることメモ…"
-          onkeydown="if(event.key==='Enter')addNote()">
+        <input id="noteInput" placeholder="ネタ・問いかけ・やること…" onkeydown="if(event.key==='Enter')addNote()">
         <button class="note-add" onclick="addNote()">＋</button>
       </div>
       <div class="note-list" id="noteList">
-        <div style="font-size:10px;color:var(--faint);padding:4px;">配信中に思いついたネタや問いかけを記録</div>
+        <div style="font-size:10px;color:var(--faint);padding:4px 0;">配信中に思いついたことを記録</div>
       </div>
+    </div>
+
+    <!-- コメント制御 -->
+    <div class="dock-sec">
+      <div class="dock-sec-lbl">💬 コメント</div>
+      <div class="cc-row">
+        <button class="cc-btn" id="ccBtn" onclick="toggleComments()">💬 ON</button>
+        <button class="spd-btn-sm" data-speed="slow"   onclick="setCommentSpeed('slow')"   title="低速">🐢</button>
+        <button class="spd-btn-sm active" data-speed="normal" onclick="setCommentSpeed('normal')" title="普通">▷</button>
+        <button class="spd-btn-sm" data-speed="fast"   onclick="setCommentSpeed('fast')"   title="高速">🔥</button>
+        <button class="burst-btn-sm" onclick="spawnComment()">×1</button>
+        <button class="burst-btn-sm" onclick="burstComments(3)">×3</button>
+      </div>
+    </div>
+
+    <!-- 人格設定 -->
+    <div class="dock-sec">
+      <div class="dock-sec-lbl">🎭 コメント人格 <span id="gamePersonaSt" style="font-size:10px;font-weight:400;letter-spacing:0;text-transform:none;opacity:.7;margin-left:4px;"></span></div>
+      <div style="display:flex;gap:6px;">
+        <input id="gamePersonaUrl" placeholder="Google Sheets CSV URL" style="font-size:11px;">
+        <button onclick="syncPersonas()" style="white-space:nowrap;padding:0 10px;font-size:11px;font-weight:900;border:1px solid rgba(79,195,247,.3);background:rgba(79,195,247,.08);color:var(--acc);border-radius:8px;cursor:pointer;width:auto;min-height:36px;">🔄</button>
+      </div>
+      <a href="https://rainybrainch.github.io/comment-studio/ai-comment-personas.html" target="_blank" style="display:flex;align-items:center;justify-content:center;min-height:34px;border:1px solid rgba(224,160,255,.3);border-radius:8px;background:rgba(224,160,255,.06);color:#e0a0ff;font-size:11px;font-weight:900;text-decoration:none;">🎭 Channel OS で人格を作る ↗</a>
+      <div style="border-top:1px solid rgba(255,255,255,.07);padding-top:8px;display:flex;flex-direction:column;gap:5px;">
+        <div style="font-size:9px;font-weight:900;letter-spacing:.1em;color:var(--muted);text-transform:uppercase;">✨ YouTube から人格生成</div>
+        <input id="ytGenUrl" placeholder="https://youtube.com/..." style="font-size:11px;">
+        <input id="ytGenDesc" placeholder="視聴者層・特徴（任意）" style="font-size:11px;">
+        <div style="display:flex;gap:5px;">
+          <select id="ytGenCount" style="font-size:11px;width:auto;"><option value="4">4人</option><option value="6" selected>6人</option><option value="8">8人</option></select>
+          <button onclick="genPersonasFromYT('ytGenUrl','ytGenDesc','ytGenCount','ytGenStatus')" style="flex:1;min-height:32px;font-size:11px;font-weight:900;border:1px solid rgba(100,210,255,.3);background:rgba(100,210,255,.08);color:#64d2ff;border-radius:7px;cursor:pointer;">✨ 生成</button>
+        </div>
+        <div id="ytGenStatus" style="font-size:10px;color:var(--muted);min-height:14px;"></div>
+      </div>
+    </div>
+
+    <!-- メモ（服牢） -->
+    <div class="dock-sec">
+      <div class="dock-sec-lbl">🦁 服牢メモ</div>
+      <textarea id="noteA" placeholder="実況準備・気づき…" style="min-height:60px;resize:vertical;"></textarea>
     </div>
 
     <!-- 書き出し -->
-    <div class="export-bar">
-      <span class="export-lbl" id="exportLbl">セッションの記録を書き出せます</span>
-      <button class="btn-exp" onclick="exportSession()">📄 書き出し</button>
-      <button class="btn-exp" onclick="clearSession()">🗑 クリア</button>
-    </div>
-
-    <details style="border:1px solid rgba(255,255,255,.09);border-radius:10px;background:rgba(0,0,0,.14);">
-      <summary style="cursor:pointer;padding:10px 12px;font-size:12px;font-weight:900;color:var(--muted);display:flex;align-items:center;gap:7px;">🎭 コメント人格設定 <span id="gamePersonaSt" style="margin-left:auto;font-size:10px;"></span></summary>
-      <div style="padding:0 12px 12px;display:grid;gap:8px;">
-        <div style="display:flex;gap:6px;">
-          <input id="gamePersonaUrl" placeholder="Google Sheets CSV URL" style="flex:1;min-height:36px;font-size:11px;border:1px solid var(--line);border-radius:8px;background:rgba(0,0,0,.3);color:var(--text);padding:7px 10px;outline:none;">
-          <button onclick="syncPersonas()" style="white-space:nowrap;min-height:36px;padding:0 12px;font-size:11px;font-weight:900;border:1px solid rgba(79,195,247,.3);background:rgba(79,195,247,.08);color:#4fc3f7;border-radius:8px;cursor:pointer;">🔄 同期</button>
-        </div>
-        <a href="https://rainybrainch.github.io/comment-studio/ai-comment-personas.html" target="_blank" style="display:flex;align-items:center;justify-content:center;min-height:36px;border:1px solid rgba(224,160,255,.35);border-radius:8px;background:rgba(224,160,255,.07);color:#e0a0ff;font-size:11px;font-weight:900;text-decoration:none;">🎭 Channel OS で人格を作る ↗</a>
-        <div style="border-top:1px solid rgba(255,255,255,.07);padding-top:8px;margin-top:2px;display:grid;gap:5px;">
-          <div style="font-size:9px;font-weight:900;letter-spacing:.1em;color:var(--muted);text-transform:uppercase;">✨ YouTube から人格生成</div>
-          <input id="ytGenUrl" placeholder="https://youtube.com/..." style="width:100%;min-height:34px;font-size:11px;border:1px solid var(--line);border-radius:7px;background:rgba(0,0,0,.3);color:var(--text);padding:5px 9px;outline:none;">
-          <input id="ytGenDesc" placeholder="視聴者層・特徴（任意）" style="width:100%;min-height:30px;font-size:11px;border:1px solid var(--line);border-radius:7px;background:rgba(0,0,0,.3);color:var(--text);padding:5px 9px;outline:none;">
-          <div style="display:flex;gap:5px;">
-            <select id="ytGenCount" style="min-height:32px;font-size:11px;border:1px solid var(--line);border-radius:7px;background:rgba(0,0,0,.3);color:var(--text);padding:3px 6px;"><option value="4">4人</option><option value="6" selected>6人</option><option value="8">8人</option></select>
-            <button onclick="genPersonasFromYT('ytGenUrl','ytGenDesc','ytGenCount','ytGenStatus')" style="flex:1;min-height:32px;font-size:11px;font-weight:900;border:1px solid rgba(100,210,255,.3);background:rgba(100,210,255,.08);color:#64d2ff;border-radius:7px;cursor:pointer;">✨ 生成</button>
-          </div>
-          <div id="ytGenStatus" style="font-size:10px;color:var(--muted);min-height:14px;"></div>
-        </div>
+    <div class="dock-sec">
+      <div class="dock-sec-lbl">書き出し</div>
+      <div class="export-row">
+        <button class="btn-exp" onclick="exportSession()">📄 書き出し</button>
+        <button class="btn-exp" onclick="clearSession()">🗑 クリア</button>
       </div>
-    </details>
-
-  </main>
-
-  <!-- LIVE CHAT -->
-  <div class="live-chat-panel">
-    <div class="lc-header">
-      <span class="lc-live-dot"></span>
-      <span class="lc-title">LIVE CHAT</span>
-      <button class="lc-toggle-btn" id="lcToggleBtn" onclick="toggleChat()">ON</button>
     </div>
-    <div class="lc-messages" id="lcMessages"></div>
-    <div class="lc-footer">
-      <span class="lc-count" id="lcCount">0 コメント</span>
-      <select class="lc-speed" id="lcSpeed" onchange="saveLcSpeed()">
-        <option value="slow">遅め</option>
-        <option value="normal" selected>普通</option>
-        <option value="fast">速め</option>
-      </select>
-    </div>
-  </div>
 
-</div>
+  </div><!-- /dock-body -->
+</div><!-- /dock -->
 
 <!-- MINI VIEW -->
 <div class="mini-view" id="miniView">
@@ -528,10 +612,6 @@ body::after{width:42vw;height:38vh;right:4%;bottom:8%;background:radial-gradient
     <div class="mini-char-pill a" id="miniPillA" onclick="toggleSpeak('a')">
       <span class="mcp-avatar">🦁</span>
       <div><div class="mcp-name" id="miniNameA">服牢</div><div class="mcp-role">実況主</div></div>
-    </div>
-    <div class="mini-char-pill b" id="miniPillB" onclick="toggleSpeak('b')">
-      <span class="mcp-avatar">🎮</span>
-      <div><div class="mcp-name" id="miniNameB">パートナー</div><div class="mcp-role">共演者</div></div>
     </div>
   </div>
   <button class="mini-stop-btn" id="miniStopBtn" onclick="toggleStop()">
@@ -553,8 +633,7 @@ body::after{width:42vw;height:38vh;right:4%;bottom:8%;background:radial-gradient
   </div>
   <div class="mini-clip-panel">
     <div class="mini-clip-lbl">🎬 Clip</div>
-    <input class="mini-clip-input" id="miniClipInput" placeholder="場面名…"
-      onkeydown="if(event.key==='Enter')miniSaveClip()">
+    <input class="mini-clip-input" id="miniClipInput" placeholder="場面名…" onkeydown="if(event.key==='Enter')miniSaveClip()">
     <button class="mini-clip-save" onclick="miniSaveClip()">🎬 記録する</button>
   </div>
   <div class="mini-footer">
@@ -613,8 +692,8 @@ const FLOWS = {
 };
 
 const SPEAKER_META = {
-  a:    { badge:'speaker-a',    label:() => document.getElementById('nameA')?.value || '服牢' },
-  b:    { badge:'speaker-b',    label:() => document.getElementById('nameB')?.value || 'パートナー' },
+  a:    { badge:'speaker-a',    label:() => '服牢' },
+  b:    { badge:'speaker-b',    label:() => 'パートナー' },
   both: { badge:'speaker-both', label:() => '両者' },
 };
 
@@ -702,6 +781,51 @@ function saveLcSpeed() {
   if (lcEnabled) { clearTimeout(lcTimer); scheduleLc(); }
 }
 
+// ── Dock ──
+let dockOpen = false;
+function toggleDock() {
+  dockOpen = !dockOpen;
+  document.getElementById('dock').classList.toggle('open', dockOpen);
+}
+
+// ── Dock drag ──
+(function(){
+  const dock = document.getElementById('dock');
+  const handle = document.getElementById('dockHandle');
+  let dragging = false, ox = 0, oy = 0;
+  handle.addEventListener('mousedown', e => {
+    dragging = true;
+    const r = dock.getBoundingClientRect();
+    ox = e.clientX - r.left; oy = e.clientY - r.top;
+    e.preventDefault();
+  });
+  document.addEventListener('mousemove', e => {
+    if (!dragging) return;
+    dock.style.left = (e.clientX - ox) + 'px';
+    dock.style.top  = (e.clientY - oy) + 'px';
+  });
+  document.addEventListener('mouseup', () => { dragging = false; });
+})();
+
+// ── Game Title Sync ──
+function onGameTitleChange() {
+  const v = document.getElementById('gameTitle')?.value || '';
+  const tw = document.getElementById('twTitle');
+  if (tw) tw.textContent = v || 'ゲームタイトルを設定してください';
+  const mg = document.getElementById('mGameTitle');
+  if (mg) mg.textContent = v || '—';
+  updateStats();
+}
+
+// ── Genre Buttons ──
+function onGenreChange(g) {
+  genre = g;
+  document.querySelectorAll('.genre-btn').forEach(b => b.classList.toggle('active', b.dataset.genre === g));
+  renderTags(g);
+  const badge = document.getElementById('twBadge');
+  if (badge) badge.textContent = g.toUpperCase();
+}
+
 // ── Init ──
 document.addEventListener('DOMContentLoaded', () => {
   loadClips(); loadNotes();
@@ -712,6 +836,8 @@ document.addEventListener('DOMContentLoaded', () => {
   scheduleLc();
 });
 
+</script>
+<script>
 function escHtml(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
@@ -869,8 +995,10 @@ function renderMiniFlow() {
 // ── Stop / Resume ──
 function toggleStop() {
   stopped = !stopped;
-  document.getElementById('btnStop').style.display   = stopped ? 'none'        : 'inline-flex';
-  document.getElementById('btnResume').style.display = stopped ? 'inline-flex' : 'none';
+  const btnStop = document.getElementById('btnStop');
+  if (btnStop) btnStop.classList.toggle('stop-active', stopped);
+  const dockStop = document.getElementById('dockStopBtn');
+  if (dockStop) { dockStop.textContent = stopped ? '▶ ゲームを再開する' : '⏸ 場面を止める'; dockStop.classList.toggle('resume', stopped); }
   if (stopped) {
     stopCount++; stopStart = Date.now();
     stopInterval = setInterval(updateStopTimer, 1000);
