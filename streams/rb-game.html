@@ -1160,25 +1160,7 @@ function renderClips() {
 }
 
 function renderSidebarClips() {
-  const el = document.getElementById('clipsA');
-  if (el) {
-    el.innerHTML = clips.slice(0, 5).map(c => `
-      <div class="char-clip-card">
-        <div class="char-clip-title">${escHtml(c.name)} <span style="font-size:9px;color:var(--muted);">${c.type}</span></div>
-        ${c.note ? `<div class="char-clip-note">${escHtml(c.note)}</div>` : ''}
-      </div>`).join('') || '';
-  }
-  const rl = document.getElementById('replayList');
-  if (rl) {
-    const highlights = clips.filter(c => c.type === '名場面' || c.stage === 'highlight' || c.stage === 'story' || c.stage === 'legend');
-    rl.innerHTML = highlights.length > 0
-      ? highlights.slice(0, 5).map(c => `
-          <div style="display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid var(--line);">
-            <span style="font-size:11px;flex:1;color:var(--muted);">${escHtml(c.name)}</span>
-            <span style="font-size:10px;color:var(--acc);">${(CLIP_STAGES[c.stage]?.label || '💫').split(' ')[0]}</span>
-          </div>`).join('')
-      : '<div style="font-size:10px;color:var(--faint);padding:4px 0;">名場面が記録されると表示されます</div>';
-  }
+  // サイドバーClipはドックのclipHistoryで表示済みのため省略
 }
 
 // ── Stream Notes ──
