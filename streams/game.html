@@ -255,6 +255,69 @@ body.mini .mini-view{display:flex!important;}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
 .toast.milestone{border-color:rgba(79,195,247,.4);color:var(--acc);}
 
+/* ── TRANSCRIPT ── */
+.transcript-wrap{
+  position:fixed;bottom:22px;left:50%;transform:translateX(-50%);
+  z-index:90;width:min(820px,90vw);pointer-events:none;
+  display:none;flex-direction:column;gap:4px;align-items:center;
+}
+.transcript-wrap.active{display:flex;}
+.transcript-line{
+  padding:6px 18px;border-radius:8px;
+  font-family:var(--serif);line-height:1.5;text-align:center;
+  max-width:100%;word-break:break-all;
+}
+.transcript-interim{
+  font-size:15px;color:rgba(192,216,240,.55);
+  background:rgba(4,9,16,.55);backdrop-filter:blur(6px);
+  border:1px solid rgba(79,195,247,.12);
+  font-style:italic;min-height:28px;
+}
+.transcript-final{
+  font-size:17px;color:rgba(220,240,255,.92);
+  background:rgba(4,9,16,.82);backdrop-filter:blur(8px);
+  border:1px solid rgba(79,195,247,.25);
+  font-weight:700;min-height:32px;
+}
+.transcript-interim:empty,.transcript-final:empty{display:none;}
+.btn-transcript{padding:5px 12px;border-radius:7px;border:1px solid rgba(79,195,247,.25);background:rgba(79,195,247,.06);font-size:11px;font-weight:900;color:var(--blue);cursor:pointer;transition:all .15s;flex-shrink:0;}
+.btn-transcript:hover{background:rgba(79,195,247,.14);}
+.btn-transcript.active{border-color:rgba(79,195,247,.5);background:rgba(79,195,247,.16);color:var(--acc);}
+.btn-transcript-clear{padding:5px 10px;border-radius:7px;border:1px solid var(--line);background:rgba(255,255,255,.03);font-size:11px;font-weight:900;color:var(--muted);cursor:pointer;transition:all .15s;flex-shrink:0;}
+.btn-transcript-clear:hover{border-color:rgba(224,85,85,.3);color:var(--stop);}
+
+/* ── HAKKE TABLE ── */
+.hakke-wrap{
+  position:fixed; bottom:18px; left:18px; z-index:100;
+  pointer-events:none;
+  animation:hk-float 5s ease-in-out infinite;
+}
+@keyframes hk-float{
+  0%,100%{transform:translateY(0);}
+  50%{transform:translateY(-4px);}
+}
+.hakke-img{
+  display:block; width:260px; height:auto;
+  border-radius:8px;
+  filter:drop-shadow(0 0 8px rgba(201,168,76,.45))
+         drop-shadow(0 0 20px rgba(201,168,76,.25));
+  animation:hk-glow 3s ease-in-out infinite;
+}
+@keyframes hk-glow{
+  0%,100%{filter:drop-shadow(0 0 6px rgba(201,168,76,.4)) drop-shadow(0 0 16px rgba(201,168,76,.2));}
+  50%{filter:drop-shadow(0 0 14px rgba(201,168,76,.75)) drop-shadow(0 0 28px rgba(201,168,76,.45)) drop-shadow(0 0 4px rgba(255,230,140,.3));}
+}
+.hakke-wrap::before,.hakke-wrap::after{
+  content:'✦'; position:absolute; font-size:11px; color:rgba(201,168,76,.8);
+  animation:hk-spark 3.5s ease-in-out infinite;
+}
+.hakke-wrap::before{top:-6px;right:16px;animation-delay:0s;}
+.hakke-wrap::after{bottom:10px;left:8px;animation-delay:1.7s;}
+@keyframes hk-spark{
+  0%,100%{opacity:0;transform:scale(.5) rotate(0deg);}
+  45%,55%{opacity:1;transform:scale(1.3) rotate(25deg);}
+}
+
 /* ── NAMEPLATE ── */
 .nameplate-wrap{
   position:fixed; bottom:18px; right:18px; z-index:100;
@@ -302,6 +365,8 @@ body.mini .mini-view{display:flex!important;}
   <button class="btn-stop"   id="btnStop"   onclick="toggleStop()">⏸ 止める</button>
   <button class="btn-resume" id="btnResume" onclick="toggleStop()">▶ 再開</button>
   <div class="header-btns">
+    <button class="btn-transcript" id="btnTranscript" onclick="toggleTranscript()">🎤 文字起こし</button>
+    <button class="btn-transcript-clear" onclick="clearTranscript()" title="確定テキストをクリア">🗑</button>
     <button class="btn-hd" onclick="toggleMini()" id="btnMini">ミニ</button>
     <button class="btn-hd" onclick="toggleObs()"  id="btnObs">OBS</button>
     <a class="h-back" href="index.html">← 配信ハブ</a>
@@ -1124,7 +1189,83 @@ function showToast(msg, cls = '') {
   requestAnimationFrame(() => t.classList.add('show'));
   toastTimer = setTimeout(() => t.classList.remove('show'), 2800);
 }
+
+// ════════════════════════════════════
+//  Transcript (Web Speech API)
+// ════════════════════════════════════
+let recognition = null;
+let transcriptOn = false;
+let finalText = '';
+
+function toggleTranscript() {
+  transcriptOn ? stopTranscript() : startTranscript();
+}
+
+function startTranscript() {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) { alert('このブラウザはWeb Speech APIに対応していません（Chrome推奨）'); return; }
+  recognition = new SR();
+  recognition.lang = 'ja-JP';
+  recognition.continuous = true;
+  recognition.interimResults = true;
+
+  recognition.onresult = (e) => {
+    let interim = '';
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      const res = e.results[i];
+      if (res.isFinal) {
+        finalText += res[0].transcript;
+        // 長すぎたら古い部分を削る（最新100文字程度を保持）
+        if (finalText.length > 120) finalText = finalText.slice(-100);
+      } else {
+        interim += res[0].transcript;
+      }
+    }
+    document.getElementById('transcriptInterim').textContent = interim;
+    document.getElementById('transcriptFinal').textContent = finalText;
+  };
+
+  recognition.onerror = (e) => {
+    if (e.error !== 'no-speech') showToast('文字起こしエラー: ' + e.error, 'error');
+  };
+
+  recognition.onend = () => {
+    if (transcriptOn) recognition.start(); // 自動再起動
+  };
+
+  recognition.start();
+  transcriptOn = true;
+  document.getElementById('transcriptWrap').classList.add('active');
+  document.getElementById('btnTranscript').classList.add('active');
+  document.getElementById('btnTranscript').textContent = '🔴 文字起こし中';
+}
+
+function stopTranscript() {
+  transcriptOn = false;
+  if (recognition) { recognition.stop(); recognition = null; }
+  document.getElementById('transcriptWrap').classList.remove('active');
+  document.getElementById('btnTranscript').classList.remove('active');
+  document.getElementById('btnTranscript').textContent = '🎤 文字起こし';
+}
+
+function clearTranscript() {
+  finalText = '';
+  document.getElementById('transcriptFinal').textContent = '';
+  document.getElementById('transcriptInterim').textContent = '';
+}
 </script>
+
+<!-- ── TRANSCRIPT ── -->
+<div class="transcript-wrap" id="transcriptWrap">
+  <div class="transcript-line transcript-interim" id="transcriptInterim"></div>
+  <div class="transcript-line transcript-final"   id="transcriptFinal"></div>
+</div>
+
+<!-- ── HAKKE TABLE ── -->
+<div class="hakke-wrap" id="hakkeWrap">
+  <img class="hakke-img" src="assets/dqm3-hakke.png" alt="八大家系一覧"
+       onerror="this.parentElement.style.display='none'">
+</div>
 
 <!-- ── NAMEPLATE ── -->
 <div class="nameplate-wrap" id="nameplateWrap">
