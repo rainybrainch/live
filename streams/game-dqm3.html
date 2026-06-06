@@ -250,6 +250,14 @@ body.mini .mini-view{display:flex!important;}
 .lc-count{font-size:10px;color:var(--muted);flex:1;}
 .lc-speed{background:rgba(0,0,0,.3);border:1px solid var(--line);border-radius:5px;padding:3px 7px;font-size:10px;color:var(--muted);outline:none;cursor:pointer;}
 
+/* ── LIVE DOT ── */
+.live-badge{display:flex;align-items:center;gap:5px;padding:4px 10px;border-radius:999px;border:1px solid rgba(224,85,85,.28);background:rgba(224,85,85,.05);font-size:9px;font-weight:900;color:#e05555;letter-spacing:.08em;flex-shrink:0;}
+.live-blink{width:6px;height:6px;border-radius:50%;background:#e05555;animation:live-p 1.6s ease-in-out infinite;}
+@keyframes live-p{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.25;transform:scale(.65);}}
+.p-canvas{position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.2;}
+.scan-overlay{position:fixed;inset:0;pointer-events:none;z-index:1;background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(79,195,247,.018) 3px,rgba(79,195,247,.018) 4px);animation:scan-drift 8s linear infinite;}
+@keyframes scan-drift{from{background-position-y:0}to{background-position-y:40px}}
+
 /* Toast */
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:rgba(8,14,28,.95);border:1px solid var(--line);border-radius:10px;padding:9px 18px;font-size:12px;font-weight:700;color:var(--text);pointer-events:none;opacity:0;transition:all .3s;z-index:200;white-space:nowrap;}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
@@ -353,7 +361,11 @@ body.mini .mini-view{display:flex!important;}
 </head>
 <body>
 
+<canvas class="p-canvas" id="pCanvas"></canvas>
+<div class="scan-overlay"></div>
+
 <header class="header">
+  <div class="live-badge"><span class="live-blink"></span>LIVE</div>
   <div class="logo">
     <span class="logo-mark">🎮</span>
     <div>
@@ -1189,6 +1201,28 @@ function showToast(msg, cls = '') {
   requestAnimationFrame(() => t.classList.add('show'));
   toastTimer = setTimeout(() => t.classList.remove('show'), 2800);
 }
+
+// ════════════════════════════════════
+//  Particles
+// ════════════════════════════════════
+(function(){
+  const c=document.getElementById('pCanvas');if(!c)return;
+  const x=c.getContext('2d');let W,H,ps=[];
+  function rs(){W=c.width=innerWidth;H=c.height=innerHeight;}
+  function mp(){return{x:Math.random()*W,y:Math.random()*H,vy:-.18-Math.random()*.4,vx:(Math.random()-.5)*.12,r:.8+Math.random()*1.2,a:Math.random()*.5+.1};}
+  function init(){rs();ps=[];for(let i=0;i<50;i++)ps.push(mp());}
+  function draw(){
+    x.clearRect(0,0,W,H);
+    ps.forEach(p=>{
+      x.beginPath();x.arc(p.x,p.y,p.r,0,Math.PI*2);
+      x.fillStyle=`rgba(79,195,247,${p.a})`;x.fill();
+      p.x+=p.vx;p.y+=p.vy;
+      if(p.y<-4){p.y=H+4;p.x=Math.random()*W;}
+    });
+    requestAnimationFrame(draw);
+  }
+  window.addEventListener('resize',init);init();draw();
+})();
 
 // ════════════════════════════════════
 //  Transcript (Web Speech API)
