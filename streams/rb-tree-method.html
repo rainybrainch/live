@@ -1,0 +1,1899 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RB-Tree学習</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;700&family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:    #060c08;
+  --bg2:   #0c1810;
+  --line:  rgba(100,180,120,.13);
+  --text:  #d4e8d0;
+  --muted: rgba(180,210,180,.52);
+  --faint: rgba(180,210,180,.28);
+  --acc:   #c9a84c;
+  --green: #57c87c;
+  --stop:  #e05555;
+  --blue:  #6bb6ff;
+  --font:  "Noto Sans JP", sans-serif;
+  --serif: "Noto Serif JP", serif;
+  color-scheme: dark;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;font-family:var(--font);color:var(--text);background:var(--bg);}
+button,input,textarea{font:inherit;color:inherit;}
+textarea{resize:vertical;}
+
+/* ── HEADER ── */
+.header{
+  position:sticky;top:0;z-index:30;
+  display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  padding:0 18px;min-height:52px;
+  background:rgba(6,12,8,.97);backdrop-filter:blur(14px);
+  border-bottom:1px solid var(--line);
+}
+.logo{display:flex;align-items:center;gap:8px;white-space:nowrap;flex-shrink:0;}
+.logo-mark{font-size:20px;}
+.logo-name{font-family:var(--serif);font-size:13px;font-weight:700;letter-spacing:.05em;}
+.logo-sub{font-size:9px;color:var(--muted);letter-spacing:.15em;margin-top:1px;}
+.mode-toggle{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;}
+.mode-btn{padding:5px 14px;border:0;background:0;cursor:pointer;font-size:11px;font-weight:900;color:var(--muted);transition:all .15s;}
+.mode-btn.active{background:rgba(201,168,76,.18);color:var(--acc);}
+.session-timer{font-family:var(--serif);font-size:13px;font-weight:700;color:var(--muted);padding:4px 11px;border:1px solid var(--line);border-radius:8px;min-width:58px;text-align:center;flex-shrink:0;}
+.btn-stop{padding:6px 16px;border-radius:8px;border:1px solid rgba(224,85,85,.4);background:rgba(224,85,85,.1);color:var(--stop);font-size:12px;font-weight:900;cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;gap:5px;flex-shrink:0;}
+.btn-stop:hover{background:rgba(224,85,85,.2);}
+.btn-resume{padding:6px 16px;border-radius:8px;border:1px solid rgba(87,200,124,.4);background:rgba(87,200,124,.1);color:var(--green);font-size:12px;font-weight:900;cursor:pointer;transition:all .15s;display:none;align-items:center;gap:5px;flex-shrink:0;}
+.btn-resume:hover{background:rgba(87,200,124,.2);}
+.h-back{margin-left:auto;font-size:11px;color:var(--muted);text-decoration:none;white-space:nowrap;flex-shrink:0;transition:color .15s;}
+.h-back:hover{color:var(--text);}
+
+/* ── LAYOUT ── */
+.layout{display:grid;grid-template-columns:264px 1fr;height:calc(100vh - 52px);overflow:hidden;}
+
+/* ── SIDEBAR ── */
+.sidebar{border-right:1px solid var(--line);background:var(--bg2);overflow-y:auto;padding:16px 13px;display:flex;flex-direction:column;gap:20px;}
+.s-section{display:flex;flex-direction:column;gap:8px;}
+.s-label{font-size:9px;font-weight:900;letter-spacing:.18em;color:var(--muted);text-transform:uppercase;padding-bottom:6px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:6px;}
+.s-badge{font-size:9px;font-weight:900;padding:1px 6px;border-radius:999px;background:rgba(107,182,255,.12);color:var(--blue);border:1px solid rgba(107,182,255,.2);}
+
+/* Triggers */
+.trigger-list{display:flex;flex-direction:column;gap:4px;}
+.trigger-item{display:flex;align-items:flex-start;gap:8px;padding:8px 10px;border-radius:8px;background:rgba(255,255,255,.02);border:1px solid transparent;cursor:pointer;transition:all .2s;}
+.trigger-item:hover{background:rgba(201,168,76,.06);border-color:rgba(201,168,76,.18);}
+.trigger-item.fired{background:rgba(201,168,76,.11);border-color:rgba(201,168,76,.35);}
+.t-icon{font-size:14px;flex-shrink:0;margin-top:1px;}
+.t-name{font-size:11px;font-weight:700;color:var(--text);}
+.t-desc{font-size:10px;color:var(--muted);margin-top:1px;line-height:1.4;}
+.trigger-item.fired .t-name{color:var(--acc);}
+
+/* Phrases */
+.phrase-list{display:flex;flex-direction:column;gap:3px;}
+.phrase-btn{padding:7px 10px;border-radius:8px;text-align:left;background:rgba(255,255,255,.02);border:1px solid var(--line);font-size:11px;color:var(--muted);cursor:pointer;transition:all .15s;line-height:1.4;display:flex;align-items:flex-start;gap:6px;}
+.phrase-btn::before{content:"📋";font-size:10px;flex-shrink:0;margin-top:1px;}
+.phrase-btn:hover{background:rgba(107,182,255,.07);border-color:rgba(107,182,255,.22);color:var(--text);}
+.phrase-btn.copied{background:rgba(87,200,124,.09);border-color:rgba(87,200,124,.28);color:var(--green);}
+
+/* Question log */
+.q-input-row{display:flex;gap:5px;margin-bottom:2px;}
+.q-input{flex:1;padding:7px 10px;border-radius:7px;border:1px solid var(--line);background:rgba(0,0,0,.3);font-size:11px;color:var(--text);outline:none;transition:border-color .15s;}
+.q-input:focus{border-color:rgba(107,182,255,.4);}
+.q-add{padding:7px 10px;border-radius:7px;border:1px solid rgba(107,182,255,.22);background:rgba(107,182,255,.08);color:var(--blue);font-size:13px;font-weight:900;cursor:pointer;transition:all .15s;}
+.q-add:hover{background:rgba(107,182,255,.16);}
+.q-list{display:flex;flex-direction:column;gap:3px;}
+.q-empty{font-size:10px;color:var(--faint);padding:4px 2px;}
+.q-item{display:flex;align-items:flex-start;gap:5px;padding:6px 8px;border-radius:6px;background:rgba(107,182,255,.05);border:1px solid rgba(107,182,255,.12);}
+.q-item.done{background:rgba(87,200,124,.04);border-color:rgba(87,200,124,.12);opacity:.55;}
+.q-mark{color:var(--blue);font-size:10px;flex-shrink:0;margin-top:2px;}
+.q-text{flex:1;font-size:10px;color:var(--muted);line-height:1.4;}
+.q-item.done .q-text{text-decoration:line-through;}
+.q-check,.q-del{background:0;border:0;padding:1px 4px;font-size:10px;color:var(--muted);cursor:pointer;opacity:.5;transition:opacity .15s;flex-shrink:0;}
+.q-check:hover,.q-del:hover{opacity:1;}
+
+/* ── MAIN ── */
+.main{overflow-y:auto;padding:16px 20px 40px;display:flex;flex-direction:column;gap:16px;}
+
+/* Stats bar */
+.stats-bar{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;}
+.stat-item{flex:1;padding:9px 10px;text-align:center;border-right:1px solid var(--line);background:rgba(255,255,255,.018);}
+.stat-item:last-child{border-right:0;}
+.stat-n{font-family:var(--serif);font-size:20px;font-weight:700;line-height:1;}
+.stat-n.stop {color:var(--stop);}
+.stat-n.seed {color:var(--acc);}
+.stat-n.quest{color:var(--blue);}
+.stat-n.score{color:var(--green);}
+.stat-n.time {color:var(--muted);}
+.stat-l{font-size:9px;color:var(--muted);font-weight:900;letter-spacing:.06em;margin-top:3px;}
+
+/* Stop indicator */
+.stop-indicator{border:2px solid transparent;border-radius:12px;padding:13px 16px;background:transparent;transition:all .3s;display:none;}
+.stop-indicator.active{display:block;border-color:rgba(224,85,85,.45);background:rgba(224,85,85,.06);}
+.si-head{display:flex;align-items:center;gap:8px;margin-bottom:10px;}
+.si-dot{width:8px;height:8px;border-radius:50%;background:var(--stop);animation:pulse 1s ease-in-out infinite;flex-shrink:0;}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.3;transform:scale(.85)}}
+.si-title{font-size:12px;font-weight:900;color:var(--stop);letter-spacing:.06em;}
+.si-stimer{margin-left:auto;font-family:var(--serif);font-size:13px;color:var(--stop);font-weight:700;}
+.si-input{width:100%;padding:8px 12px;border-radius:8px;border:1px solid rgba(224,85,85,.28);background:rgba(0,0,0,.35);font-size:13px;outline:none;transition:border-color .15s;color:var(--text);}
+.si-input:focus{border-color:rgba(224,85,85,.55);}
+
+/* Flow section */
+.flow-section{border:1px solid var(--line);border-radius:12px;overflow:hidden;}
+.flow-head{padding:11px 15px;background:rgba(255,255,255,.025);border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px;}
+.flow-lbl{font-size:10px;font-weight:900;letter-spacing:.12em;color:var(--muted);text-transform:uppercase;}
+.flow-badge{font-size:10px;font-weight:900;padding:2px 9px;border-radius:999px;background:rgba(201,168,76,.1);color:var(--acc);border:1px solid rgba(201,168,76,.22);}
+.flow-prog{margin-left:auto;font-size:10px;color:var(--muted);font-weight:700;}
+.flow-reset{padding:3px 10px;border-radius:6px;background:0;border:1px solid var(--line);font-size:10px;color:var(--muted);cursor:pointer;transition:all .15s;}
+.flow-reset:hover{border-color:rgba(201,168,76,.3);color:var(--acc);}
+.flow-steps{padding:12px 15px;display:flex;flex-direction:column;gap:5px;}
+
+/* Step items */
+.step-item{display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border-radius:8px;border:1px solid var(--line);background:rgba(255,255,255,.018);cursor:pointer;transition:all .2s;}
+.step-item:hover:not(.done){background:rgba(201,168,76,.04);}
+.step-item.done{background:rgba(87,200,124,.04);border-color:rgba(87,200,124,.22);opacity:.6;}
+.step-item.active{background:rgba(201,168,76,.07);border-color:rgba(201,168,76,.32);border-left:3px solid var(--acc);}
+.step-num{width:22px;height:22px;border-radius:50%;border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:900;color:var(--muted);flex-shrink:0;transition:all .2s;margin-top:1px;}
+.step-item.done   .step-num{background:rgba(87,200,124,.18);border-color:rgba(87,200,124,.45);color:var(--green);}
+.step-item.active .step-num{background:rgba(201,168,76,.18);border-color:rgba(201,168,76,.45);color:var(--acc);}
+.step-content{flex:1;min-width:0;}
+.step-title{font-size:12px;font-weight:700;margin-bottom:2px;}
+.step-desc{font-size:11px;color:var(--muted);line-height:1.6;}
+.step-item.active .step-desc{color:rgba(212,232,208,.72);}
+
+.step-input,.step-textarea{margin-top:8px;width:100%;padding:7px 10px;border-radius:7px;border:1px solid var(--line);background:rgba(0,0,0,.3);font-size:12px;color:var(--text);outline:none;transition:border-color .15s;}
+.step-textarea{min-height:60px;}
+.step-input:focus,.step-textarea:focus{border-color:rgba(201,168,76,.4);}
+
+/* Elaboration prompts */
+.elab-section{margin-top:10px;padding:10px 12px;border-radius:8px;background:rgba(107,182,255,.04);border:1px solid rgba(107,182,255,.12);display:none;}
+.elab-section.show{display:block;}
+.elab-title{font-size:9px;font-weight:900;letter-spacing:.14em;color:var(--blue);text-transform:uppercase;margin-bottom:8px;}
+.elab-row{display:flex;flex-direction:column;gap:3px;margin-bottom:7px;}
+.elab-row:last-child{margin-bottom:0;}
+.elab-q{font-size:10px;color:rgba(107,182,255,.7);font-weight:700;}
+.elab-input{width:100%;padding:6px 9px;border-radius:6px;border:1px solid rgba(107,182,255,.18);background:rgba(0,0,0,.25);font-size:11px;color:var(--text);outline:none;transition:border-color .15s;}
+.elab-input:focus{border-color:rgba(107,182,255,.4);}
+
+/* Question shortcut in flow */
+.step-q-row{display:flex;gap:5px;margin-top:8px;}
+.step-q-input{flex:1;padding:5px 9px;border-radius:6px;border:1px solid rgba(107,182,255,.18);background:rgba(107,182,255,.05);font-size:11px;color:var(--text);outline:none;transition:border-color .15s;}
+.step-q-input::placeholder{color:rgba(107,182,255,.35);}
+.step-q-input:focus{border-color:rgba(107,182,255,.38);}
+.step-q-btn{padding:5px 9px;border-radius:6px;border:1px solid rgba(107,182,255,.18);background:rgba(107,182,255,.07);color:var(--blue);font-size:10px;font-weight:900;cursor:pointer;transition:all .15s;white-space:nowrap;}
+.step-q-btn:hover{background:rgba(107,182,255,.15);}
+
+/* Next step button */
+.flow-footer{padding:10px 15px;border-top:1px solid var(--line);background:rgba(255,255,255,.01);display:flex;gap:8px;align-items:center;}
+.btn-next{padding:7px 18px;border-radius:7px;border:1px solid rgba(201,168,76,.3);background:rgba(201,168,76,.1);color:var(--acc);font-size:11px;font-weight:900;cursor:pointer;transition:all .15s;}
+.btn-next:hover{background:rgba(201,168,76,.2);}
+.btn-next:disabled{opacity:.3;cursor:default;}
+.flow-kbd{font-size:10px;color:var(--faint);margin-left:auto;}
+
+/* Seed section */
+.seed-section{border:1px solid rgba(201,168,76,.22);border-radius:12px;overflow:hidden;background:rgba(201,168,76,.025);}
+.seed-head{padding:11px 15px;background:rgba(201,168,76,.06);border-bottom:1px solid rgba(201,168,76,.14);display:flex;align-items:center;gap:8px;}
+.seed-lbl{font-size:10px;font-weight:900;letter-spacing:.12em;color:var(--acc);text-transform:uppercase;}
+.seed-count{margin-left:auto;font-family:var(--serif);font-size:13px;font-weight:700;color:var(--acc);}
+.seed-form{padding:14px 15px;display:flex;flex-direction:column;gap:10px;}
+.sf-field{display:flex;flex-direction:column;gap:4px;}
+.sf-row{display:flex;gap:8px;}
+.sf-row .sf-field{flex:1;}
+.sf-lbl{font-size:9px;font-weight:900;letter-spacing:.14em;color:var(--muted);text-transform:uppercase;}
+.sf-lbl .req{color:var(--stop);}
+.sf-input,.sf-textarea{padding:8px 11px;border-radius:8px;border:1px solid var(--line);background:rgba(0,0,0,.35);font-size:12px;outline:none;transition:border-color .15s;color:var(--text);}
+.sf-textarea{min-height:64px;line-height:1.6;}
+.sf-input:focus,.sf-textarea:focus{border-color:rgba(201,168,76,.45);}
+.stage-row{display:flex;gap:4px;flex-wrap:wrap;}
+.stage-btn{padding:4px 10px;border-radius:999px;border:1px solid var(--line);background:0;font-size:10px;font-weight:900;color:var(--muted);cursor:pointer;transition:all .15s;}
+.stage-btn.active{background:rgba(201,168,76,.14);border-color:rgba(201,168,76,.38);color:var(--acc);}
+.btn-save-seed{padding:9px;border-radius:8px;background:rgba(201,168,76,.14);border:1px solid rgba(201,168,76,.32);color:var(--acc);font-size:12px;font-weight:900;cursor:pointer;transition:all .15s;}
+.btn-save-seed:hover{background:rgba(201,168,76,.24);}
+
+/* Seed history */
+.seed-history{border-top:1px solid rgba(201,168,76,.1);padding:12px 15px;display:flex;flex-direction:column;gap:6px;}
+.sh-lbl{font-size:9px;font-weight:900;letter-spacing:.15em;color:var(--muted);text-transform:uppercase;margin-bottom:4px;}
+.seed-card{padding:9px 11px;border-radius:8px;border:1px solid var(--line);background:rgba(255,255,255,.018);display:flex;align-items:flex-start;gap:8px;transition:all .2s;}
+.seed-card.hidden-mode{background:rgba(201,168,76,.04);border-color:rgba(201,168,76,.2);}
+/* Recall rating tints */
+.seed-card.rated-good{border-left:3px solid rgba(87,200,124,.5);}
+.seed-card.rated-ok  {border-left:3px solid rgba(201,168,76,.5);}
+.seed-card.rated-bad {border-left:3px solid rgba(224,85,85,.5);}
+.sc-left{display:flex;flex-direction:column;gap:4px;align-items:flex-start;}
+.sc-stage{font-size:9px;font-weight:900;padding:2px 7px;border-radius:999px;background:rgba(201,168,76,.1);color:var(--acc);border:1px solid rgba(201,168,76,.2);white-space:nowrap;}
+.sc-rating-badge{font-size:11px;line-height:1;}
+.sc-body{flex:1;min-width:0;}
+.sc-title{font-size:12px;font-weight:700;}
+.sc-words{font-size:11px;color:var(--muted);margin-top:2px;line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.sc-tags{font-size:10px;color:var(--faint);margin-top:3px;}
+.sc-hint{font-size:11px;color:var(--blue);font-style:italic;margin-top:4px;display:none;}
+.seed-card.hidden-mode .sc-hint{display:block;}
+.seed-card.hidden-mode .sc-words,
+.seed-card.hidden-mode .sc-tags{display:none;}
+.sc-footer{display:flex;gap:4px;margin-top:6px;flex-wrap:wrap;}
+.sc-btn{padding:3px 8px;border-radius:5px;background:0;border:1px solid var(--line);font-size:10px;color:var(--muted);cursor:pointer;transition:all .15s;}
+.sc-btn:hover{border-color:rgba(201,168,76,.3);color:var(--acc);}
+.sc-btn.reveal:hover{border-color:rgba(107,182,255,.3);color:var(--blue);}
+.sc-btn.danger:hover{border-color:rgba(224,85,85,.3);color:var(--stop);}
+
+.empty-seeds{padding:20px;text-align:center;font-size:11px;color:var(--faint);line-height:1.7;}
+
+/* Export bar */
+.export-bar{border:1px solid var(--line);border-radius:10px;padding:12px 15px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.export-lbl{font-size:11px;color:var(--muted);flex:1;min-width:100px;}
+.btn-exp{padding:6px 14px;border-radius:7px;border:1px solid var(--line);background:rgba(255,255,255,.03);font-size:11px;font-weight:900;color:var(--muted);cursor:pointer;transition:all .15s;}
+.btn-exp:hover{border-color:rgba(201,168,76,.3);color:var(--acc);}
+.btn-review{padding:6px 14px;border-radius:7px;border:1px solid rgba(87,200,124,.28);background:rgba(87,200,124,.08);font-size:11px;font-weight:900;color:var(--green);cursor:pointer;transition:all .15s;}
+.btn-review:hover{background:rgba(87,200,124,.18);}
+
+/* ── RECALL OVERLAY ── */
+.recall-overlay{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.88);backdrop-filter:blur(8px);display:none;align-items:center;justify-content:center;}
+.recall-overlay.open{display:flex;}
+.recall-panel{width:90%;max-width:540px;background:var(--bg2);border:1px solid var(--line);border-radius:16px;overflow:hidden;display:flex;flex-direction:column;}
+.rp-header{padding:14px 18px;background:rgba(255,255,255,.03);border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px;}
+.rp-title{font-family:var(--serif);font-size:14px;font-weight:700;}
+.rp-prog{font-size:11px;color:var(--muted);margin-left:auto;}
+.rp-close{padding:4px 10px;border-radius:6px;background:0;border:1px solid var(--line);font-size:11px;color:var(--muted);cursor:pointer;transition:all .15s;}
+.rp-close:hover{color:var(--text);}
+
+.recall-card{padding:28px 24px;min-height:240px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center;}
+.rc-stage{font-size:10px;font-weight:900;padding:3px 10px;border-radius:999px;background:rgba(201,168,76,.1);color:var(--acc);border:1px solid rgba(201,168,76,.22);}
+.rc-title{font-family:var(--serif);font-size:28px;font-weight:700;}
+.rc-hint{font-size:12px;color:var(--muted);line-height:1.6;}
+.rc-reveal-btn{padding:9px 24px;border-radius:8px;background:rgba(201,168,76,.12);border:1px solid rgba(201,168,76,.28);color:var(--acc);font-size:12px;font-weight:900;cursor:pointer;transition:all .15s;}
+.rc-reveal-btn:hover{background:rgba(201,168,76,.22);}
+.rc-answer{display:none;flex-direction:column;gap:8px;width:100%;text-align:left;border-top:1px solid var(--line);padding-top:14px;margin-top:4px;}
+.rc-answer.show{display:flex;}
+.rc-ans-row{display:flex;flex-direction:column;gap:2px;}
+.rc-ans-lbl{font-size:9px;font-weight:900;letter-spacing:.1em;color:var(--muted);text-transform:uppercase;}
+.rc-ans-val{font-size:13px;color:var(--text);line-height:1.6;}
+
+.recall-rating{padding:14px 20px;border-top:1px solid var(--line);background:rgba(255,255,255,.02);display:none;gap:8px;}
+.recall-rating.show{display:flex;}
+.rating-btn{flex:1;padding:10px 6px;border-radius:8px;border:1px solid var(--line);background:0;font-size:12px;font-weight:700;cursor:pointer;transition:all .2s;}
+.rating-btn.good:hover{background:rgba(87,200,124,.15);border-color:rgba(87,200,124,.4);color:var(--green);}
+.rating-btn.ok:hover  {background:rgba(201,168,76,.12);border-color:rgba(201,168,76,.35);color:var(--acc);}
+.rating-btn.bad:hover {background:rgba(224,85,85,.1);  border-color:rgba(224,85,85,.3);  color:var(--stop);}
+
+/* Recall result */
+.recall-result{padding:28px 24px;text-align:center;display:none;flex-direction:column;gap:14px;align-items:center;}
+.recall-result.show{display:flex;}
+.rr-title{font-family:var(--serif);font-size:20px;font-weight:700;}
+.rr-score-num{font-size:44px;font-weight:900;font-family:var(--serif);}
+.rr-breakdown{font-size:12px;color:var(--muted);line-height:2;}
+.rr-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;}
+.rr-weak-btn{padding:9px 18px;border-radius:8px;background:rgba(224,85,85,.1);border:1px solid rgba(224,85,85,.28);color:var(--stop);font-size:12px;font-weight:900;cursor:pointer;transition:all .15s;}
+.rr-weak-btn:hover{background:rgba(224,85,85,.2);}
+.rr-close-btn{padding:9px 18px;border-radius:8px;background:rgba(87,200,124,.12);border:1px solid rgba(87,200,124,.28);color:var(--green);font-size:12px;font-weight:900;cursor:pointer;transition:all .15s;}
+.rr-close-btn:hover{background:rgba(87,200,124,.22);}
+
+/* Toast */
+.toast{position:fixed;bottom:20px;right:20px;z-index:999;padding:8px 16px;border-radius:8px;background:#0d1c10;border:1px solid rgba(87,200,124,.4);color:var(--green);font-size:12px;font-weight:700;opacity:0;transition:opacity .25s;pointer-events:none;max-width:300px;text-align:center;}
+.toast.show{opacity:1;}
+.toast.error{border-color:rgba(224,85,85,.4);color:var(--stop);background:#1c0d0d;}
+.toast.milestone{border-color:rgba(201,168,76,.4);color:var(--acc);background:#1c160a;}
+
+/* Responsive */
+@media(max-width:680px){.layout{grid-template-columns:1fr;height:auto;}.sidebar{display:none;}}
+@media(max-width:440px){.header{padding:8px 12px;gap:6px;}.logo-sub{display:none;}}
+
+/* ── LIVE DOT ── */
+.live-badge{display:flex;align-items:center;gap:5px;padding:4px 10px;border-radius:999px;border:1px solid rgba(224,85,85,.28);background:rgba(224,85,85,.05);font-size:9px;font-weight:900;color:var(--stop);letter-spacing:.08em;flex-shrink:0;}
+.live-blink{width:6px;height:6px;border-radius:50%;background:var(--stop);animation:live-pulse 1.6s ease-in-out infinite;}
+@keyframes live-pulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.25;transform:scale(.65);}}
+
+/* ── TICKER ── */
+.ticker-wrap{border:1px solid var(--line);border-radius:10px;padding:9px 16px;background:rgba(255,255,255,.018);display:flex;align-items:center;gap:12px;flex-shrink:0;margin:0 20px 0;}
+.ticker-badge{font-size:9px;font-weight:900;letter-spacing:.15em;color:var(--acc);text-transform:uppercase;white-space:nowrap;flex-shrink:0;}
+.ticker-text{font-size:12px;color:var(--muted);flex:1;transition:opacity .35s,transform .35s;}
+.ticker-text.out{opacity:0;transform:translateY(-5px);}
+
+/* ── PARTICLES CANVAS ── */
+.particles-canvas{position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.22;}
+
+/* ── RESEARCH PANEL ── */
+.btn-research{padding:5px 11px;border-radius:7px;border:1px solid rgba(107,182,255,.25);background:rgba(107,182,255,.06);font-size:11px;font-weight:900;color:var(--blue);cursor:pointer;transition:all .15s;flex-shrink:0;}
+.btn-research:hover{background:rgba(107,182,255,.14);}
+.btn-research.active{border-color:rgba(107,182,255,.45);background:rgba(107,182,255,.14);}
+.research-panel{position:fixed;top:52px;right:0;bottom:0;width:420px;max-width:100vw;background:var(--bg2);border-left:1px solid var(--line);display:flex;flex-direction:column;z-index:50;transform:translateX(100%);transition:transform .25s ease;}
+.research-panel.open{transform:translateX(0);}
+.rp-hd{padding:11px 14px;border-bottom:1px solid var(--line);background:rgba(107,182,255,.04);display:flex;align-items:center;gap:8px;flex-shrink:0;}
+.rp-hd-lbl{font-size:10px;font-weight:900;letter-spacing:.12em;color:var(--blue);text-transform:uppercase;flex:1;}
+.rp-close-btn{padding:3px 9px;border-radius:5px;background:0;border:1px solid var(--line);font-size:10px;color:var(--muted);cursor:pointer;transition:all .15s;}
+.rp-close-btn:hover{color:var(--text);}
+.rp-url-area{padding:11px 14px;border-bottom:1px solid var(--line);flex-shrink:0;}
+.rp-url-row{display:flex;gap:5px;margin-bottom:6px;}
+.rp-url-input{flex:1;padding:7px 10px;border-radius:7px;border:1px solid var(--line);background:rgba(0,0,0,.3);font-size:11px;color:var(--text);outline:none;transition:border-color .15s;}
+.rp-url-input:focus{border-color:rgba(107,182,255,.4);}
+.rp-go-btn{padding:7px 11px;border-radius:7px;border:1px solid rgba(107,182,255,.25);background:rgba(107,182,255,.1);color:var(--blue);font-size:11px;font-weight:900;cursor:pointer;transition:all .15s;white-space:nowrap;}
+.rp-go-btn:hover{background:rgba(107,182,255,.18);}
+.rp-tab-btn{padding:7px 11px;border-radius:7px;border:1px solid rgba(201,168,76,.22);background:rgba(201,168,76,.07);color:var(--acc);font-size:11px;font-weight:900;cursor:pointer;transition:all .15s;white-space:nowrap;}
+.rp-tab-btn:hover{background:rgba(201,168,76,.15);}
+.rp-cur-url{font-size:10px;color:var(--faint);word-break:break-all;line-height:1.4;}
+.rp-iframe-wrap{flex:1;position:relative;overflow:hidden;min-height:0;}
+.rp-iframe{width:100%;height:100%;border:0;background:#fff;}
+.rp-blocked{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;gap:12px;background:rgba(6,12,8,.96);color:var(--muted);text-align:center;padding:24px;}
+.rp-blocked.show{display:flex;}
+.rp-blocked-msg{font-size:12px;line-height:1.8;}
+.rp-memo-area{padding:11px 14px;border-top:1px solid var(--line);flex-shrink:0;}
+.rp-memo-tabs{display:flex;gap:4px;margin-bottom:7px;}
+.rp-mtab{padding:4px 10px;border-radius:5px;border:1px solid var(--line);background:0;font-size:10px;font-weight:900;color:var(--muted);cursor:pointer;transition:all .15s;}
+.rp-mtab.active{border-color:rgba(201,168,76,.35);background:rgba(201,168,76,.1);color:var(--acc);}
+.rp-memo-ta{width:100%;min-height:72px;max-height:130px;padding:7px 10px;border-radius:7px;border:1px solid var(--line);background:rgba(0,0,0,.3);font-size:11px;color:var(--text);outline:none;resize:vertical;line-height:1.6;transition:border-color .15s;}
+.rp-memo-ta:focus{border-color:rgba(201,168,76,.4);}
+.rp-saved{font-size:9px;color:var(--faint);margin-top:4px;text-align:right;min-height:11px;}
+
+/* ── AUDIO PANEL ── */
+.btn-audio{padding:5px 11px;border-radius:7px;border:1px solid rgba(201,168,76,.22);background:rgba(201,168,76,.04);font-size:11px;font-weight:900;color:var(--acc);cursor:pointer;transition:all .15s;flex-shrink:0;}
+.btn-audio:hover{background:rgba(201,168,76,.12);}
+.btn-audio.active{border-color:rgba(201,168,76,.45);background:rgba(201,168,76,.14);}
+.audio-panel{position:fixed;top:52px;left:0;bottom:0;width:290px;background:var(--bg2);border-right:1px solid var(--line);display:flex;flex-direction:column;z-index:49;transform:translateX(-100%);transition:transform .25s ease;overflow-y:auto;}
+.audio-panel.open{transform:translateX(0);}
+.ap-hd{padding:11px 14px;border-bottom:1px solid var(--line);background:rgba(201,168,76,.03);display:flex;align-items:center;gap:8px;flex-shrink:0;}
+.ap-hd-lbl{font-size:10px;font-weight:900;letter-spacing:.12em;color:var(--acc);text-transform:uppercase;flex:1;}
+.ap-section{padding:12px 14px;border-bottom:1px solid var(--line);}
+.ap-sec-lbl{font-size:9px;font-weight:900;letter-spacing:.15em;color:var(--muted);text-transform:uppercase;margin-bottom:8px;}
+.ap-vol-row{display:flex;align-items:center;gap:7px;margin-bottom:5px;}
+.ap-vol-lbl{font-size:10px;color:var(--muted);width:66px;flex-shrink:0;}
+.ap-slider{flex:1;height:3px;accent-color:var(--acc);}
+.ap-vol-val{font-size:10px;color:var(--muted);width:26px;text-align:right;}
+.ap-mute{padding:3px 8px;border-radius:5px;border:1px solid var(--line);background:0;font-size:10px;color:var(--muted);cursor:pointer;transition:all .15s;}
+.ap-mute:hover{border-color:rgba(224,85,85,.3);color:var(--stop);}
+.bgm-list{display:flex;flex-direction:column;gap:4px;margin-bottom:7px;}
+.bgm-item{display:flex;align-items:center;gap:7px;padding:7px 9px;border-radius:7px;border:1px solid var(--line);background:rgba(255,255,255,.018);cursor:pointer;transition:all .15s;}
+.bgm-item:hover{border-color:rgba(201,168,76,.2);}
+.bgm-item.playing{border-color:rgba(201,168,76,.4);background:rgba(201,168,76,.07);}
+.bgm-ico{font-size:13px;flex-shrink:0;}
+.bgm-name{flex:1;font-size:11px;}
+.bgm-item.playing .bgm-name{color:var(--acc);}
+.bgm-st{font-size:9px;color:var(--faint);}
+.bgm-item.playing .bgm-st{color:var(--acc);}
+.bgm-stop{padding:3px 7px;border-radius:5px;border:1px solid rgba(224,85,85,.22);background:rgba(224,85,85,.07);font-size:10px;color:var(--stop);cursor:pointer;transition:all .15s;}
+.bgm-stop:hover{background:rgba(224,85,85,.15);}
+.se-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px;}
+.se-btn{padding:8px 5px;border-radius:7px;border:1px solid var(--line);background:rgba(255,255,255,.018);font-size:10px;color:var(--muted);cursor:pointer;transition:all .15s;text-align:center;line-height:1.35;}
+.se-btn:hover{border-color:rgba(107,182,255,.25);color:var(--text);background:rgba(107,182,255,.07);}
+.se-btn.flash{border-color:rgba(201,168,76,.5);color:var(--acc);background:rgba(201,168,76,.12);}
+.se-ico{font-size:14px;display:block;margin-bottom:1px;}
+.se-lbl{font-size:9px;font-weight:900;letter-spacing:.04em;display:block;}
+.se-miss{font-size:10px;color:var(--faint);font-style:italic;margin-top:3px;}
+@media(max-width:680px){.research-panel,.audio-panel{width:100vw;}}
+
+/* ── MINI MODE ── */
+.btn-mini{padding:5px 12px;border-radius:7px;border:1px solid var(--line);background:rgba(255,255,255,.04);font-size:11px;font-weight:900;color:var(--muted);cursor:pointer;transition:all .15s;flex-shrink:0;}
+.btn-mini:hover{border-color:rgba(201,168,76,.3);color:var(--acc);}
+.btn-mini.active{border-color:rgba(201,168,76,.4);background:rgba(201,168,76,.1);color:var(--acc);}
+body.mini .layout{display:none!important;}
+body.mini .mini-view{display:flex!important;}
+.mini-view{
+  display:none;flex-direction:column;gap:10px;
+  height:calc(100vh - 52px);overflow:hidden;
+  padding:12px 14px;max-width:300px;margin:0 auto;
+}
+.mini-stop-btn{
+  width:100%;padding:15px;border-radius:10px;
+  font-size:16px;font-weight:900;cursor:pointer;
+  border:2px solid rgba(224,85,85,.4);background:rgba(224,85,85,.1);color:var(--stop);
+  transition:all .2s;display:flex;align-items:center;justify-content:center;gap:10px;flex-shrink:0;
+}
+.mini-stop-btn:hover{background:rgba(224,85,85,.2);}
+.mini-stop-btn.resume{border-color:rgba(87,200,124,.4);background:rgba(87,200,124,.1);color:var(--green);}
+.mini-stop-btn.resume:hover{background:rgba(87,200,124,.2);}
+.mini-stimer{font-family:var(--serif);font-size:13px;font-weight:700;}
+.mini-step-panel{
+  flex:1;min-height:0;
+  border:1px solid var(--line);border-radius:10px;
+  background:rgba(255,255,255,.018);padding:14px;
+  display:flex;flex-direction:column;gap:8px;overflow:hidden;
+  transition:border-color .2s,background .2s;
+}
+.mini-step-panel.on{border-color:rgba(201,168,76,.35);background:rgba(201,168,76,.06);}
+.mini-step-meta{display:flex;align-items:center;gap:6px;}
+.mini-counter{font-size:10px;font-weight:900;letter-spacing:.1em;color:var(--muted);}
+.mini-mode-badge{font-size:10px;padding:2px 8px;border-radius:999px;background:rgba(201,168,76,.1);color:var(--acc);border:1px solid rgba(201,168,76,.2);}
+.mini-step-title{font-size:14px;font-weight:900;line-height:1.35;color:var(--text);}
+.mini-step-desc{font-size:11px;color:var(--muted);line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.mini-in{width:100%;padding:8px 10px;border-radius:7px;border:1px solid var(--line);background:rgba(0,0,0,.3);font-size:12px;color:var(--text);outline:none;transition:border-color .15s;}
+.mini-in:focus{border-color:rgba(201,168,76,.4);}
+textarea.mini-in{min-height:52px;resize:none;font-family:var(--font);line-height:1.5;}
+.mini-nav{display:flex;gap:6px;margin-top:auto;padding-top:6px;}
+.mini-nav-btn{flex:1;padding:8px;border-radius:7px;border:1px solid var(--line);background:rgba(255,255,255,.03);font-size:11px;font-weight:900;color:var(--muted);cursor:pointer;transition:all .15s;}
+.mini-nav-btn:hover:not(:disabled){border-color:rgba(201,168,76,.3);color:var(--acc);}
+.mini-nav-btn:disabled{opacity:.3;cursor:default;}
+.mini-nav-btn.primary{border-color:rgba(201,168,76,.32);background:rgba(201,168,76,.1);color:var(--acc);}
+.mini-seed-panel{border:1px solid rgba(201,168,76,.2);border-radius:10px;padding:12px;background:rgba(201,168,76,.03);flex-shrink:0;}
+.mini-seed-lbl{font-size:9px;font-weight:900;letter-spacing:.14em;color:var(--acc);text-transform:uppercase;margin-bottom:7px;}
+.mini-seed-input{width:100%;padding:8px 10px;border-radius:7px;border:1px solid rgba(201,168,76,.22);background:rgba(0,0,0,.3);font-size:13px;color:var(--text);outline:none;transition:border-color .15s;margin-bottom:7px;}
+.mini-seed-input:focus{border-color:rgba(201,168,76,.45);}
+.mini-seed-save{width:100%;padding:9px;border-radius:7px;background:rgba(201,168,76,.14);border:1px solid rgba(201,168,76,.3);color:var(--acc);font-size:12px;font-weight:900;cursor:pointer;transition:all .15s;}
+.mini-seed-save:hover{background:rgba(201,168,76,.24);}
+.mini-footer{display:flex;justify-content:space-between;align-items:center;flex-shrink:0;}
+.mini-stats{display:flex;gap:10px;font-size:11px;color:var(--muted);}
+.mini-stats b{color:var(--text);}
+.mini-recall-btn{padding:5px 10px;border-radius:6px;border:1px solid rgba(87,200,124,.25);background:rgba(87,200,124,.07);color:var(--green);font-size:10px;font-weight:900;cursor:pointer;transition:all .15s;}
+.mini-recall-btn:hover{background:rgba(87,200,124,.15);}
+</style>
+</head>
+<body>
+
+<canvas class="particles-canvas" id="particlesCanvas"></canvas>
+<div class="toast" id="toast"></div>
+
+<!-- ── RECALL OVERLAY ── -->
+<div class="recall-overlay" id="recallOverlay">
+  <div class="recall-panel">
+    <div class="rp-header">
+      <span class="rp-title">📚 振り返りモード</span>
+      <span class="rp-prog" id="rpProg">1 / 0</span>
+      <button class="rp-close" onclick="closeRecall()">閉じる</button>
+    </div>
+    <div class="recall-card" id="recallCard">
+      <span class="rc-stage" id="rcStage">🌱 Seed</span>
+      <div class="rc-title" id="rcTitle">—</div>
+      <div class="rc-hint">自分の言葉で説明してみよう<br><span style="font-size:10px;color:var(--faint);">思い出したら「答えを見る」を押す</span></div>
+      <button class="rc-reveal-btn" id="rcRevealBtn" onclick="revealRecall()">答えを見る ▼</button>
+      <div class="rc-answer" id="rcAnswer">
+        <div class="rc-ans-row" id="rcDefRow" style="display:none">
+          <div class="rc-ans-lbl">定義</div>
+          <div class="rc-ans-val" id="rcDef"></div>
+        </div>
+        <div class="rc-ans-row" id="rcWordsRow" style="display:none">
+          <div class="rc-ans-lbl">自分の言葉</div>
+          <div class="rc-ans-val" id="rcWords"></div>
+        </div>
+        <div class="rc-ans-row" id="rcExRow" style="display:none">
+          <div class="rc-ans-lbl">例え</div>
+          <div class="rc-ans-val" id="rcEx"></div>
+        </div>
+      </div>
+    </div>
+    <div class="recall-rating" id="recallRating">
+      <button class="rating-btn good" onclick="rateRecall('good')">💚 完全に言えた</button>
+      <button class="rating-btn ok"   onclick="rateRecall('ok')">🟡 なんとなく</button>
+      <button class="rating-btn bad"  onclick="rateRecall('bad')">🔴 言えなかった</button>
+    </div>
+    <div class="recall-result" id="recallResult">
+      <div class="rr-title">振り返り完了</div>
+      <div class="rr-score-num" id="rrScore">—</div>
+      <div class="rr-breakdown" id="rrBreak"></div>
+      <div class="rr-actions">
+        <button class="rr-weak-btn" id="rrWeakBtn" onclick="startWeakRecall()" style="display:none">🔴 弱点を再確認する</button>
+        <button class="rr-close-btn" onclick="closeRecall()">完了</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── HEADER ── -->
+<header class="header">
+  <div class="logo">
+    <span class="logo-mark">🌳</span>
+    <div>
+      <div class="logo-name">RB-Tree学習</div>
+      <div class="logo-sub">止めながら学ぶ</div>
+    </div>
+  </div>
+  <div class="mode-toggle">
+    <button class="mode-btn active" id="modeVideo" onclick="setMode('video')">📹 動画</button>
+    <button class="mode-btn"        id="modeText"  onclick="setMode('text')">📄 文章</button>
+  </div>
+  <div class="session-timer" id="sessionTimer">00:00</div>
+  <button class="btn-stop"   id="btnStop"   onclick="toggleStop()">⏸ 止める</button>
+  <button class="btn-resume" id="btnResume" onclick="toggleStop()">▶ 再開</button>
+  <div class="live-badge"><span class="live-blink"></span>LIVE</div>
+  <button class="btn-audio" id="btnAudio" onclick="toggleAudioPanel()">🎵 音声</button>
+  <button class="btn-research" id="btnResearch" onclick="toggleResearchPanel()">🔍 調査</button>
+  <button class="btn-mini" id="btnMini" onclick="toggleMiniMode()">⬜ ミニモード</button>
+  <button class="btn-mini" id="btnFullscreen" onclick="toggleFullscreen()">⛶ 全画面</button>
+  <a class="h-back" href="index.html">← 配信TOP</a>
+</header>
+
+<!-- ── AUDIO PANEL ── -->
+<div class="audio-panel" id="audioPanel">
+  <div class="ap-hd">
+    <span class="ap-hd-lbl">🎵 音声パネル</span>
+    <button class="rp-close-btn" onclick="toggleAudioPanel()">✕</button>
+  </div>
+  <div class="ap-section">
+    <div class="ap-sec-lbl">音量</div>
+    <div class="ap-vol-row">
+      <span class="ap-vol-lbl">BGM</span>
+      <input type="range" class="ap-slider" id="volBgm" min="0" max="100" value="25" oninput="setVolBgm(this.value)">
+      <span class="ap-vol-val" id="volBgmVal">25</span>
+      <button class="ap-mute" onclick="muteBgm()">🔇</button>
+    </div>
+    <div class="ap-vol-row">
+      <span class="ap-vol-lbl">効果音</span>
+      <input type="range" class="ap-slider" id="volSe" min="0" max="100" value="70" oninput="setVolSe(this.value)">
+      <span class="ap-vol-val" id="volSeVal">70</span>
+    </div>
+  </div>
+  <div class="ap-section">
+    <div class="ap-sec-lbl">BGM</div>
+    <div class="bgm-list" id="bgmList"></div>
+  </div>
+  <div class="ap-section">
+    <div class="ap-sec-lbl">効果音</div>
+    <div class="se-grid" id="seGrid"></div>
+    <div class="se-miss">音源ファイルを /assets/audio/se/ に追加すると鳴ります</div>
+  </div>
+</div>
+
+<!-- ── RESEARCH PANEL ── -->
+<div class="research-panel" id="researchPanel">
+  <div class="rp-hd">
+    <span class="rp-hd-lbl">🔍 Research Panel</span>
+    <button class="rp-close-btn" onclick="toggleResearchPanel()">✕</button>
+  </div>
+  <div class="rp-url-area">
+    <div class="rp-url-row">
+      <input class="rp-url-input" id="rpUrlInput" placeholder="URLを入力… (例: https://www.boj.or.jp)"
+        onkeydown="if(event.key==='Enter')rpLoad()">
+      <button class="rp-go-btn" onclick="rpLoad()">表示</button>
+      <button class="rp-tab-btn" onclick="rpOpenTab()">↗ 別タブ</button>
+    </div>
+    <div class="rp-cur-url" id="rpCurUrl">URLを入力してください</div>
+  </div>
+  <div class="rp-iframe-wrap">
+    <iframe class="rp-iframe" id="rpIframe" sandbox="allow-scripts allow-same-origin allow-forms allow-popups"></iframe>
+    <div class="rp-blocked" id="rpBlocked">
+      <div style="font-size:22px;">🚫</div>
+      <div class="rp-blocked-msg">このサイトは埋め込み表示できません。<br>「↗ 別タブ」で開いてください。</div>
+      <button class="rp-tab-btn" onclick="rpOpenTab()">↗ 新しいタブで開く</button>
+    </div>
+  </div>
+  <div class="rp-memo-area">
+    <div class="rp-memo-tabs">
+      <button class="rp-mtab active" onclick="rpSwitchTab(this,'insight')">💡 気づき</button>
+      <button class="rp-mtab" onclick="rpSwitchTab(this,'question')">❓ 疑問</button>
+      <button class="rp-mtab" onclick="rpSwitchTab(this,'next')">→ 次に調べる</button>
+    </div>
+    <textarea class="rp-memo-ta" id="rpMemoTa" placeholder="メモを入力…" oninput="rpSaveMemo()"></textarea>
+    <div class="rp-saved" id="rpSaved"></div>
+  </div>
+</div>
+
+<div class="layout">
+  <!-- ── SIDEBAR ── -->
+  <aside class="sidebar">
+
+    <div class="s-section">
+      <div class="s-label">ストップトリガー</div>
+      <div class="trigger-list">
+        <div class="trigger-item" onclick="fireTrigger(this,'keyword')">
+          <span class="t-icon">🔑</span>
+          <div><div class="t-name">キーワード出現</div><div class="t-desc">初めて聞く用語・概念が出てきたら</div></div>
+        </div>
+        <div class="trigger-item" onclick="fireTrigger(this,'question')">
+          <span class="t-icon">❓</span>
+          <div><div class="t-name">疑問が生まれた</div><div class="t-desc">「なんで？」「どういうこと？」と感じたら</div></div>
+        </div>
+        <div class="trigger-item" onclick="fireTrigger(this,'insight')">
+          <span class="t-icon">💡</span>
+          <div><div class="t-name">気づきが生まれた</div><div class="t-desc">「あ、そういうことか！」の瞬間</div></div>
+        </div>
+        <div class="trigger-item" onclick="fireTrigger(this,'comment')">
+          <span class="t-icon">💬</span>
+          <div><div class="t-name">コメントで「？」増加</div><div class="t-desc">視聴者が混乱している気配を感じたら</div></div>
+        </div>
+        <div class="trigger-item" onclick="fireTrigger(this,'regular')">
+          <span class="t-icon">⏱️</span>
+          <div><div class="t-name">定期停止</div><div class="t-desc">5〜10分ごとの理解チェック</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="s-section">
+      <div class="s-label">視聴者への問いかけ</div>
+      <div class="phrase-list">
+        <button class="phrase-btn" onclick="copyPhrase(this,'わかった人は○、まだな人は×でコメントしてください')">わかった人は○、まだな人は×でコメントしてください</button>
+        <button class="phrase-btn" onclick="copyPhrase(this,'これを日常に例えると何ですか？コメントで教えてください')">これを日常に例えると何ですか？コメントで教えてください</button>
+        <button class="phrase-btn" onclick="copyPhrase(this,'いまのポイントを3文字でまとめてみて')">いまのポイントを3文字でまとめてみて</button>
+        <button class="phrase-btn" onclick="copyPhrase(this,'これ、知ってた人いますか？')">これ、知ってた人いますか？</button>
+        <button class="phrase-btn" onclick="copyPhrase(this,'じゃあ自分の言葉で言い換えてみようか')">じゃあ自分の言葉で言い換えてみようか</button>
+        <button class="phrase-btn" onclick="copyPhrase(this,'質問ある人、コメントどうぞ')">質問ある人、コメントどうぞ</button>
+        <button class="phrase-btn" onclick="copyPhrase(this,'これ、生活のどんな場面で感じたことある？')">これ、生活のどんな場面で感じたことある？</button>
+        <button class="phrase-btn" onclick="copyPhrase(this,'最近のニュースで関係しそうなのあった？')">最近のニュースで関係しそうなのあった？</button>
+      </div>
+    </div>
+
+    <div class="s-section">
+      <div class="s-label">
+        ❓ 問いログ
+        <span class="s-badge" id="qBadge">0</span>
+      </div>
+      <div class="q-input-row">
+        <input class="q-input" id="qInput" placeholder="生まれた「なぜ？」を記録…"
+          onkeydown="if(event.key==='Enter')addQuestion()">
+        <button class="q-add" onclick="addQuestion()" title="追加">＋</button>
+      </div>
+      <div class="q-list" id="qList">
+        <div class="q-empty" id="qEmpty">疑問が浮かんだらここに記録</div>
+      </div>
+    </div>
+
+  </aside>
+
+  <!-- ── MAIN ── -->
+  <main class="main">
+
+    <!-- 統計バー -->
+    <div class="stats-bar">
+      <div class="stat-item">
+        <div class="stat-n stop"  id="statStop">0</div>
+        <div class="stat-l">⏸ 停止</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-n seed"  id="statSeed">0</div>
+        <div class="stat-l">🌱 Seeds</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-n quest" id="statQ">0</div>
+        <div class="stat-l">❓ 問い</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-n time"  id="statAvg">—</div>
+        <div class="stat-l">⏱ 平均停止</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-n score" id="statScore">—</div>
+        <div class="stat-l">🧠 想起</div>
+      </div>
+    </div>
+
+    <!-- 停止インジケーター -->
+    <div class="stop-indicator" id="stopIndicator">
+      <div class="si-head">
+        <span class="si-dot"></span>
+        <span class="si-title">STOPPED — 解説フェーズ</span>
+        <span class="si-stimer" id="stopTimer">0:00</span>
+      </div>
+      <input class="si-input" id="siKeyword"
+        placeholder="止めたキーワード・テーマを入力してEnter…"
+        onkeydown="if(event.key==='Enter')applyKeyword()">
+    </div>
+
+    <!-- 解説フロー -->
+    <div class="flow-section">
+      <div class="flow-head">
+        <span class="flow-lbl">解説フロー</span>
+        <span class="flow-badge" id="flowBadge">📹 動画モード</span>
+        <span class="flow-prog"  id="flowProg">0 / 6</span>
+        <button class="flow-reset" onclick="resetSteps()">リセット</button>
+      </div>
+      <div class="flow-steps" id="flowSteps"></div>
+      <div class="flow-footer">
+        <button class="btn-next" id="btnNext" onclick="advanceStep()">次のステップへ →</button>
+        <span class="flow-kbd">Enter で次へ（テキストエリアは Ctrl+Enter）</span>
+      </div>
+    </div>
+
+    <!-- Seed記録 -->
+    <div class="seed-section">
+      <div class="seed-head">
+        <span class="seed-lbl">🌱 Seed を記録</span>
+        <span class="seed-count" id="seedCount">0 seeds</span>
+      </div>
+      <form class="seed-form" onsubmit="saveSeed(event)">
+        <div class="sf-field">
+          <div class="sf-lbl">用語・タイトル <span class="req">*</span></div>
+          <input class="sf-input" id="seedTitle" placeholder="例: インフレ" required>
+        </div>
+        <div class="sf-field">
+          <div class="sf-lbl">一言定義</div>
+          <input class="sf-input" id="seedDef" placeholder="例: 物の値段が継続的に上がり続けること">
+        </div>
+        <div class="sf-field">
+          <div class="sf-lbl">自分の言葉で言うと</div>
+          <textarea class="sf-textarea" id="seedMyWords"
+            placeholder="例: お金の価値が下がって、同じ金額で買えるものが減ること。バナナが100円→150円になる感じ。"></textarea>
+        </div>
+        <div class="sf-row">
+          <div class="sf-field">
+            <div class="sf-lbl">例え</div>
+            <input class="sf-input" id="seedExample" placeholder="例: バナナの値段が上がること">
+          </div>
+          <div class="sf-field">
+            <div class="sf-lbl">タグ</div>
+            <input class="sf-input" id="seedTags" placeholder="例: 物価, 日銀, 金利">
+          </div>
+        </div>
+        <div class="sf-field">
+          <div class="sf-lbl">ステージ</div>
+          <div class="stage-row">
+            <button type="button" class="stage-btn active" data-stage="seed"    onclick="selectStage(this)">🌱 Seed</button>
+            <button type="button" class="stage-btn"        data-stage="sprout"  onclick="selectStage(this)">🌿 Sprout</button>
+            <button type="button" class="stage-btn"        data-stage="sapling" onclick="selectStage(this)">🌲 Sapling</button>
+            <button type="button" class="stage-btn"        data-stage="tree"    onclick="selectStage(this)">🌳 Tree</button>
+            <button type="button" class="stage-btn"        data-stage="forest"  onclick="selectStage(this)">🏔 Forest</button>
+          </div>
+        </div>
+        <button class="btn-save-seed" type="submit">🌱 Seed を記録する</button>
+      </form>
+      <div class="seed-history" id="seedHistory">
+        <div class="sh-lbl">このセッションの記録</div>
+        <div class="empty-seeds" id="seedEmpty">まだ記録がありません<br><span style="font-size:10px;">止めて → フローを進めて → ここに残していこう</span></div>
+      </div>
+    </div>
+
+    <!-- ティッカー -->
+    <div class="ticker-wrap">
+      <span class="ticker-badge">📌 POINT</span>
+      <span class="ticker-text" id="tickerText">動画を止めながら学ぼう — キーワードが出たら⏸ボタン</span>
+    </div>
+
+    <!-- 書き出し -->
+    <div class="export-bar">
+      <span class="export-lbl" id="exportLbl">セッションが終わったら振り返りモードで想起練習をしよう</span>
+      <button class="btn-review" onclick="startRecall()">📚 振り返りモード</button>
+      <button class="btn-exp"    onclick="exportSession()">📄 書き出し</button>
+      <button class="btn-exp"    onclick="clearSession()">🗑 クリア</button>
+    </div>
+
+  </main>
+</div>
+
+<!-- ── MINI VIEW ── -->
+<div class="mini-view" id="miniView">
+
+  <!-- 止める / 再開 -->
+  <button class="mini-stop-btn" id="miniStopBtn" onclick="toggleStop()">
+    <span id="miniStopLabel">⏸ 止める</span>
+    <span class="mini-stimer" id="miniStopTimer" style="display:none">0:00</span>
+  </button>
+
+  <!-- 現在ステップ -->
+  <div class="mini-step-panel" id="miniStepPanel">
+    <div class="mini-step-meta">
+      <span class="mini-counter"    id="miniCounter">1 / 6</span>
+      <span class="mini-mode-badge" id="miniModeBadge">📹 動画</span>
+    </div>
+    <div class="mini-step-title" id="miniStepTitle">—</div>
+    <div class="mini-step-desc"  id="miniStepDesc">—</div>
+    <div id="miniInWrap"></div>
+    <div class="mini-nav">
+      <button class="mini-nav-btn" id="miniPrevBtn" onclick="miniPrev()" disabled>← 前へ</button>
+      <button class="mini-nav-btn primary" id="miniNextBtn" onclick="miniNext()">次へ →</button>
+    </div>
+  </div>
+
+  <!-- クイックSeed保存 -->
+  <div class="mini-seed-panel">
+    <div class="mini-seed-lbl">🌱 Seed タイトル</div>
+    <input class="mini-seed-input" id="miniSeedInput" placeholder="用語名…"
+      onkeydown="if(event.key==='Enter')miniSaveSeed()">
+    <button class="mini-seed-save" onclick="miniSaveSeed()">🌱 Seed を記録する</button>
+  </div>
+
+  <!-- フッター統計 -->
+  <div class="mini-footer">
+    <div class="mini-stats">
+      <span>⏸ <b id="mStatStop">0</b></span>
+      <span>🌱 <b id="mStatSeed">0</b></span>
+      <span>❓ <b id="mStatQ">0</b></span>
+      <span id="mStatScore" style="display:none">🧠 <b id="mStatScoreVal">—</b></span>
+    </div>
+    <button class="mini-recall-btn" onclick="startRecall()" title="振り返りモード">📚</button>
+  </div>
+
+</div>
+
+<script>
+// ════════════════════════════════════
+//  Constants & Keys
+// ════════════════════════════════════
+const TODAY      = new Date().toISOString().slice(0,10);
+const SEED_KEY   = `rbtree_seeds_${TODAY}`;
+const Q_KEY      = `rbtree_questions_${TODAY}`;
+const STAGE_META = {
+  seed:    {emoji:'🌱', label:'Seed'   },
+  sprout:  {emoji:'🌿', label:'Sprout' },
+  sapling: {emoji:'🌲', label:'Sapling'},
+  tree:    {emoji:'🌳', label:'Tree'   },
+  forest:  {emoji:'🏔', label:'Forest' }
+};
+const MILESTONES = {1:'最初のSeedを記録しました 🌱', 5:'5件到達！成長してきています 🌿', 10:'10件！あなたの森が育っています 🌳'};
+
+// ════════════════════════════════════
+//  State
+// ════════════════════════════════════
+let mode          = 'video';
+let stopped       = false;
+let sessionStart  = Date.now();
+let stopStart     = null;
+let stopInterval  = null;
+let stopCount     = 0;
+let totalStopSec  = 0;
+let currentStep   = 0;
+let doneSteps     = new Set();
+let stepInputs    = {};
+let seeds         = [];
+let questions     = [];
+let selectedStage = 'seed';
+
+// Recall state
+let recallQueue   = [];
+let recallIdx     = 0;
+let recallRatings = [];
+let recallRatingMap = {};  // seedId -> 'good'|'ok'|'bad'
+let recallScore   = null;
+let isWeakRetry   = false;
+
+// ════════════════════════════════════
+//  Flows
+// ════════════════════════════════════
+const FLOWS = {
+  video: [
+    {
+      title: '① 止めた理由を一言で言う',
+      desc: '「ここで一回止めます。——という言葉が出てきました」と声に出す。',
+      inputType:'input', placeholder:'止めた理由・キーワード（Seedタイトルに転記）',
+      seedField:'title'
+    },
+    {
+      title: '② 視聴者に問いを投げる',
+      desc: '「これって何だと思う？」「知ってる人いる？」コメントを1〜2分待つ。',
+      inputType:null, hasQuestion:true
+    },
+    {
+      title: '③ 自分の言葉で説明する',
+      desc: '定義より先に「つまりこういうことです」と噛み砕く。視聴者コメントも拾いながら。',
+      inputType:'textarea', placeholder:'自分の言葉での説明（Seedの「自分の言葉」に転記）',
+      seedField:'myWords', hasElab:true, hasQuestion:true
+    },
+    {
+      title: '④ 例えに変換する',
+      desc: '日常の具体物で例える。「バナナで言うと…」「給料で言うと…」',
+      inputType:'input', placeholder:'例え（Seedの「例え」に転記）',
+      seedField:'example'
+    },
+    {
+      title: '⑤ Seedに記録する',
+      desc: '下のフォームに入力して記録。③と④の内容がすでに転記されています。',
+      inputType:null
+    },
+    {
+      title: '⑥ 再生へ',
+      desc: '「では続きを見ましょう」と一言添えて動画を再開。',
+      inputType:null
+    }
+  ],
+  text: [
+    {
+      title: '① 止めた箇所を読み上げる',
+      desc: '「ここのセンテンスで止めます」と声に出してゆっくり読む。',
+      inputType:'input', placeholder:'止めた箇所のキーワード（Seedタイトルに転記）',
+      seedField:'title'
+    },
+    {
+      title: '② 自分の言葉に置き換える',
+      desc: '「このセンテンス、みんなで言い換えてみよう」視聴者にコメントを促す。',
+      inputType:'textarea', placeholder:'自分なりの言い換え（Seedの「自分の言葉」に転記）',
+      seedField:'myWords', hasElab:true, hasQuestion:true
+    },
+    {
+      title: '③ コメントから拾う',
+      desc: '視聴者の言い換えで「一番しっくりきた表現」を選んで読み上げる。',
+      inputType:'input', placeholder:'選んだ表現・印象に残ったコメント',
+      seedField:'example'
+    },
+    {
+      title: '④ 前後の文脈を確認する',
+      desc: '「この段落で言いたいことは何か」骨格を整理する。前後のつながりを見る。',
+      inputType:'input', placeholder:'文脈メモ（この段落の要点）', seedField:null
+    },
+    {
+      title: '⑤ Seedに記録する',
+      desc: '下のフォームに入力して記録。②と③の内容がすでに転記されています。',
+      inputType:null
+    },
+    {
+      title: '⑥ 次の段落へ',
+      desc: '「では次に進みます」と一言添えて読み進める。',
+      inputType:null
+    }
+  ]
+};
+
+// ════════════════════════════════════
+//  Init
+// ════════════════════════════════════
+window.addEventListener('DOMContentLoaded', () => {
+  renderSteps();
+  startSessionTimer();
+  loadSeeds();
+  loadQuestions();
+  updateNextBtn();
+});
+
+// ════════════════════════════════════
+//  Mode
+// ════════════════════════════════════
+function setMode(m) {
+  mode = m;
+  document.getElementById('modeVideo').classList.toggle('active', m==='video');
+  document.getElementById('modeText' ).classList.toggle('active', m==='text');
+  document.getElementById('flowBadge').textContent = m==='video' ? '📹 動画モード' : '📄 文章モード';
+  stepInputs = {};
+  renderSteps();
+}
+
+// ════════════════════════════════════
+//  Flow
+// ════════════════════════════════════
+function renderSteps() {
+  const steps = FLOWS[mode];
+  doneSteps = new Set();
+  currentStep = 0;
+
+  document.getElementById('flowSteps').innerHTML = steps.map((s, i) => {
+    const elabId = `elab${i}`;
+    return `
+    <div class="step-item ${i===0?'active':''}" id="step${i}" onclick="activateStep(${i})">
+      <div class="step-num" id="stepNum${i}">${i+1}</div>
+      <div class="step-content">
+        <div class="step-title">${s.title}</div>
+        <div class="step-desc">${s.desc}</div>
+        ${s.inputType==='input' ? `
+          <input class="step-input" id="stepIn${i}"
+            placeholder="${s.placeholder}"
+            onclick="event.stopPropagation()"
+            oninput="onStepInput(${i},this.value)"
+            onkeydown="if(event.key==='Enter'){event.preventDefault();advanceStep();}">
+        ` : s.inputType==='textarea' ? `
+          <textarea class="step-textarea" id="stepIn${i}"
+            placeholder="${s.placeholder}"
+            onclick="event.stopPropagation()"
+            oninput="onStepInput(${i},this.value);maybeShowElab(${i})"
+            onkeydown="if(event.key==='Enter'&&event.ctrlKey){event.preventDefault();advanceStep();}"></textarea>
+        ` : ''}
+        ${s.hasElab ? `
+          <div class="elab-section" id="${elabId}" onclick="event.stopPropagation()">
+            <div class="elab-title">💭 深掘りしてみよう（任意）</div>
+            <div class="elab-row">
+              <div class="elab-q">なぜそうなる？（因果を1行で）</div>
+              <input class="elab-input" id="elabWhy${i}" placeholder="例: 需要が供給を上回ると値段が上がるから" oninput="onElabInput(${i},'why',this.value)">
+            </div>
+            <div class="elab-row">
+              <div class="elab-q">日常のどこで感じる？</div>
+              <input class="elab-input" id="elabWhere${i}" placeholder="例: スーパーで去年より値段が上がっていると感じるとき" oninput="onElabInput(${i},'where',this.value)">
+            </div>
+          </div>
+        ` : ''}
+        ${s.hasQuestion ? `
+          <div class="step-q-row" onclick="event.stopPropagation()">
+            <input class="step-q-input" placeholder="💭 ここで生まれた「なぜ？」を記録…"
+              onkeydown="if(event.key==='Enter'){addQuestionFromInput(this);event.preventDefault();}">
+            <button class="step-q-btn" onclick="addQuestionFromBtn(this)">問いに記録 ❓</button>
+          </div>
+        ` : ''}
+      </div>
+    </div>`;
+  }).join('');
+
+  updateProgress();
+  updateNextBtn();
+}
+
+function activateStep(idx) {
+  const steps = FLOWS[mode];
+  for (let i = 0; i < steps.length; i++) {
+    const el  = document.getElementById('step'   + i);
+    const num = document.getElementById('stepNum'+ i);
+    if (!el) continue;
+    if (i < idx) {
+      el.classList.add('done'); el.classList.remove('active');
+      if (num) num.textContent = '✓';
+      doneSteps.add(i);
+    } else if (i === idx) {
+      el.classList.add('active'); el.classList.remove('done');
+      doneSteps.delete(i);
+      const inp = document.getElementById('stepIn' + i);
+      if (inp) setTimeout(() => inp.focus(), 80);
+    } else {
+      el.classList.remove('active','done');
+      if (num && !doneSteps.has(i)) num.textContent = i+1;
+    }
+  }
+  currentStep = idx;
+  updateProgress();
+  updateNextBtn();
+  renderMiniState();
+  if (idx === steps.length-1 && stopped) setTimeout(() => { if (stopped) toggleStop(); }, 600);
+}
+
+function advanceStep() {
+  const next = currentStep + 1;
+  if (next < FLOWS[mode].length) activateStep(next);
+}
+
+function updateNextBtn() {
+  const btn = document.getElementById('btnNext');
+  if (!btn) return;
+  const last = FLOWS[mode].length - 1;
+  btn.disabled = (currentStep >= last);
+  btn.textContent = currentStep === last-1 ? 'Seedを記録する 🌱' : '次のステップへ →';
+}
+
+function onStepInput(idx, val) {
+  stepInputs[idx] = val;
+  const s = FLOWS[mode][idx];
+  if (!s.seedField) return;
+  if (s.seedField==='title') {
+    const el = document.getElementById('seedTitle');
+    if (el && !el.value) el.value = val;
+  } else if (s.seedField==='myWords') {
+    document.getElementById('seedMyWords').value = val;
+  } else if (s.seedField==='example') {
+    document.getElementById('seedExample').value = val;
+  }
+}
+
+function maybeShowElab(idx) {
+  const inp = document.getElementById('stepIn' + idx);
+  const elab = document.getElementById('elab' + idx);
+  if (!inp || !elab) return;
+  if (inp.value.trim().length > 5) elab.classList.add('show');
+}
+
+function onElabInput(idx, type, val) {
+  // elaboration -> append to myWords on seed form
+  const why   = document.getElementById(`elabWhy${idx}`)?.value.trim()   || '';
+  const where = document.getElementById(`elabWhere${idx}`)?.value.trim() || '';
+  const base  = stepInputs[idx] || '';
+  const parts = [base];
+  if (why)   parts.push(`【なぜ】${why}`);
+  if (where) parts.push(`【日常】${where}`);
+  document.getElementById('seedMyWords').value = parts.filter(Boolean).join('\n');
+}
+
+function resetSteps() {
+  doneSteps  = new Set();
+  stepInputs = {};
+  renderSteps();
+  ['seedTitle','seedDef','seedMyWords','seedExample','seedTags'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+}
+
+function updateProgress() {
+  document.getElementById('flowProg').textContent = `${doneSteps.size} / ${FLOWS[mode].length}`;
+}
+
+// ════════════════════════════════════
+//  Stop / Resume
+// ════════════════════════════════════
+function toggleStop() {
+  stopped = !stopped;
+  const btnStop   = document.getElementById('btnStop');
+  const btnResume = document.getElementById('btnResume');
+  const ind       = document.getElementById('stopIndicator');
+
+  if (stopped) {
+    stopCount++;
+    btnStop.style.display   = 'none';
+    btnResume.style.display = 'inline-flex';
+    ind.classList.add('active');
+    stopStart    = Date.now();
+    stopInterval = setInterval(updateStopTimer, 1000);
+    setTimeout(() => document.getElementById('siKeyword').focus(), 100);
+    resetSteps();
+    updateStats();
+    renderMiniState();
+  } else {
+    // Accumulate stop duration
+    if (stopStart) totalStopSec += Math.floor((Date.now() - stopStart) / 1000);
+    btnStop.style.display   = 'inline-flex';
+    btnResume.style.display = 'none';
+    ind.classList.remove('active');
+    clearInterval(stopInterval);
+    document.getElementById('stopTimer').textContent = '0:00';
+    const kw = document.getElementById('siKeyword').value.trim();
+    if (kw) {
+      const el = document.getElementById('seedTitle');
+      if (el && !el.value) el.value = kw;
+      document.getElementById('siKeyword').value = '';
+    }
+    updateStats();
+    renderMiniState();
+  }
+}
+
+function applyKeyword() {
+  const kw = document.getElementById('siKeyword').value.trim();
+  if (!kw) return;
+  const el = document.getElementById('seedTitle');
+  if (el && !el.value) el.value = kw;
+  const s0 = document.getElementById('stepIn0');
+  if (s0 && !s0.value) { s0.value = kw; onStepInput(0, kw); }
+  activateStep(1);
+}
+
+function updateStopTimer() {
+  if (!stopStart) return;
+  const sec = Math.floor((Date.now() - stopStart) / 1000);
+  const txt = `${Math.floor(sec/60)}:${String(sec%60).padStart(2,'0')}`;
+  document.getElementById('stopTimer').textContent     = txt;
+  const mt = document.getElementById('miniStopTimer');
+  if (mt) mt.textContent = txt;
+}
+
+// ════════════════════════════════════
+//  Session timer
+// ════════════════════════════════════
+function startSessionTimer() {
+  setInterval(() => {
+    const sec = Math.floor((Date.now() - sessionStart) / 1000);
+    const h = Math.floor(sec/3600), m = Math.floor((sec%3600)/60), s = sec%60;
+    document.getElementById('sessionTimer').textContent =
+      h > 0
+        ? `${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`
+        : `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  }, 1000);
+}
+
+// ════════════════════════════════════
+//  Stats
+// ════════════════════════════════════
+function updateStats() {
+  document.getElementById('statStop').textContent = stopCount;
+  document.getElementById('statSeed').textContent = seeds.length;
+  document.getElementById('statQ'   ).textContent = questions.length;
+  if (recallScore !== null) {
+    document.getElementById('statScore').textContent = recallScore + '%';
+  }
+  // Average stop time
+  const avg = stopCount > 0 ? Math.round(totalStopSec / stopCount) : 0;
+  document.getElementById('statAvg').textContent =
+    avg > 0 ? `${Math.floor(avg/60)}:${String(avg%60).padStart(2,'0')}` : '—';
+  renderMiniState();
+}
+
+// ════════════════════════════════════
+//  Triggers
+// ════════════════════════════════════
+function fireTrigger(el, type) {
+  document.querySelectorAll('.trigger-item').forEach(t => t.classList.remove('fired'));
+  el.classList.add('fired');
+  if (!stopped) toggleStop();
+}
+
+// ════════════════════════════════════
+//  Phrases
+// ════════════════════════════════════
+function copyPhrase(btn, text) {
+  const orig = btn.innerHTML;
+  navigator.clipboard.writeText(text).then(() => {
+    btn.classList.add('copied'); btn.innerHTML = '✅ コピーしました';
+    setTimeout(() => { btn.classList.remove('copied'); btn.innerHTML = orig; }, 1800);
+  }).catch(() => showToast('コピー失敗', 'error'));
+}
+
+// ════════════════════════════════════
+//  Questions
+// ════════════════════════════════════
+function loadQuestions() {
+  try { questions = JSON.parse(localStorage.getItem(Q_KEY) || '[]'); } catch { questions = []; }
+  renderQuestions();
+}
+function addQuestion(text) {
+  const inp = document.getElementById('qInput');
+  const q   = (text ?? inp?.value ?? '').trim();
+  if (!q) return;
+  questions.unshift({id: Date.now().toString(), text: q, done: false});
+  localStorage.setItem(Q_KEY, JSON.stringify(questions));
+  if (!text && inp) inp.value = '';
+  renderQuestions();
+  updateStats();
+  showToast('❓ 問いを記録しました');
+}
+function addQuestionFromInput(inputEl) {
+  const q = inputEl.value.trim();
+  if (!q) return;
+  addQuestion(q);
+  inputEl.value = '';
+}
+function addQuestionFromBtn(btn) {
+  const inp = btn.previousElementSibling;
+  if (inp) addQuestionFromInput(inp);
+}
+function toggleQuestion(id) {
+  const q = questions.find(q => q.id === id);
+  if (q) { q.done = !q.done; localStorage.setItem(Q_KEY, JSON.stringify(questions)); renderQuestions(); }
+}
+function deleteQuestion(id) {
+  questions = questions.filter(q => q.id !== id);
+  localStorage.setItem(Q_KEY, JSON.stringify(questions));
+  renderQuestions(); updateStats();
+}
+function renderQuestions() {
+  const list  = document.getElementById('qList');
+  const empty = document.getElementById('qEmpty');
+  const badge = document.getElementById('qBadge');
+  badge.textContent = questions.filter(q => !q.done).length;
+  list.querySelectorAll('.q-item').forEach(el => el.remove());
+  empty.style.display = questions.length === 0 ? 'block' : 'none';
+  questions.forEach(q => {
+    const el = document.createElement('div');
+    el.className = 'q-item' + (q.done ? ' done' : '');
+    el.innerHTML = `
+      <span class="q-mark">❓</span>
+      <span class="q-text">${escHtml(q.text)}</span>
+      <button class="q-check" onclick="toggleQuestion('${q.id}')" title="解決済み">✓</button>
+      <button class="q-del"   onclick="deleteQuestion('${q.id}')" title="削除">✕</button>
+    `;
+    list.appendChild(el);
+  });
+}
+
+// ════════════════════════════════════
+//  Seeds
+// ════════════════════════════════════
+function loadSeeds() {
+  try { seeds = JSON.parse(localStorage.getItem(SEED_KEY) || '[]'); } catch { seeds = []; }
+  renderSeeds();
+}
+function saveSeed(e) {
+  e.preventDefault();
+  const title = document.getElementById('seedTitle').value.trim();
+  if (!title) return;
+  const seed = {
+    id:         Date.now().toString(),
+    title,
+    definition: document.getElementById('seedDef').value.trim(),
+    myWords:    document.getElementById('seedMyWords').value.trim(),
+    example:    document.getElementById('seedExample').value.trim(),
+    tags:       document.getElementById('seedTags').value.trim(),
+    stage:      selectedStage,
+    time:       new Date().toLocaleTimeString('ja-JP', {hour:'2-digit',minute:'2-digit'}),
+    mode,
+    hidden:     false
+  };
+  seeds.unshift(seed);
+  localStorage.setItem(SEED_KEY, JSON.stringify(seeds));
+  renderSeeds();
+  ['seedTitle','seedDef','seedMyWords','seedExample','seedTags'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  document.querySelectorAll('.stage-btn').forEach(b => b.classList.remove('active'));
+  document.querySelector('.stage-btn[data-stage="seed"]').classList.add('active');
+  selectedStage = 'seed';
+  resetSteps();
+  updateStats();
+  updateExportLabel();
+
+  const m = MILESTONES[seeds.length];
+  if (m) showToast(m, 'milestone');
+  else   showToast(`🌱 「${title}」を記録しました`);
+  renderMiniState();
+}
+function deleteSeed(id) {
+  seeds = seeds.filter(s => s.id !== id);
+  localStorage.setItem(SEED_KEY, JSON.stringify(seeds));
+  renderSeeds(); updateStats(); updateExportLabel();
+}
+function toggleHide(id) {
+  const s = seeds.find(s => s.id === id);
+  if (!s) return;
+  s.hidden = !s.hidden;
+  localStorage.setItem(SEED_KEY, JSON.stringify(seeds));
+  renderSeeds();
+}
+function renderSeeds() {
+  const hist  = document.getElementById('seedHistory');
+  const empty = document.getElementById('seedEmpty');
+  document.getElementById('seedCount').textContent = `${seeds.length} seeds`;
+  hist.querySelectorAll('.seed-card').forEach(c => c.remove());
+  if (seeds.length === 0) { empty.style.display = 'block'; return; }
+  empty.style.display = 'none';
+
+  seeds.forEach(s => {
+    const meta    = STAGE_META[s.stage] || STAGE_META.seed;
+    const rating  = recallRatingMap[s.id];
+    const ratingClass = rating ? `rated-${rating}` : '';
+    const ratingEmoji = {good:'💚', ok:'🟡', bad:'🔴'}[rating] || '';
+    const hasAnswer = s.myWords || s.definition || s.example;
+
+    const card = document.createElement('div');
+    card.className = `seed-card ${s.hidden ? 'hidden-mode' : ''} ${ratingClass}`.trim();
+    card.innerHTML = `
+      <div class="sc-left">
+        <span class="sc-stage">${meta.emoji} ${meta.label}</span>
+        ${ratingEmoji ? `<span class="sc-rating-badge" title="振り返り評価">${ratingEmoji}</span>` : ''}
+      </div>
+      <div class="sc-body">
+        <div class="sc-title">${escHtml(s.title)} <span style="font-size:10px;color:var(--faint);">${s.time}</span></div>
+        <div class="sc-answer">
+          ${s.myWords    ? `<div class="sc-words">${escHtml(s.myWords)}</div>` : ''}
+          ${!s.myWords && s.definition ? `<div class="sc-words">${escHtml(s.definition)}</div>` : ''}
+          ${s.example    ? `<div class="sc-tags">例え: ${escHtml(s.example)}</div>` : ''}
+          ${s.tags       ? `<div class="sc-tags">${escHtml(s.tags)}</div>` : ''}
+        </div>
+        <div class="sc-hint">— 自分の言葉で思い出してみよう —</div>
+        <div class="sc-footer">
+          ${hasAnswer ? `
+            <button class="sc-btn ${s.hidden ? 'reveal' : ''}" onclick="toggleHide('${s.id}')">
+              ${s.hidden ? '👁 答えを見る' : '🙈 隠して確認'}
+            </button>
+          ` : ''}
+          <button class="sc-btn danger" onclick="deleteSeed('${s.id}')">✕</button>
+        </div>
+      </div>
+    `;
+    hist.appendChild(card);
+  });
+}
+function selectStage(btn) {
+  document.querySelectorAll('.stage-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  selectedStage = btn.dataset.stage;
+}
+
+// ════════════════════════════════════
+//  Recall mode
+// ════════════════════════════════════
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length-1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i+1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function startRecall(weakOnly = false) {
+  const source = weakOnly
+    ? seeds.filter(s => recallRatingMap[s.id] === 'bad')
+    : seeds;
+  if (source.length === 0) {
+    showToast(weakOnly ? '🔴 弱点Seedはありません' : 'まだSeedがありません');
+    return;
+  }
+  recallQueue   = shuffle(source);
+  recallIdx     = 0;
+  recallRatings = [];
+  isWeakRetry   = weakOnly;
+  showRecallCard();
+  document.getElementById('recallOverlay').classList.add('open');
+}
+function startWeakRecall() { startRecall(true); }
+
+function showRecallCard() {
+  const s = recallQueue[recallIdx];
+  if (!s) { showRecallResult(); return; }
+  const meta = STAGE_META[s.stage] || STAGE_META.seed;
+
+  document.getElementById('rpProg'  ).textContent = `${recallIdx+1} / ${recallQueue.length}`;
+  document.getElementById('rcStage' ).textContent = `${meta.emoji} ${meta.label}`;
+  document.getElementById('rcTitle' ).textContent = s.title;
+
+  const defRow   = document.getElementById('rcDefRow');
+  const wordsRow = document.getElementById('rcWordsRow');
+  const exRow    = document.getElementById('rcExRow');
+  defRow.style.display   = s.definition ? '' : 'none';
+  wordsRow.style.display = s.myWords    ? '' : 'none';
+  exRow.style.display    = s.example    ? '' : 'none';
+  document.getElementById('rcDef'  ).textContent = s.definition || '';
+  document.getElementById('rcWords').textContent = s.myWords    || '';
+  document.getElementById('rcEx'   ).textContent = s.example    || '';
+
+  document.getElementById('rcAnswer'     ).classList.remove('show');
+  document.getElementById('rcRevealBtn'  ).style.display = '';
+  document.getElementById('recallRating' ).classList.remove('show');
+  document.getElementById('recallCard'   ).style.display = 'flex';
+  document.getElementById('recallResult' ).classList.remove('show');
+}
+
+function revealRecall() {
+  document.getElementById('rcAnswer'    ).classList.add('show');
+  document.getElementById('rcRevealBtn' ).style.display = 'none';
+  document.getElementById('recallRating').classList.add('show');
+}
+
+function rateRecall(rating) {
+  const s = recallQueue[recallIdx];
+  if (s) recallRatingMap[s.id] = rating;
+  recallRatings.push(rating);
+  recallIdx++;
+  if (recallIdx >= recallQueue.length) showRecallResult();
+  else showRecallCard();
+}
+
+function showRecallResult() {
+  const good = recallRatings.filter(r => r==='good').length;
+  const ok   = recallRatings.filter(r => r==='ok'  ).length;
+  const bad  = recallRatings.filter(r => r==='bad'  ).length;
+  const total = recallRatings.length;
+  const pct  = total > 0 ? Math.round(((good + ok*0.5) / total) * 100) : 0;
+  if (!isWeakRetry) recallScore = pct;
+
+  document.getElementById('recallCard'  ).style.display = 'none';
+  document.getElementById('recallRating').classList.remove('show');
+  document.getElementById('recallResult').classList.add('show');
+  document.getElementById('rrScore').textContent = pct + '%';
+  document.getElementById('rrScore').style.color =
+    pct >= 70 ? 'var(--green)' : pct >= 40 ? 'var(--acc)' : 'var(--stop)';
+  document.getElementById('rrBreak').innerHTML =
+    `💚 完全に言えた: ${good}件 &nbsp;🟡 なんとなく: ${ok}件 &nbsp;🔴 言えなかった: ${bad}件`;
+
+  const weakBtn = document.getElementById('rrWeakBtn');
+  weakBtn.style.display = bad > 0 ? '' : 'none';
+  weakBtn.textContent   = `🔴 ${bad}件を再確認する`;
+
+  updateStats();
+  updateExportLabel();
+  renderSeeds(); // show rating badges
+}
+
+function closeRecall() {
+  document.getElementById('recallOverlay').classList.remove('open');
+}
+
+// ════════════════════════════════════
+//  Export
+// ════════════════════════════════════
+function updateExportLabel() {
+  const parts = [];
+  if (seeds.length    > 0) parts.push(`${seeds.length} Seeds`);
+  if (questions.length > 0) parts.push(`問い${questions.length}件`);
+  if (recallScore !== null) parts.push(`想起${recallScore}%`);
+  document.getElementById('exportLbl').textContent =
+    parts.length > 0 ? parts.join(' · ') : 'セッションが終わったら振り返りモードで想起練習をしよう';
+}
+function exportSession() {
+  if (seeds.length===0 && questions.length===0) { showToast('まだ記録がありません'); return; }
+  const date  = new Date().toLocaleDateString('ja-JP');
+  const lines = [`# RB-Tree 学習セッション — ${date}`, '',
+    `> 停止: ${stopCount}回  Seeds: ${seeds.length}件  問い: ${questions.length}件${recallScore!==null?`  想起スコア: ${recallScore}%`:''}`, ''];
+
+  if (seeds.length > 0) {
+    lines.push('## 🌱 Seeds', '');
+    seeds.slice().reverse().forEach(s => {
+      const m = STAGE_META[s.stage] || STAGE_META.seed;
+      const r = recallRatingMap[s.id];
+      const rLabel = {good:'💚',ok:'🟡',bad:'🔴'}[r] || '';
+      lines.push(`### ${m.emoji} ${s.title} ${rLabel} (${m.label} · ${s.time})`);
+      if (s.definition) lines.push(`**定義**: ${s.definition}`);
+      if (s.myWords)    lines.push(`**自分の言葉**: ${s.myWords}`);
+      if (s.example)    lines.push(`**例え**: ${s.example}`);
+      if (s.tags)       lines.push(`**タグ**: ${s.tags}`);
+      lines.push('');
+    });
+  }
+  if (questions.length > 0) {
+    lines.push('## ❓ 問いログ', '');
+    questions.slice().reverse().forEach(q => {
+      lines.push(`- ${q.done?'~~':''}${q.text}${q.done?'~~':''}`);
+    });
+    lines.push('');
+  }
+  const blob = new Blob([lines.join('\n')], {type:'text/markdown;charset=utf-8'});
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url; a.download = `rbtree-session-${TODAY}.md`; a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 500);
+  showToast('📄 Markdownで書き出しました');
+}
+function clearSession() {
+  if (seeds.length===0 && questions.length===0) { showToast('記録がありません'); return; }
+  if (!confirm(`Seeds ${seeds.length}件・問い ${questions.length}件をクリアしますか？`)) return;
+  seeds=[]; questions=[]; stopCount=0; totalStopSec=0; recallScore=null; recallRatingMap={};
+  localStorage.removeItem(SEED_KEY);
+  localStorage.removeItem(Q_KEY);
+  renderSeeds(); renderQuestions(); updateStats(); updateExportLabel();
+  showToast('クリアしました');
+}
+
+// ════════════════════════════════════
+//  Utils
+// ════════════════════════════════════
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function showToast(msg, type = '') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast' + (type ? ' ' + type : '');
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+// ════════════════════════════════════
+//  Mini Mode
+// ════════════════════════════════════
+let miniMode = false;
+
+function toggleMiniMode() {
+  miniMode = !miniMode;
+  document.body.classList.toggle('mini', miniMode);
+  const btn = document.getElementById('btnMini');
+  btn.textContent = miniMode ? '⛶ フルモード' : '⬜ ミニモード';
+  btn.classList.toggle('active', miniMode);
+  if (miniMode) renderMiniState();
+}
+
+function renderMiniState() {
+  if (!miniMode) return;
+
+  // 止める/再開ボタン
+  const stopBtn = document.getElementById('miniStopBtn');
+  const stopLbl = document.getElementById('miniStopLabel');
+  const stopTmr = document.getElementById('miniStopTimer');
+  const panel   = document.getElementById('miniStepPanel');
+  if (stopped) {
+    stopBtn.classList.add('resume');
+    stopLbl.textContent   = '▶ 再開';
+    stopTmr.style.display = '';
+    panel.classList.add('on');
+  } else {
+    stopBtn.classList.remove('resume');
+    stopLbl.textContent   = '⏸ 止める';
+    stopTmr.style.display = 'none';
+    stopTmr.textContent   = '0:00';
+    panel.classList.remove('on');
+  }
+
+  // 現在ステップ
+  const steps = FLOWS[mode];
+  const step  = steps[currentStep];
+  if (!step) return;
+  document.getElementById('miniCounter'  ).textContent = `${currentStep + 1} / ${steps.length}`;
+  document.getElementById('miniModeBadge').textContent = mode === 'video' ? '📹 動画' : '📄 文章';
+  document.getElementById('miniStepTitle').textContent = step.title;
+  document.getElementById('miniStepDesc' ).textContent = step.desc;
+
+  // 入力フィールド（既存値を保持）
+  const wrap     = document.getElementById('miniInWrap');
+  const existing = stepInputs[currentStep] || '';
+  if (step.inputType === 'input') {
+    wrap.innerHTML = `<input class="mini-in" id="miniIn"
+      placeholder="${escHtml(step.placeholder || '')}"
+      value="${escHtml(existing)}"
+      oninput="onMiniInput(this.value)"
+      onkeydown="if(event.key==='Enter'){event.preventDefault();miniNext();}">`;
+  } else if (step.inputType === 'textarea') {
+    wrap.innerHTML = `<textarea class="mini-in" id="miniIn"
+      placeholder="${escHtml(step.placeholder || '')}"
+      oninput="onMiniInput(this.value)"
+      onkeydown="if(event.key==='Enter'&&event.ctrlKey){event.preventDefault();miniNext();}"
+    >${escHtml(existing)}</textarea>`;
+  } else {
+    wrap.innerHTML = '';
+  }
+
+  // ナビボタン
+  const isLast = currentStep === steps.length - 1;
+  const isPreLast = currentStep === steps.length - 2;
+  document.getElementById('miniPrevBtn').disabled = currentStep === 0;
+  document.getElementById('miniNextBtn').disabled = isLast;
+  document.getElementById('miniNextBtn').textContent = isPreLast ? 'Seedを記録 🌱' : '次へ →';
+
+  // Seedタイトル同期
+  const mainTitle = document.getElementById('seedTitle');
+  const miniInput = document.getElementById('miniSeedInput');
+  if (mainTitle && miniInput && !miniInput.value && mainTitle.value) {
+    miniInput.value = mainTitle.value;
+  }
+
+  // 統計
+  document.getElementById('mStatStop').textContent = stopCount;
+  document.getElementById('mStatSeed').textContent = seeds.length;
+  document.getElementById('mStatQ'   ).textContent = questions.length;
+  if (recallScore !== null) {
+    document.getElementById('mStatScore').style.display = '';
+    document.getElementById('mStatScoreVal').textContent = recallScore + '%';
+  }
+}
+
+function onMiniInput(val) {
+  // フルモードのステップ入力と完全同期
+  stepInputs[currentStep] = val;
+  const mainIn = document.getElementById('stepIn' + currentStep);
+  if (mainIn) mainIn.value = val;
+  onStepInput(currentStep, val);
+}
+
+function miniPrev() {
+  if (currentStep > 0) activateStep(currentStep - 1);
+}
+function miniNext() {
+  const max = FLOWS[mode].length - 1;
+  if (currentStep < max) activateStep(currentStep + 1);
+}
+
+// ════════════════════════════════════
+//  Fullscreen
+// ════════════════════════════════════
+function toggleFullscreen() {
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen().catch(() => showToast('全画面に失敗しました', 'error'));
+  } else {
+    document.exitFullscreen();
+  }
+}
+document.addEventListener('fullscreenchange', () => {
+  const btn = document.getElementById('btnFullscreen');
+  if (!btn) return;
+  if (document.fullscreenElement) {
+    btn.textContent = '✕ 全画面解除';
+    btn.classList.add('active');
+  } else {
+    btn.textContent = '⛶ 全画面';
+    btn.classList.remove('active');
+  }
+});
+
+function miniSaveSeed() {
+  const miniInput = document.getElementById('miniSeedInput');
+  const title = miniInput?.value.trim();
+  if (!title) { showToast('用語名を入力してください'); return; }
+  document.getElementById('seedTitle').value = title;
+  const form = document.querySelector('.seed-form');
+  if (form) form.dispatchEvent(new Event('submit', {cancelable: true, bubbles: true}));
+  if (miniInput) miniInput.value = '';
+}
+
+// ════════════════════════════════════
+//  Particles
+// ════════════════════════════════════
+(function(){
+  const canvas = document.getElementById('particlesCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  let W, H, pts = [];
+  function resize(){ W = canvas.width = innerWidth; H = canvas.height = innerHeight; }
+  function mkPt(){ return { x:Math.random()*W, y:Math.random()*H, vy:-.2-Math.random()*.5, vx:(Math.random()-.5)*.15, r:1+Math.random()*1.5, a:Math.random()*.6+.1 }; }
+  function init(){ resize(); pts=[]; for(let i=0;i<45;i++) pts.push(mkPt()); }
+  function draw(){
+    ctx.clearRect(0,0,W,H);
+    pts.forEach(p=>{
+      ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+      ctx.fillStyle=`rgba(100,180,120,${p.a})`; ctx.fill();
+      p.x+=p.vx; p.y+=p.vy;
+      if(p.y<-4) { p.y=H+4; p.x=Math.random()*W; }
+    });
+    requestAnimationFrame(draw);
+  }
+  window.addEventListener('resize', init);
+  init(); draw();
+})();
+
+// ════════════════════════════════════
+//  Ticker
+// ════════════════════════════════════
+const TICKER_MSGS = [
+  '動画を止めながら学ぼう — キーワードが出たら⏸',
+  '気づきが浮かんだら❓問いログに記録しよう',
+  '自分の言葉に言い換えてみよう',
+  '30秒止めて考えよう — なぜそうなる？',
+  '視聴者にコメントを促してみよう',
+  '学んだことをSeedに記録しよう🌱',
+  '今日のテーマを1文でまとめてみよう',
+  '前回学んだことと繋がるものはあるか？',
+  'ここまでの内容を3文字でまとめると？',
+];
+let tickerIdx = 0;
+function rotateTicker() {
+  const el = document.getElementById('tickerText');
+  if (!el) return;
+  el.classList.add('out');
+  setTimeout(() => {
+    tickerIdx = (tickerIdx + 1) % TICKER_MSGS.length;
+    el.textContent = TICKER_MSGS[tickerIdx];
+    el.classList.remove('out');
+  }, 380);
+}
+setInterval(rotateTicker, 12000);
+
+// ════════════════════════════════════
+//  Research Panel
+// ════════════════════════════════════
+const RP_KEY = 'rbtree_research';
+let rpCurTab = 'insight';
+let rpCurUrl = '';
+
+function toggleResearchPanel() {
+  const p = document.getElementById('researchPanel');
+  const b = document.getElementById('btnResearch');
+  p.classList.toggle('open');
+  b.classList.toggle('active', p.classList.contains('open'));
+}
+
+function rpLoad() {
+  let url = document.getElementById('rpUrlInput').value.trim();
+  if (!url) return;
+  if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
+  rpCurUrl = url;
+  document.getElementById('rpCurUrl').textContent = url;
+  const iframe = document.getElementById('rpIframe');
+  const blocked = document.getElementById('rpBlocked');
+  blocked.classList.remove('show');
+  iframe.src = url;
+  iframe.onerror = () => blocked.classList.add('show');
+  // X-Frame-Options はerrorで検知できないのでloadで判定
+  iframe.onload = () => {
+    try {
+      const _ = iframe.contentDocument;
+      blocked.classList.remove('show');
+    } catch(e) {
+      blocked.classList.add('show');
+    }
+  };
+}
+
+function rpOpenTab() {
+  const url = document.getElementById('rpUrlInput').value.trim() || rpCurUrl;
+  if (url) window.open(url.startsWith('http') ? url : 'https://'+url, '_blank');
+}
+
+function rpSwitchTab(btn, tab) {
+  rpCurTab = tab;
+  document.querySelectorAll('.rp-mtab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const saved = rpLoadMemos();
+  document.getElementById('rpMemoTa').value = saved[tab] || '';
+  document.getElementById('rpSaved').textContent = '';
+}
+
+function rpSaveMemo() {
+  const val = document.getElementById('rpMemoTa').value;
+  const data = rpLoadMemos();
+  data[rpCurTab] = val;
+  localStorage.setItem(RP_KEY, JSON.stringify(data));
+  const el = document.getElementById('rpSaved');
+  el.textContent = '保存済み ✓';
+  setTimeout(() => { el.textContent = ''; }, 1500);
+}
+
+function rpLoadMemos() {
+  try { return JSON.parse(localStorage.getItem(RP_KEY) || '{}'); } catch(e) { return {}; }
+}
+
+// 起動時にメモ復元
+window.addEventListener('DOMContentLoaded', () => {
+  const saved = rpLoadMemos();
+  document.getElementById('rpMemoTa').value = saved['insight'] || '';
+});
+
+// ════════════════════════════════════
+//  Audio Panel
+// ════════════════════════════════════
+const AUDIO_VOL_KEY = 'rbtree_audio_vol';
+let bgmAudio = null;
+let volBgm = 0.25;
+let volSe  = 0.70;
+let bgmMuted = false;
+
+const BGM_LIST = [
+  { id:'talk',    icon:'🎵', name:'通常トーク',    file:'bgm_talk.mp3' },
+  { id:'study',   icon:'📚', name:'学習中',        file:'bgm_study.mp3' },
+  { id:'think',   icon:'🤔', name:'考え中',        file:'bgm_think.mp3' },
+  { id:'hype',    icon:'⚡', name:'盛り上がる',    file:'bgm_hype.mp3' },
+  { id:'ending',  icon:'🌙', name:'エンディング',  file:'bgm_ending.mp3' },
+];
+
+const SE_LIST = [
+  { id:'ding',     icon:'🔔', name:'決定音',      file:'se_ding.mp3' },
+  { id:'correct',  icon:'⭕', name:'ピンポン',    file:'se_correct.mp3' },
+  { id:'wrong',    icon:'❌', name:'ブブー',      file:'se_wrong.mp3' },
+  { id:'sparkle',  icon:'✨', name:'キラキラ',    file:'se_sparkle.mp3' },
+  { id:'idea',     icon:'💡', name:'ひらめき',    file:'se_idea.mp3' },
+  { id:'tsukkomi', icon:'🎤', name:'ツッコミ',    file:'se_tsukkomi.mp3' },
+  { id:'clap',     icon:'👏', name:'拍手',        file:'se_clap.mp3' },
+  { id:'wow',      icon:'🎉', name:'ワー！',      file:'se_wow.mp3' },
+  { id:'silence',  icon:'🤫', name:'しーん…',    file:'se_silence.mp3' },
+  { id:'rain',     icon:'🌧', name:'雨音',        file:'se_rain.mp3' },
+  { id:'page',     icon:'📄', name:'めくる',      file:'se_page.mp3' },
+  { id:'stop30',   icon:'⏸', name:'30秒停止',    file:'se_stop30.mp3' },
+];
+
+function toggleAudioPanel() {
+  const p = document.getElementById('audioPanel');
+  const b = document.getElementById('btnAudio');
+  p.classList.toggle('open');
+  b.classList.toggle('active', p.classList.contains('open'));
+}
+
+function renderBgmList() {
+  document.getElementById('bgmList').innerHTML = BGM_LIST.map(b => `
+    <div class="bgm-item" id="bgm_${b.id}" onclick="playBgm('${b.id}','${b.file}')">
+      <span class="bgm-ico">${b.icon}</span>
+      <span class="bgm-name">${b.name}</span>
+      <span class="bgm-st" id="bgmSt_${b.id}">ファイル未設定</span>
+      <button class="bgm-stop" onclick="event.stopPropagation();stopBgm()" title="停止">■</button>
+    </div>
+  `).join('');
+}
+
+function renderSeGrid() {
+  document.getElementById('seGrid').innerHTML = SE_LIST.map(s => `
+    <button class="se-btn" id="se_${s.id}" onclick="playSe('${s.id}','${s.file}')">
+      <span class="se-ico">${s.icon}</span>
+      <span class="se-lbl">${s.name}</span>
+    </button>
+  `).join('');
+}
+
+function playBgm(id, file) {
+  stopBgm();
+  const path = `/assets/audio/bgm/${file}`;
+  bgmAudio = new Audio(path);
+  bgmAudio.loop = true;
+  bgmAudio.volume = bgmMuted ? 0 : volBgm;
+  bgmAudio.play().then(() => {
+    document.querySelectorAll('.bgm-item').forEach(el => el.classList.remove('playing'));
+    const item = document.getElementById(`bgm_${id}`);
+    if (item) { item.classList.add('playing'); document.getElementById(`bgmSt_${id}`).textContent = '▶ 再生中'; }
+  }).catch(() => {
+    document.getElementById(`bgmSt_${id}`).textContent = 'ファイル未設定';
+    showToast(`BGMファイルが見つかりません: ${file}`, 'error');
+  });
+}
+
+function stopBgm() {
+  if (bgmAudio) { bgmAudio.pause(); bgmAudio = null; }
+  document.querySelectorAll('.bgm-item').forEach(el => {
+    el.classList.remove('playing');
+    const st = el.querySelector('.bgm-st'); if (st) st.textContent = 'ファイル未設定';
+  });
+}
+
+function playSe(id, file) {
+  const path = `/assets/audio/se/${file}`;
+  const a = new Audio(path);
+  a.volume = volSe;
+  const btn = document.getElementById(`se_${id}`);
+  a.play().then(() => {
+    if (btn) { btn.classList.add('flash'); setTimeout(() => btn.classList.remove('flash'), 600); }
+  }).catch(() => {
+    showToast(`効果音ファイルが見つかりません: ${file}`, 'error');
+  });
+}
+
+function setVolBgm(v) {
+  volBgm = v / 100;
+  document.getElementById('volBgmVal').textContent = v;
+  if (bgmAudio && !bgmMuted) bgmAudio.volume = volBgm;
+  saveAudioVol();
+}
+
+function setVolSe(v) {
+  volSe = v / 100;
+  document.getElementById('volSeVal').textContent = v;
+  saveAudioVol();
+}
+
+function muteBgm() {
+  bgmMuted = !bgmMuted;
+  if (bgmAudio) bgmAudio.volume = bgmMuted ? 0 : volBgm;
+  document.querySelector('.ap-mute').textContent = bgmMuted ? '🔈' : '🔇';
+}
+
+function saveAudioVol() {
+  localStorage.setItem(AUDIO_VOL_KEY, JSON.stringify({ bgm: Math.round(volBgm*100), se: Math.round(volSe*100) }));
+}
+
+function loadAudioVol() {
+  try {
+    const d = JSON.parse(localStorage.getItem(AUDIO_VOL_KEY)||'{}');
+    if (d.bgm !== undefined) {
+      volBgm = d.bgm / 100;
+      document.getElementById('volBgm').value = d.bgm;
+      document.getElementById('volBgmVal').textContent = d.bgm;
+    }
+    if (d.se !== undefined) {
+      volSe = d.se / 100;
+      document.getElementById('volSe').value = d.se;
+      document.getElementById('volSeVal').textContent = d.se;
+    }
+  } catch(e) {}
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+  renderBgmList();
+  renderSeGrid();
+  loadAudioVol();
+});
+</script>
+</body>
+</html>
