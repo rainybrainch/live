@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>🦉 MS — Morning news Studio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://unpkg.com/@ffmpeg/ffmpeg@0.11.6/dist/ffmpeg.min.js"></script>
 <style>
@@ -18,27 +20,30 @@
     --char-color: #c9a84c;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { background: var(--bg); color: var(--text); font-family: 'Noto Serif JP','Hiragino Serif',serif; min-height: 100vh; display: flex; flex-direction: column; }
+  body { background: var(--bg); color: var(--text); font-family: 'Noto Sans JP','Hiragino Kaku Gothic ProN','Meiryo',sans-serif; min-height: 100vh; display: flex; flex-direction: column; font-size: 14px; line-height: 1.6; }
 
-  header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 14px 24px; display: flex; align-items: center; gap: 16px; }
-  header h1 { font-size: 1.1rem; font-weight: 700; color: var(--accent); letter-spacing: .05em; }
-  header span { color: var(--text-muted); font-size: .8rem; }
+  header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 10px 20px; display: flex; align-items: center; gap: 12px; min-height: 52px; }
+  header h1 { font-size: 1.05rem; font-weight: 700; color: var(--accent); letter-spacing: .05em; white-space: nowrap; }
+  header span { color: var(--text-muted); font-size: .78rem; }
+  #sidebarToggle { background: none; border: 1px solid var(--border); border-radius: 6px; color: var(--text-muted); width: 32px; height: 32px; cursor: pointer; font-size: 1.1rem; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all .2s; }
+  #sidebarToggle:hover { border-color: var(--accent); color: var(--accent); }
 
   .layout { display: flex; flex: 1; overflow: hidden; }
 
-  aside { width: 220px; background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; overflow-y: auto; flex-shrink: 0; }
-  .sidebar-title { padding: 14px 16px 8px; font-size: .7rem; color: var(--text-muted); letter-spacing: .1em; text-transform: uppercase; }
-  .char-item { padding: 12px 16px; cursor: pointer; border-left: 3px solid transparent; transition: all .2s; display: flex; align-items: center; gap: 10px; }
+  aside { width: 220px; min-width: 220px; background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; overflow-y: auto; overflow-x: hidden; flex-shrink: 0; transition: width .22s ease, min-width .22s ease; }
+  aside.closed { width: 0; min-width: 0; border-right: none; }
+  .sidebar-title { padding: 12px 16px 6px; font-size: .68rem; font-weight: 700; color: var(--text-muted); letter-spacing: .12em; text-transform: uppercase; white-space: nowrap; }
+  .char-item { padding: 10px 14px; cursor: pointer; border-left: 3px solid transparent; transition: all .2s; display: flex; align-items: center; gap: 10px; white-space: nowrap; }
   .char-item:hover { background: var(--surface2); }
   .char-item.active { border-left-color: var(--char-color); background: var(--surface2); }
-  .char-icon { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1rem; flex-shrink: 0; overflow: hidden; }
+  .char-icon { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: .95rem; flex-shrink: 0; overflow: hidden; }
   .char-icon img { width: 100%; height: 100%; object-fit: cover; }
-  .char-name { font-size: .9rem; font-weight: 600; }
-  .char-theme { font-size: .7rem; color: var(--text-muted); }
-  .add-char-btn { margin: 12px; padding: 10px; background: none; border: 1px dashed var(--border); border-radius: 6px; color: var(--text-muted); cursor: pointer; font-size: .82rem; transition: all .2s; }
+  .char-name { font-size: .85rem; font-weight: 600; }
+  .char-theme { font-size: .68rem; color: var(--text-muted); }
+  .add-char-btn { margin: 10px 12px; padding: 9px; background: none; border: 1px dashed var(--border); border-radius: 6px; color: var(--text-muted); cursor: pointer; font-size: .8rem; transition: all .2s; white-space: nowrap; }
   .add-char-btn:hover { border-color: var(--accent); color: var(--accent); }
 
-  main { flex: 1; overflow-y: auto; padding: 24px; display: flex; flex-direction: column; gap: 20px; }
+  main { flex: 1; overflow-y: auto; padding: 20px 24px; display: flex; flex-direction: column; gap: 18px; }
 
   .char-header { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 20px 24px; display: flex; align-items: center; gap: 16px; border-left: 4px solid var(--char-color); }
   .char-header-icon { width: 56px; height: 56px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; overflow: hidden; flex-shrink: 0; }
@@ -48,10 +53,10 @@
   .char-header-badges { margin-top: 6px; display: flex; gap: 6px; flex-wrap: wrap; }
   .badge { background: var(--surface2); border: 1px solid var(--border); border-radius: 4px; padding: 2px 8px; font-size: .72rem; color: var(--text-muted); }
 
-  .tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
-  .tab { padding: 8px 14px; background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: .82rem; border-bottom: 2px solid transparent; transition: all .2s; font-family: inherit; position: relative; }
-  .tab:hover { color: var(--text); }
-  .tab.active { color: var(--char-color); border-bottom-color: var(--char-color); }
+  .tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+  .tab { padding: 10px 16px; background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: .82rem; font-weight: 500; border-bottom: 2px solid transparent; transition: all .18s; font-family: inherit; position: relative; letter-spacing: .02em; white-space: nowrap; }
+  .tab:hover { color: var(--text); background: rgba(255,255,255,.03); }
+  .tab.active { color: var(--char-color); border-bottom-color: var(--char-color); background: rgba(201,168,76,.06); }
   .tab .notif-dot { position: absolute; top: 5px; right: 5px; width: 7px; height: 7px; border-radius: 50%; background: #e53935; display: none; box-shadow: 0 0 0 2px var(--bg); }
   .tab.has-notif .notif-dot { display: block; }
 
@@ -174,11 +179,11 @@
   ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 
   @media (max-width: 768px) {
-    aside { width: 60px; }
-    .char-name, .char-theme, .sidebar-title { display: none; }
-    .char-item { justify-content: center; padding: 12px 8px; }
-    main { padding: 16px; }
+    aside { width: 0; min-width: 0; }
+    aside.open { width: 220px; min-width: 220px; position: fixed; top: 52px; left: 0; height: calc(100vh - 52px); z-index: 200; box-shadow: 4px 0 20px rgba(0,0,0,.5); }
+    main { padding: 14px 16px; }
     .scene-layout { grid-template-columns: 1fr; }
+    .char-header { flex-wrap: wrap; }
   }
 </style>
 </head>
@@ -190,11 +195,12 @@
 </div>
 
 <header>
-  <h1>🦉 MS <span style="font-size:.7rem;font-weight:400;color:var(--text-muted);letter-spacing:.05em;">Morning news Studio</span></h1>
-  <span id="headerSub">キャラクターを選択してください</span>
-  <span id="syncStatus" style="margin-left:auto;font-size:.75rem;color:var(--text-muted);">— Drive未確認</span>
-  <span id="saveIndicator" style="margin-left:8px;font-size:.75rem;color:var(--text-muted);opacity:0;transition:opacity .5s;">💾 保存済</span>
-  <button onclick="switchTab('settings')" style="margin-left:12px;background:none;border:1px solid var(--border);border-radius:6px;color:var(--text-muted);padding:6px 12px;cursor:pointer;font-size:.8rem;flex-shrink:0;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">⚙️ 設定</button>
+  <button id="sidebarToggle" onclick="toggleSidebar()" title="サイドバー開閉">☰</button>
+  <h1>🦉 MS <span style="font-size:.68rem;font-weight:400;color:var(--text-muted);letter-spacing:.04em;">Morning news Studio</span></h1>
+  <span id="headerSub" style="font-size:.78rem;color:var(--text-muted);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
+  <span id="syncStatus" style="margin-left:auto;font-size:.72rem;color:var(--text-muted);white-space:nowrap;flex-shrink:0;">Drive未接続</span>
+  <span id="saveIndicator" style="margin-left:6px;font-size:.72rem;color:var(--text-muted);opacity:0;transition:opacity .5s;flex-shrink:0;">💾</span>
+  <button onclick="switchTab('settings')" style="margin-left:8px;background:none;border:1px solid var(--border);border-radius:6px;color:var(--text-muted);padding:5px 10px;cursor:pointer;font-size:.78rem;flex-shrink:0;white-space:nowrap;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">⚙️ 設定</button>
 </header>
 
 <div class="layout">
@@ -746,7 +752,6 @@ function renderSidebar() {
 
 function selectChar(id) {
   currentCharId = id; selectedPlan = null; generatedScript = ''; generatedMeta = null; currentEpisodeId = null;
-  document.getElementById('epSidebarTitle').style.display = 'block';
   // 最後に開いていたエピソードを復元
   const eps = (data.episodes || []).filter(e => e.charId === id);
   if (eps.length > 0) {
@@ -781,18 +786,17 @@ function renderMain() {
           ${char.channel_id?`<span class="badge">CH: ${char.channel_id}</span>`:''}
         </div>
       </div>
-      <div style="margin-left:auto;display:flex;gap:6px;align-items:center;">
+      <div style="margin-left:auto;display:flex;gap:6px;align-items:center;flex-shrink:0;">
         ${getYtToken(char.id)
-          ? `<span style="font-size:.72rem;color:#4a8;">📺 YT認証済</span>
-             <button class="btn btn-secondary btn-sm" onclick="ytLogout('${char.id}')">YTログアウト</button>`
+          ? `<span style="font-size:.72rem;color:#4a8;white-space:nowrap;">📺 YT認証済</span>
+             <button class="btn btn-secondary btn-sm" onclick="ytLogout('${char.id}')">ログアウト</button>`
           : `<button class="btn btn-primary btn-sm" onclick="ytAuth('${char.id}')">📺 YouTube認証</button>`}
-        <button class="btn btn-secondary btn-sm" onclick="openEditChar('${char.id}')">編集</button>
       </div>
     </div>
 
     <div class="tabs">
-      ${['news','script','meta','assets','publish'].map(t => {
-        const labels = {news:'📰 ニュース入力',script:'📝 台本',meta:'🎯 投稿情報',assets:'🖼 素材',publish:'📦 投稿'};
+      ${['news','script','meta','thumb','publish'].map(t => {
+        const labels = {news:'📰 ニュース入力',script:'📝 台本',meta:'🎯 概要・タイトル',thumb:'🖼 サムネ作成',publish:'📦 投稿'};
         return `<button class="tab ${currentTab===t?'active':''}" id="tab_${t}" onclick="switchTab('${t}')">${labels[t]}<span class="notif-dot"></span></button>`;
       }).join('')}
     </div>
@@ -800,7 +804,7 @@ function renderMain() {
     ${renderNewsPanel()}
     ${renderScriptPanel(char)}
     ${renderMetaPanel(char)}
-    ${renderAssetsPanel()}
+    ${renderThumbPanel()}
     ${renderPublishPanel()}
     ${renderSettingsPanel()}
   `;
@@ -820,7 +824,7 @@ function switchTab(tab) {
     } else {
       const el = document.getElementById('panelSettings');
       if (el) el.outerHTML = renderSettingsPanel();
-      ['news','script','meta','assets','publish','settings'].forEach(t => {
+      ['news','script','meta','thumb','publish','settings'].forEach(t => {
         const p = document.getElementById('panel' + t.charAt(0).toUpperCase() + t.slice(1));
         if (p) p.classList.toggle('active', t === 'settings');
       });
@@ -835,7 +839,7 @@ function switchTab(tab) {
       news:     () => { const el = document.getElementById('panelNews');     if (el) el.outerHTML = renderNewsPanel(); },
       script:   () => { const el = document.getElementById('panelScript');   if (el) el.outerHTML = renderScriptPanel(char); },
       meta:     () => { const el = document.getElementById('panelMeta');     if (el) el.outerHTML = renderMetaPanel(char); },
-      assets:   () => { loadDriveAssets(); },
+      thumb:    () => { const el = document.getElementById('panelThumb');    if (el) el.outerHTML = renderThumbPanel(); setTimeout(initThumbCanvas, 50); },
     };
     if (renders[tab]) renders[tab]();
   }
@@ -846,13 +850,14 @@ function switchTab(tab) {
 
   // タブボタンactive
   document.querySelectorAll('.tab').forEach(b => b.classList.toggle('active',
-    b.textContent.includes({news:'ニュース入力',script:'台本',meta:'投稿情報',assets:'素材',publish:'投稿'}[tab]||'__none__')
+    b.textContent.includes({news:'ニュース入力',script:'台本',meta:'概要',thumb:'サムネ',publish:'投稿'}[tab]||'__none__')
   ));
   // パネルactive
-  ['news','script','meta','assets','publish','settings'].forEach(t => {
+  ['news','script','meta','thumb','publish','settings'].forEach(t => {
     const el = document.getElementById('panel' + t.charAt(0).toUpperCase() + t.slice(1));
     if (el) el.classList.toggle('active', t === tab);
   });
+  if (tab === 'thumb') setTimeout(initThumbCanvas, 80);
 }
 
 // ════════════════════════════════════
@@ -1014,7 +1019,7 @@ ${char.ai_personality}
       document.querySelectorAll('.tab').forEach(b => b.classList.toggle('active',
         b.textContent.includes('台本')
       ));
-      ['news','script','meta','assets','publish','settings'].forEach(t => {
+      ['news','script','meta','thumb','publish','settings'].forEach(t => {
         const el = document.getElementById('panel' + t.charAt(0).toUpperCase() + t.slice(1));
         if (el) el.classList.toggle('active', t === 'script');
       });
@@ -1318,7 +1323,7 @@ ${strategy}
       document.querySelectorAll('.tab').forEach(b => b.classList.toggle('active',
         b.textContent.includes('投稿情報')
       ));
-      ['news','script','meta','assets','publish','settings'].forEach(t => {
+      ['news','script','meta','thumb','publish','settings'].forEach(t => {
         const el = document.getElementById('panel' + t.charAt(0).toUpperCase() + t.slice(1));
         if (el) el.classList.toggle('active', t === 'meta');
       });
@@ -1375,46 +1380,58 @@ function selectPlan(i, plan) {
 //  Script Panel
 // ════════════════════════════════════
 function renderScriptPanel(char) {
+  const scriptLines = generatedScript ? parseScript(generatedScript).lines : '';
   return `
   <div class="panel ${currentTab==='script'?'active':''}" id="panelScript">
-    <div class="card">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-        <div class="card-title" style="margin:0;">台本生成</div>
+
+    <!-- STEP 1: 台本を貼り付け（メイン） -->
+    <div class="card" style="border:1px solid var(--char-color,#c9a84c);background:linear-gradient(135deg,rgba(201,168,76,.08),transparent);">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+        <div style="font-size:.9rem;font-weight:700;color:var(--char-color);">📝 台本を貼り付け</div>
         <button class="btn btn-secondary btn-sm" onclick="switchTab('news')">← ニュース入力</button>
       </div>
-      ${selectedPlan ? `<div style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:10px 14px;margin-bottom:12px;font-size:.82rem;color:var(--text-muted);">選択中: <strong style="color:var(--text);">${selectedPlan.title}</strong></div>` : `<p style="font-size:.82rem;color:var(--text-muted);margin-bottom:12px;">企画タブで企画を選択してください</p>`}
-      ${generatedScript ? `
-      <div style="background:rgba(76,175,80,.08);border:1px solid #4caf50;border-radius:6px;padding:8px 12px;margin-bottom:10px;font-size:.78rem;color:#4caf50;">✅ 台本生成済み（一括生成より）</div>` : ''}
-      <details ${generatedScript ? '' : 'open'} style="margin-bottom:4px;">
-        <summary style="font-size:.78rem;color:var(--text-muted);cursor:pointer;padding:4px 0;">${generatedScript ? '🔄 台本を再生成する' : '台本を個別生成'}</summary>
-        <div class="form-row" style="margin-top:8px;">
-          <div style="flex:1;"><label>動画形式</label>
-            <select id="scriptFormat"><option value="horizontal">横動画（約3分）</option><option value="shorts">ショート（60秒以内）</option></select></div>
-          <div style="flex:1;"><label>追加指示（任意）</label>
-            <input type="text" id="scriptNote" placeholder="例: ギャグ多め"></div>
-          <button class="btn ${generatedScript ? 'btn-secondary' : 'btn-primary'}" style="margin-top:18px;" onclick="generateScript()" ${!selectedPlan?'disabled':''}>生成</button>
-        </div>
-      </details>
-      <div id="scriptLoading" class="loading" style="display:none;margin-top:10px;"><div class="spinner"></div><span>台本を執筆中...</span></div>
+      <p style="font-size:.78rem;color:var(--text-muted);margin-bottom:10px;">ChatGPT等で作った台本をそのまま貼り付けてください</p>
+      <textarea id="scriptPasteArea" placeholder="台本テキストをここに貼り付け…" style="width:100%;min-height:200px;padding:12px 14px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:.88rem;line-height:1.8;resize:vertical;font-family:'Noto Serif JP',serif;">${escHtml(scriptLines)}</textarea>
+      <div style="display:flex;gap:8px;margin-top:10px;">
+        <button class="btn btn-primary" style="flex:1;" onclick="applyPastedScript()">✅ この台本を使う</button>
+        <button class="btn btn-secondary btn-sm" onclick="copyScriptLines()">全コピー</button>
+      </div>
+      ${selectedPlan ? `<div style="margin-top:8px;font-size:.75rem;color:var(--text-muted);">📁 ${escHtml(selectedPlan.title||'')}</div>` : ''}
     </div>
-    ${generatedScript ? `
-    <div class="card">
-      <div class="card-title">📋 動画情報</div>
-      <div style="background:var(--surface2);border-radius:6px;padding:12px 14px;font-size:.82rem;line-height:1.8;white-space:pre-wrap;">${escHtml(parseScript(generatedScript).info)}</div>
-    </div>
-    <div class="card">
-      <div class="result-header">
-        <span class="card-title" style="margin:0;">🎤 セリフ（コピーしてそのまま使用）</span>
-        <div style="display:flex;gap:6px;flex-wrap:wrap;">
-          <button class="btn btn-secondary btn-sm" onclick="copyScriptLines()">全コピー</button>
-          <button class="btn btn-secondary btn-sm" onclick="generateVoicevox()" title="VOICEVOX（localhost:50021）で音声生成">🎙 音声生成</button>
-          <button class="btn btn-secondary btn-sm" onclick="switchTab('scene')">📽 絵コンテへ →</button>
-          <button class="btn btn-primary btn-sm" onclick="switchTab('meta')">投稿情報を生成 →</button>
+
+    <!-- STEP 2: AIで生成（オプション） -->
+    <details style="margin-bottom:0;" ${generatedScript ? '' : 'open'}>
+      <summary style="cursor:pointer;padding:10px 0;font-size:.82rem;color:var(--text-muted);list-style:none;display:flex;align-items:center;gap:6px;">
+        <span>▶</span> 🤖 AIで台本を自動生成（ニュース入力から）
+      </summary>
+      <div class="card" style="margin-top:8px;">
+        <div id="scriptLoading" class="loading" style="display:none;margin-top:4px;"><div class="spinner"></div><span>台本を執筆中...</span></div>
+        <div class="form-row" style="margin-top:4px;flex-wrap:wrap;gap:8px;">
+          <div style="flex:1;min-width:140px;"><label>動画形式</label>
+            <select id="scriptFormat" style="margin-top:4px;"><option value="horizontal">横動画（約1分）</option><option value="shorts">ショート（60秒以内）</option></select></div>
+          <div style="flex:2;min-width:200px;"><label>追加指示（任意）</label>
+            <input type="text" id="scriptNote" placeholder="例: やわらかめのトーン" style="margin-top:4px;"></div>
+          <button class="btn btn-primary" style="margin-top:20px;" onclick="generateScript()">生成</button>
         </div>
       </div>
-      <div style="background:var(--surface2);border:1px solid var(--accent);border-radius:6px;padding:14px;font-size:.9rem;line-height:2;white-space:pre-wrap;font-family:'Noto Serif JP',serif;">${escHtml(parseScript(generatedScript).lines)}</div>
-    </div>` : ''}
+    </details>
+
   </div>`;
+}
+
+function applyPastedScript() {
+  const area = document.getElementById('scriptPasteArea');
+  if (!area || !area.value.trim()) { showToast('台本を入力してください'); return; }
+  const lines = area.value.trim();
+  generatedScript = JSON.stringify({ info: '（貼り付け台本）', lines });
+  selectedPlan = selectedPlan || { title: '台本', description: '' };
+  saveCurrentEpisode();
+  showToast('✅ 台本を設定しました');
+  ['meta','thumb'].forEach(t => {
+    const el = document.getElementById('tab_' + t);
+    if (el) el.classList.add('has-notif');
+  });
+  setTimeout(() => switchTab('meta'), 400);
 }
 
 // 2026年横動画（3分）戦略フレームワーク（horizontal-strategy-2026.md より抽出）
@@ -1896,59 +1913,85 @@ async function convertToPng(blob) {
 //  Meta Panel
 // ════════════════════════════════════
 function renderMetaPanel(char) {
+  const hasGemini = !!localStorage.getItem(GEMINI_KEY_SK);
   return `
   <div class="panel ${currentTab==='meta'?'active':''}" id="panelMeta">
-    <div class="card">
+    <div class="card" style="border:1px solid var(--char-color,#c9a84c);background:linear-gradient(135deg,rgba(201,168,76,.08),transparent);">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-        <div class="card-title" style="margin:0;">投稿情報生成</div>
+        <div style="font-size:.9rem;font-weight:700;color:var(--char-color);">🎯 概要欄・SEOタイトル生成</div>
         <button class="btn btn-secondary btn-sm" onclick="switchTab('script')">← 台本に戻る</button>
       </div>
-      ${generatedMeta ? `
-      <div style="background:rgba(76,175,80,.08);border:1px solid #4caf50;border-radius:6px;padding:8px 12px;margin-bottom:10px;font-size:.78rem;color:#4caf50;">✅ 投稿情報生成済み（一括生成より）</div>
-      <button class="btn btn-secondary btn-sm" onclick="generateMeta()" ${!generatedScript?'disabled':''}>🔄 投稿情報を再生成</button>
-      ` : `
-      <button class="btn btn-primary" onclick="generateMeta()" ${!generatedScript?'disabled':''}>タイトル・概要欄・タグを生成</button>
-      ${!generatedScript?`<p style="font-size:.78rem;color:var(--text-muted);margin-top:8px;">先に台本を生成してください</p>`:''}
-      `}
-      <div id="metaLoading" class="loading" style="display:none;margin-top:10px;"><div class="spinner"></div><span>投稿情報を最適化中...</span></div>
+      <p style="font-size:.78rem;color:var(--text-muted);margin-bottom:14px;">台本をもとに Gemini がSEOタイトル・概要欄・タグを自動生成します</p>
+      ${!hasGemini ? `<div style="background:rgba(229,85,85,.1);border:1px solid #e55;border-radius:6px;padding:10px 14px;margin-bottom:12px;font-size:.78rem;color:#e55;">⚠️ Gemini APIキーが未設定です。設定タブで入力してください。<button class="btn btn-secondary btn-sm" style="margin-left:8px;" onclick="switchTab('settings')">設定へ</button></div>` : ''}
+      ${!generatedScript ? `<div style="background:rgba(229,85,85,.1);border:1px solid #e55;border-radius:6px;padding:10px 14px;margin-bottom:12px;font-size:.78rem;color:#e55;">⚠️ 先に台本タブで台本を設定してください</div>` : ''}
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="btn btn-primary" style="flex:1;" onclick="generateMetaWithGemini()" ${(!generatedScript||!hasGemini)?'disabled':''}>
+          ✨ Gemini で生成
+        </button>
+        ${generatedMeta ? `<button class="btn btn-secondary btn-sm" onclick="generateMetaWithGemini()">🔄 再生成</button>` : ''}
+      </div>
+      <div id="metaLoading" class="loading" style="display:none;margin-top:10px;"><div class="spinner"></div><span>Gemini が生成中...</span></div>
     </div>
     <div id="metaResultArea">${generatedMeta ? renderMetaResult(generatedMeta) : ''}</div>
   </div>`;
 }
 
-async function generateMeta() {
+async function generateMetaWithGemini() {
   const char = data.characters.find(c => c.id === currentCharId);
+  if (!char) { showToast('キャラクターが見つかりません'); return; }
+  const geminiKey = localStorage.getItem(GEMINI_KEY_SK);
+  if (!geminiKey) { showToast('設定タブでGemini APIキーを入力してください'); return; }
+  if (!generatedScript) { showToast('先に台本を設定してください'); return; }
+
+  const scriptLines = parseScript(generatedScript).lines;
   document.getElementById('metaLoading').style.display = 'flex';
-  aiStart('投稿情報を生成中...');
-  const prompt = `以下の台本を元にYouTube投稿情報と画像生成プロンプトを生成してください。
-キャラクター: ${char.name}（${char.species}）テーマ: ${char.theme} トーン: ${char.tone}
-台本（抜粋）: ${generatedScript.slice(0,800)}
+  aiStart('Gemini が概要欄を生成中...');
+
+  const prompt = `以下はYouTubeモーニングニュース動画の台本です。この台本をもとにSEO最適化されたYouTube投稿情報を生成してください。
+
+チャンネル: マネぼう塾（経済・株式・為替ニュースを初心者向けに解説）
+キャラクター: マネぼう🦉（ふくろうキャラ・毎朝の経済ニュース解説）
+
+## 台本
+${scriptLines.slice(0, 1200)}
 
 以下のJSONのみ出力（他テキスト不要）:
 {
-  "title": "YouTubeタイトル（40字以内・数字や感情語を含む）",
-  "title_alt": "代替タイトル案",
-  "description": "概要欄（3〜5段落。冒頭1行でフック、チャンネル説明、ハッシュタグ末尾）",
-  "tags": ["タグ1","タグ2","タグ3","タグ4","タグ5"],
-  "hashtags": ["#ハッシュタグ1","#ハッシュタグ2","#ハッシュタグ3"],
-  "best_post_time": "最適投稿日時（例: 土曜18時）",
-  "thumb_horizontal": "横サムネイル用画像生成プロンプト（英語・16:9・高コントラスト・タイトル文字映え・Midjourney形式 --ar 16:9）",
-  "thumb_shorts": "縦サムネイル用画像生成プロンプト（英語・9:16・スマホ全画面・インパクト重視・Midjourney形式 --ar 9:16）",
-  "thumb_text_horizontal": "横サムネイルに重ねるテキスト案（20字以内・インパクト重視）",
-  "thumb_text_shorts": "縦サムネイルに重ねるテキスト案（15字以内・縦読みOK）"
+  "title": "YouTubeタイトル（35字以内・今日の株価か注目ニュース・数字含む・SEO重視）",
+  "title_alt": "代替タイトル案（別角度・35字以内）",
+  "description": "概要欄テキスト（冒頭1行フック→今日の市場サマリー→主要ニュース箇条書き→チャンネル説明→ハッシュタグ 合計300〜400字）",
+  "tags": ["マネぼう","モーニングニュース","経済ニュース","株価","為替","投資初心者","日経平均","ニュース解説","マネー","資産運用"],
+  "hashtags": ["#マネぼう","#モーニングニュース","#経済ニュース","#株価","#投資初心者"],
+  "best_post_time": "最適投稿日時（例: 平日朝6:30〜7:00）",
+  "thumb_text_horizontal": "サムネ重ねテキスト（20字以内・今日の株価か注目ニュース・インパクト重視）"
 }`;
+
   try {
-    const text = await callClaude(prompt);
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+    });
+    if (!res.ok) throw new Error('Gemini API エラー: ' + res.status);
+    const json = await res.json();
+    const text = json.candidates?.[0]?.content?.parts?.[0]?.text || '';
     generatedMeta = JSON.parse(text.match(/\{[\s\S]*\}/)[0]);
     aiEnd('meta');
     document.getElementById('metaLoading').style.display = 'none';
     saveCurrentEpisode();
     document.getElementById('metaResultArea').innerHTML = renderMetaResult(generatedMeta);
+    showToast('✅ Gemini が概要欄・タイトルを生成しました');
+    const thumbTab = document.getElementById('tab_thumb');
+    if (thumbTab) thumbTab.classList.add('has-notif');
   } catch(e) {
     aiEnd(null);
     document.getElementById('metaLoading').style.display = 'none';
-    showToast('エラー: ' + e.message);
+    showToast('❌ Gemini エラー: ' + e.message);
   }
+}
+
+async function generateMeta() {
+  return generateMetaWithGemini();
 }
 
 function renderMetaResult(meta) {
@@ -2459,6 +2502,256 @@ function useAssetInScene(idx) {
     drawScene();
   };
   img.src = url;
+}
+
+// ════════════════════════════════════
+//  Thumb Panel（サムネ作成）
+// ════════════════════════════════════
+let thumbBgDataUrl  = '';
+let thumbRefDataUrl = '';
+let thumbCanvas, thumbCtx;
+
+function renderThumbPanel() {
+  const suggestedText = generatedMeta?.thumb_text_horizontal || '';
+  const today = new Date().toLocaleDateString('ja-JP', {month:'numeric',day:'numeric'});
+  return `
+  <div class="panel ${currentTab==='thumb'?'active':''}" id="panelThumb">
+
+    <div class="card" style="border:1px solid var(--char-color,#c9a84c);background:linear-gradient(135deg,rgba(201,168,76,.08),transparent);">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+        <div style="font-size:.9rem;font-weight:700;color:var(--char-color);">🖼 サムネイル作成</div>
+        <button class="btn btn-secondary btn-sm" onclick="switchTab('meta')">← 概要・タイトルへ</button>
+      </div>
+
+      <!-- 背景画像 -->
+      <div style="margin-bottom:14px;">
+        <label style="display:block;font-size:.78rem;color:var(--text-muted);margin-bottom:6px;font-weight:600;">① 背景画像（必須）</label>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <label for="thumbBgInput" class="btn btn-secondary btn-sm" style="cursor:pointer;">📁 画像を選択</label>
+          <input type="file" id="thumbBgInput" accept="image/*" style="display:none;" onchange="loadThumbBg(this)">
+          <span id="thumbBgName" style="font-size:.75rem;color:var(--text-muted);">${thumbBgDataUrl ? '✅ 画像読込済み' : '未選択'}</span>
+        </div>
+      </div>
+
+      <!-- テキスト設定 -->
+      <div style="margin-bottom:14px;">
+        <label style="display:block;font-size:.78rem;color:var(--text-muted);margin-bottom:6px;font-weight:600;">② 重ねるテキスト（メインタイトル）</label>
+        <input type="text" id="thumbMainText" value="${escHtml(suggestedText)}" placeholder="例: 日経38,500円突破！今日の注目ニュース" oninput="redrawThumb()">
+      </div>
+
+      <!-- サブテキスト（日付） -->
+      <div class="form-row" style="margin-bottom:14px;gap:12px;">
+        <div style="flex:1;">
+          <label style="display:block;font-size:.78rem;color:var(--text-muted);margin-bottom:6px;font-weight:600;">③ 日付テキスト</label>
+          <input type="text" id="thumbDateText" value="${today}" placeholder="例: 6/8" oninput="redrawThumb()">
+        </div>
+        <div style="flex:1;">
+          <label style="display:block;font-size:.78rem;color:var(--text-muted);margin-bottom:6px;font-weight:600;">テキストカラー</label>
+          <input type="color" id="thumbTextColor" value="#FFFFFF" oninput="redrawThumb()" style="height:36px;cursor:pointer;width:100%;">
+        </div>
+        <div style="flex:1;">
+          <label style="display:block;font-size:.78rem;color:var(--text-muted);margin-bottom:6px;font-weight:600;">影カラー</label>
+          <input type="color" id="thumbShadowColor" value="#000000" oninput="redrawThumb()" style="height:36px;cursor:pointer;width:100%;">
+        </div>
+      </div>
+
+      <!-- 参照画像（任意） -->
+      <div style="margin-bottom:14px;">
+        <label style="display:block;font-size:.78rem;color:var(--text-muted);margin-bottom:6px;font-weight:600;">④ 参照画像（任意・右下に小さく表示）</label>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+          <label for="thumbRefInput" class="btn btn-secondary btn-sm" style="cursor:pointer;">📁 参照画像を選択</label>
+          <input type="file" id="thumbRefInput" accept="image/*" style="display:none;" onchange="loadThumbRef(this)">
+          <span id="thumbRefName" style="font-size:.75rem;color:var(--text-muted);">${thumbRefDataUrl ? '✅ 読込済み' : '未選択（任意）'}</span>
+          ${thumbRefDataUrl ? `<button class="btn btn-secondary btn-sm" onclick="clearThumbRef()">✕ クリア</button>` : ''}
+        </div>
+      </div>
+
+      <button class="btn btn-primary" style="width:100%;padding:12px;" onclick="redrawThumb()">🔄 プレビュー更新</button>
+    </div>
+
+    <!-- キャンバスプレビュー -->
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <div style="font-size:.78rem;font-weight:600;color:var(--text-muted);">プレビュー（1280×720）</div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-secondary btn-sm" onclick="downloadThumbCanvas()">💾 PNG保存</button>
+          <button class="btn btn-primary btn-sm" onclick="saveThumbAndGoPublish()">✅ 保存して投稿へ →</button>
+        </div>
+      </div>
+      <canvas id="thumbCanvas" width="1280" height="720" style="width:100%;border-radius:6px;background:#1a1a1a;"></canvas>
+    </div>
+
+  </div>`;
+}
+
+function initThumbCanvas() {
+  thumbCanvas = document.getElementById('thumbCanvas');
+  if (!thumbCanvas) return;
+  thumbCtx = thumbCanvas.getContext('2d');
+  redrawThumb();
+}
+
+function loadThumbBg(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    thumbBgDataUrl = e.target.result;
+    const nameEl = document.getElementById('thumbBgName');
+    if (nameEl) nameEl.textContent = '✅ ' + file.name;
+    redrawThumb();
+  };
+  reader.readAsDataURL(file);
+}
+
+function loadThumbRef(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    thumbRefDataUrl = e.target.result;
+    const nameEl = document.getElementById('thumbRefName');
+    if (nameEl) nameEl.textContent = '✅ ' + file.name;
+    redrawThumb();
+  };
+  reader.readAsDataURL(file);
+}
+
+function clearThumbRef() {
+  thumbRefDataUrl = '';
+  const el = document.getElementById('panelThumb');
+  if (el) el.outerHTML = renderThumbPanel();
+  setTimeout(initThumbCanvas, 50);
+}
+
+function redrawThumb() {
+  if (!thumbCtx) { initThumbCanvas(); return; }
+  const W = 1280, H = 720;
+  const mainText  = document.getElementById('thumbMainText')?.value  || '';
+  const dateText  = document.getElementById('thumbDateText')?.value  || '';
+  const textColor = document.getElementById('thumbTextColor')?.value || '#FFFFFF';
+  const shadowCol = document.getElementById('thumbShadowColor')?.value || '#000000';
+
+  thumbCtx.clearRect(0, 0, W, H);
+
+  const draw = () => {
+    // 背景
+    if (thumbBgDataUrl) {
+      const img = new Image();
+      img.onload = () => {
+        thumbCtx.drawImage(img, 0, 0, W, H);
+        drawOverlay();
+      };
+      img.src = thumbBgDataUrl;
+    } else {
+      // デフォルト背景（グラデーション）
+      const grad = thumbCtx.createLinearGradient(0, 0, W, H);
+      grad.addColorStop(0, '#0d1a2e');
+      grad.addColorStop(1, '#1a2e45');
+      thumbCtx.fillStyle = grad;
+      thumbCtx.fillRect(0, 0, W, H);
+      drawOverlay();
+    }
+  };
+
+  const drawOverlay = () => {
+    // 下部グラデーション幕（テキスト可読性向上）
+    const grad2 = thumbCtx.createLinearGradient(0, H * 0.45, 0, H);
+    grad2.addColorStop(0, 'rgba(0,0,0,0)');
+    grad2.addColorStop(1, 'rgba(0,0,0,0.82)');
+    thumbCtx.fillStyle = grad2;
+    thumbCtx.fillRect(0, 0, W, H);
+
+    // 日付ラベル（左上）
+    if (dateText) {
+      thumbCtx.save();
+      thumbCtx.font = 'bold 44px "Noto Sans JP", sans-serif';
+      thumbCtx.shadowColor = shadowCol;
+      thumbCtx.shadowBlur = 12;
+      thumbCtx.fillStyle = '#F5C842';
+      thumbCtx.fillText(dateText, 52, 80);
+      thumbCtx.restore();
+    }
+
+    // マネぼうロゴ風バッジ（左上）
+    thumbCtx.save();
+    thumbCtx.font = 'bold 26px sans-serif';
+    thumbCtx.fillStyle = 'rgba(245,200,66,0.9)';
+    thumbCtx.fillText('🦉 マネぼうモーニングニュース', 48, 130);
+    thumbCtx.restore();
+
+    // メインタイトルテキスト（中央下部）
+    if (mainText) {
+      thumbCtx.save();
+      thumbCtx.shadowColor = shadowCol;
+      thumbCtx.shadowBlur = 20;
+      thumbCtx.fillStyle = textColor;
+      // 折り返し処理
+      const maxW = W - 100;
+      const fontSize = mainText.length > 18 ? 68 : 82;
+      thumbCtx.font = `bold ${fontSize}px "Noto Sans JP", "Hiragino Kaku Gothic ProN", sans-serif`;
+      wrapText(thumbCtx, mainText, 50, H - 140, maxW, fontSize * 1.2);
+      thumbCtx.restore();
+    }
+
+    // 参照画像（右下）
+    if (thumbRefDataUrl) {
+      const refImg = new Image();
+      refImg.onload = () => {
+        const rw = 240, rh = 160;
+        const rx = W - rw - 36, ry = H - rh - 36;
+        thumbCtx.save();
+        thumbCtx.shadowColor = 'rgba(0,0,0,0.6)';
+        thumbCtx.shadowBlur = 16;
+        thumbCtx.beginPath();
+        thumbCtx.roundRect(rx, ry, rw, rh, 12);
+        thumbCtx.clip();
+        thumbCtx.drawImage(refImg, rx, ry, rw, rh);
+        thumbCtx.restore();
+      };
+      refImg.src = thumbRefDataUrl;
+    }
+  };
+
+  draw();
+}
+
+function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
+  const chars = [...text];
+  let line = '';
+  let lineY = y;
+  for (let i = 0; i < chars.length; i++) {
+    const test = line + chars[i];
+    if (ctx.measureText(test).width > maxWidth && line) {
+      ctx.fillText(line, x, lineY);
+      line = chars[i];
+      lineY += lineHeight;
+    } else {
+      line = test;
+    }
+  }
+  if (line) ctx.fillText(line, x, lineY);
+}
+
+function downloadThumbCanvas() {
+  if (!thumbCanvas) { showToast('サムネイルを先に作成してください'); return; }
+  const link = document.createElement('a');
+  link.download = 'thumbnail_' + new Date().toISOString().slice(0,10) + '.png';
+  link.href = thumbCanvas.toDataURL('image/png');
+  link.click();
+  showToast('💾 サムネイルをダウンロードしました');
+}
+
+function saveThumbAndGoPublish() {
+  if (!thumbCanvas) { showToast('サムネイルを先に作成してください'); return; }
+  const dataUrl = thumbCanvas.toDataURL('image/png');
+  // エピソードに保存
+  if (currentEpisodeId) {
+    const ep = (data.episodes || []).find(e => e.id === currentEpisodeId);
+    if (ep) { ep.thumbnailDataUrl = dataUrl; saveData(data); }
+  }
+  showToast('✅ サムネイルを保存しました');
+  setTimeout(() => switchTab('publish'), 400);
 }
 
 // ════════════════════════════════════
@@ -3686,6 +3979,36 @@ function importData() {
   input.click();
 }
 function handleOAuthCallback(e) { /* handled via location.hash above */ }
+
+// ── サイドバー開閉 ──
+function toggleSidebar() {
+  const aside = document.querySelector('aside');
+  if (!aside) return;
+  const isMobile = window.innerWidth <= 768;
+  if (isMobile) {
+    aside.classList.toggle('open');
+  } else {
+    aside.classList.toggle('closed');
+  }
+}
+
+// ── roundRect polyfill ──
+if (!CanvasRenderingContext2D.prototype.roundRect) {
+  CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) {
+    r = Math.min(r, Math.min(w, h) / 2);
+    this.beginPath();
+    this.moveTo(x + r, y);
+    this.lineTo(x + w - r, y);
+    this.arcTo(x + w, y, x + w, y + r, r);
+    this.lineTo(x + w, y + h - r);
+    this.arcTo(x + w, y + h, x + w - r, y + h, r);
+    this.lineTo(x + r, y + h);
+    this.arcTo(x, y + h, x, y + h - r, r);
+    this.lineTo(x, y + r);
+    this.arcTo(x, y, x + r, y, r);
+    this.closePath();
+  };
+}
 
 // ── 起動 ──
 loadStoryboard();
