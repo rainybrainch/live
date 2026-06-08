@@ -451,7 +451,7 @@ function defaultData() {
     characters: [{
       id: 'manebou_news', name: 'マネぼうモーニングニュース', species: 'RB（経済解説）',
       theme: '経済・株式・為替・マネーニュース', tone: '明るく・わかりやすく・テンポよく',
-      color: '#F5C842', channel_id: 'UCQNWDJh_KoFMFVz5QRU3k6Q',
+      color: '#F5C842', channel_id: 'UCQNWDJh_KoFMFVz5QRU3k6Q', yt_handle: '@Rainy_Brain_22',
       ai_personality: 'マネぼう塾のふくろうキャラ。毎朝の経済ニュースを初心者にもわかりやすく1分で解説する。明るくテンポよく、専門用語を噛み砕いて伝える。視聴者を「みなさん」と呼ぶ。',
       icon: '🦉', avatar_url: 'ms-icon.png', drive_folder_id: '',
       gpt_url: 'https://chatgpt.com/g/g-6a26338c271881918e9ea284f3cafe14-manehou-moninkuniyusu',
@@ -470,7 +470,7 @@ function loadData() {
       saved.characters.unshift({
         id: 'manebou_news', name: 'マネぼうモーニングニュース', species: 'RB（経済解説）',
         theme: '経済・株式・為替・マネーニュース', tone: '明るく・わかりやすく・テンポよく',
-        color: '#F5C842', channel_id: 'UCQNWDJh_KoFMFVz5QRU3k6Q',
+        color: '#F5C842', channel_id: 'UCQNWDJh_KoFMFVz5QRU3k6Q', yt_handle: '@Rainy_Brain_22',
         ai_personality: 'マネぼう塾のふくろうキャラ。毎朝の経済ニュースを初心者にもわかりやすく1分で解説する。明るくテンポよく、専門用語を噛み砕いて伝える。視聴者を「みなさん」と呼ぶ。',
         icon: '🦉', avatar_url: 'ms-icon.png', drive_folder_id: '',
         gpt_url: 'https://chatgpt.com/g/g-6a26338c271881918e9ea284f3cafe14-manehou-moninkuniyusu',
@@ -484,6 +484,7 @@ function loadData() {
       let changed = false;
       if (!mn.avatar_url || mn.avatar_url === 'rb-icon.png') { mn.avatar_url = 'ms-icon.png'; changed = true; }
       if (mn.species === 'ふくろう（経済解説）') { mn.species = 'RB（経済解説）'; changed = true; }
+      if (!mn.yt_handle) { mn.yt_handle = '@Rainy_Brain_22'; changed = true; }
       if (changed) saveData(saved);
     }
     return saved;
@@ -924,7 +925,9 @@ function renderMain() {
         <p>${char.species} ／ ${char.tone}</p>
         <div class="char-header-badges">
           <span class="badge">${char.theme}</span>
-          ${char.channel_id?`<span class="badge">CH: ${char.channel_id}</span>`:''}
+          ${char.yt_handle
+            ? `<a class="badge" href="https://www.youtube.com/${char.yt_handle}" target="_blank" rel="noopener" style="text-decoration:none;">▶️ ${char.yt_handle}</a>`
+            : char.channel_id ? `<span class="badge">CH: ${char.channel_id}</span>` : ''}
         </div>
       </div>
       <div style="margin-left:auto;display:flex;gap:6px;align-items:center;flex-shrink:0;">
@@ -3447,12 +3450,12 @@ function renderPublishPanel() {
           <input type="text" id="ytVideoId" placeholder="動画ID（例: dQw4w9WgXcQ）" style="flex:1;">
           <button class="btn btn-primary btn-sm" onclick="applyMetaToYouTube()">メタデータを適用</button>
         </div>
-        <a href="https://studio.youtube.com/channel/UCQNWDJh_KoFMFVz5QRU3k6Q/videos/upload" target="_blank" class="btn btn-secondary" style="display:block;text-align:center;text-decoration:none;padding:11px;">▶️ YouTube Studio でアップロード</a>
+        <a href="https://studio.youtube.com/channel/UCQNWDJh_KoFMFVz5QRU3k6Q/videos/upload?filter=%5B%5D&sort=%7B%22columnType%22%3A%22date%22%2C%22sortOrder%22%3A%22DESCENDING%22%7D" target="_blank" class="btn btn-secondary" style="display:block;text-align:center;text-decoration:none;padding:11px;">▶️ YouTube Studio でアップロード</a>
       ` : `
         <p style="font-size:.78rem;color:var(--text-muted);margin-bottom:12px;">YouTube認証後、タイトル・概要欄・タグ・サムネイルを自動適用できます。</p>
         <button class="btn btn-primary" style="width:100%;" onclick="ytAuth()">📺 YouTube 認証（Google OAuth）</button>
         <p style="font-size:.71rem;color:var(--text-muted);margin-top:8px;">認証が不要な場合: YouTube Studioを開いて情報を手動で貼り付けることもできます。</p>
-        <a href="https://studio.youtube.com/channel/UCQNWDJh_KoFMFVz5QRU3k6Q/videos/upload" target="_blank" class="btn btn-secondary" style="display:block;text-align:center;text-decoration:none;padding:10px;margin-top:8px;">▶️ YouTube Studio を開く</a>
+        <a href="https://studio.youtube.com/channel/UCQNWDJh_KoFMFVz5QRU3k6Q/videos/upload?filter=%5B%5D&sort=%7B%22columnType%22%3A%22date%22%2C%22sortOrder%22%3A%22DESCENDING%22%7D" target="_blank" class="btn btn-secondary" style="display:block;text-align:center;text-decoration:none;padding:10px;margin-top:8px;">▶️ YouTube Studio を開く</a>
       `}
     </div>
 
