@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>MS — Morning news Studio</title>
-<link rel="icon" href="rb-icon.png" type="image/png">
+<link rel="icon" href="ms-icon.png" type="image/png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
@@ -304,7 +304,7 @@
 
 <header>
   <button id="sidebarToggle" onclick="toggleSidebar()" title="サイドバー開閉">☰</button>
-  <img src="rb-icon.png" alt="RB" style="width:32px;height:32px;border-radius:7px;flex-shrink:0;">
+  <img src="ms-icon.png" alt="MS" style="width:32px;height:32px;border-radius:7px;flex-shrink:0;">
   <h1>MS <span class="sub">Morning news Studio</span></h1>
   <span id="headerSub" style="font-size:.78rem;color:var(--text-muted);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
   <span id="syncStatus" style="margin-left:auto;font-size:.72rem;color:var(--text-muted);white-space:nowrap;flex-shrink:0;">Drive未接続</span>
@@ -316,8 +316,8 @@
   <div id="sidebarOverlay" onclick="toggleSidebar()"></div>
   <aside>
     <div style="padding:14px 14px 10px;display:flex;align-items:center;gap:8px;border-bottom:1px solid rgba(255,255,255,.08);">
-      <img src="rb-icon.png" alt="RB" style="width:28px;height:28px;border-radius:6px;flex-shrink:0;">
-      <div style="font-size:.7rem;font-weight:700;color:var(--accent);letter-spacing:.06em;line-height:1.3;">RAINY<br>BRAINCH</div>
+      <img src="ms-icon.png" alt="MS" style="width:28px;height:28px;border-radius:6px;flex-shrink:0;">
+      <div style="font-size:.7rem;font-weight:700;color:var(--accent);letter-spacing:.06em;line-height:1.3;">MORNING<br>NEWS</div>
     </div>
     <div id="charList" style="display:none"></div>
     <div class="sidebar-title" id="epSidebarTitle" style="margin-top:8px;">動画プロジェクト</div>
@@ -438,7 +438,7 @@ function defaultData() {
       theme: '経済・株式・為替・マネーニュース', tone: '明るく・わかりやすく・テンポよく',
       color: '#F5C842', channel_id: 'UCQNWDJh_KoFMFVz5QRU3k6Q',
       ai_personality: 'マネぼう塾のふくろうキャラ。毎朝の経済ニュースを初心者にもわかりやすく1分で解説する。明るくテンポよく、専門用語を噛み砕いて伝える。視聴者を「みなさん」と呼ぶ。',
-      icon: '🦉', avatar_url: '', drive_folder_id: '',
+      icon: '🦉', avatar_url: 'ms-icon.png', drive_folder_id: '',
       gpt_url: 'https://chatgpt.com/g/g-6a26338c271881918e9ea284f3cafe14-manehou-moninkuniyusu',
       gem_url: ''
     }],
@@ -457,12 +457,15 @@ function loadData() {
         theme: '経済・株式・為替・マネーニュース', tone: '明るく・わかりやすく・テンポよく',
         color: '#F5C842', channel_id: 'UCQNWDJh_KoFMFVz5QRU3k6Q',
         ai_personality: 'マネぼう塾のふくろうキャラ。毎朝の経済ニュースを初心者にもわかりやすく1分で解説する。明るくテンポよく、専門用語を噛み砕いて伝える。視聴者を「みなさん」と呼ぶ。',
-        icon: '🦉', avatar_url: '', drive_folder_id: '',
+        icon: '🦉', avatar_url: 'ms-icon.png', drive_folder_id: '',
         gpt_url: 'https://chatgpt.com/g/g-6a26338c271881918e9ea284f3cafe14-manehou-moninkuniyusu',
         gem_url: ''
       });
       saveData(saved);
     }
+    // 既存manebou_newsにavatar_urlが未設定なら更新
+    const mn = saved.characters.find(c => c.id === 'manebou_news');
+    if (mn && !mn.avatar_url) { mn.avatar_url = 'rb-icon.png'; saveData(saved); }
     return saved;
   } catch { return defaultData(); }
 }
@@ -981,59 +984,164 @@ function renderNewsPanel() {
   const today = new Date().toISOString().slice(0,10);
   return `
   <div class="panel ${currentTab==='news'?'active':''}" id="panelNews">
-    <div class="card" style="border:1px solid var(--char-color,#c9a84c);background:linear-gradient(135deg,rgba(201,168,76,.08),transparent);">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
-        <div class="card-title" style="margin:0;">📰 モーニングニュース入力</div>
-        ${currentEpisodeId ? `<span style="font-size:.72rem;color:var(--text-muted);">📁 ${escHtml((data.episodes||[]).find(e=>e.id===currentEpisodeId)?.title||'')}</span>` : `<button class="btn btn-secondary btn-sm" onclick="newEpisode()">＋ 新規動画を開始</button>`}
+    <div class="card" style="border:1px solid var(--border-accent);background:linear-gradient(135deg,rgba(212,168,67,.06),transparent);">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+        <div class="card-title" style="margin:0;">📋 ChatGPT出力を貼り付け</div>
+        ${currentEpisodeId ? `<span style="font-size:.72rem;color:var(--text-muted);">📁 ${escHtml((data.episodes||[]).find(e=>e.id===currentEpisodeId)?.title||'')}</span>` : `<button class="btn btn-secondary btn-sm" onclick="newEpisode()">＋ 新規動画</button>`}
       </div>
 
-      <div class="form-row" style="margin-bottom:14px;">
-        <div style="flex:1;">
-          <label>放送日 <span style="color:#e55;">*</span></label>
-          <input type="date" id="newsDate" value="${today}" style="margin-top:4px;">
-        </div>
-        <div style="flex:2;">
-          <label>日経平均（終値・前日比）</label>
-          <input type="text" id="nikkei" placeholder="例: 38,500円 (+350 / +0.9%)" style="margin-top:4px;">
-        </div>
+      <div style="margin-bottom:10px;">
+        <label style="display:block;margin-bottom:8px;font-size:.78rem;color:var(--text-muted);font-weight:600;letter-spacing:.04em;">
+          要約・台本・サムネ文言案・投稿文を含むテキストをそのまま貼り付け
+        </label>
+        <textarea id="pasteAll" rows="14"
+          placeholder="【貼り付け例】
+要約（3行）
+・米国株急落の主因は…
+・ハイテク株が…
+・ただ「景気が強い…
+
+⸻
+
+1分ショート台本（話者：ふくろう）
+おはようございます！…
+
+⸻
+
+サムネ文言案（3つ）
+1.「雇用が良すぎて株が下がる!?」
+2.「利上げ不安でNASDAQ急落」
+3.「日経先物 -2500円…朝の見方」
+
+⸻
+
+投稿文（必要なら）
+おはようございます☀️…#経済ニュース"
+          style="width:100%;padding:14px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:.86rem;line-height:1.7;resize:vertical;font-family:inherit;"></textarea>
       </div>
 
-      <div class="form-row" style="margin-bottom:14px;">
-        <div style="flex:1;">
-          <label>NYダウ</label>
-          <input type="text" id="nyse" placeholder="例: 42,000 (+150)" style="margin-top:4px;">
-        </div>
-        <div style="flex:1;">
-          <label>NASDAQ</label>
-          <input type="text" id="nasdaq" placeholder="例: 18,500 (+80)" style="margin-top:4px;">
-        </div>
-        <div style="flex:1;">
-          <label>為替 USD/JPY</label>
-          <input type="text" id="forex" placeholder="例: 155.30円" style="margin-top:4px;">
-        </div>
+      <div style="margin-bottom:18px;">
+        <label style="display:block;margin-bottom:6px;font-size:.78rem;color:var(--text-muted);">放送日</label>
+        <input type="date" id="newsDate" value="${today}" style="width:180px;">
       </div>
 
-      <div style="margin-bottom:16px;">
-        <label style="display:block;margin-bottom:6px;font-size:.78rem;color:var(--text-muted);font-weight:600;">主要ニュース（1行1件）<span style="color:#e55;"> *</span></label>
-        <textarea id="newsItems" placeholder="・米国FRBが0.25%利下げを発表&#10;・トヨタ、EV戦略を大幅修正&#10;・原油価格が3%上昇" style="width:100%;min-height:120px;padding:12px 14px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:.88rem;line-height:1.7;resize:vertical;font-family:inherit;"></textarea>
-      </div>
+      <button class="btn btn-primary" style="width:100%;padding:14px;font-size:1rem;font-weight:700;letter-spacing:.04em;" onclick="parseAndSetAll()">
+        🔍 全部読み取ってセット → 台本タブへ
+      </button>
 
-      <div style="margin-bottom:20px;">
-        <label style="display:block;margin-bottom:6px;font-size:.78rem;color:var(--text-muted);">補足・追加指示（任意）</label>
-        <input type="text" id="newsNote" placeholder="例: 視聴者は投資初心者が多い、円安に特にフォーカスして" style="width:100%;padding:10px 14px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);">
-      </div>
-
-      <button class="btn btn-primary" style="width:100%;padding:14px;font-size:1rem;font-weight:700;" onclick="generateNews()">🦉 一括生成（台本 + 投稿情報 + サムネ案）</button>
-
-      <div id="newsGenProgress" style="display:none;margin-top:14px;">
-        <div style="display:flex;flex-direction:column;gap:8px;font-size:.84rem;">
-          <div id="newsStep1" style="color:var(--text-muted);">⬜ Claude が台本・投稿情報を生成中...</div>
-          <div id="newsStep2" style="color:var(--text-muted);">⬜ 完了</div>
+      <details style="margin-top:20px;">
+        <summary style="cursor:pointer;font-size:.78rem;color:var(--text-muted);padding:8px 0;border-top:1px solid var(--border);user-select:none;">
+          ▸ AI生成モード（情報を個別入力して台本生成）
+        </summary>
+        <div style="padding-top:14px;">
+          <div class="form-row" style="margin-bottom:12px;">
+            <div style="flex:1;min-width:120px;">
+              <label>日経平均</label>
+              <input type="text" id="nikkei" placeholder="38,500円 (+350)" style="margin-top:4px;">
+            </div>
+            <div style="flex:1;min-width:100px;">
+              <label>NYダウ</label>
+              <input type="text" id="nyse" placeholder="42,000 (+150)" style="margin-top:4px;">
+            </div>
+            <div style="flex:1;min-width:100px;">
+              <label>NASDAQ</label>
+              <input type="text" id="nasdaq" placeholder="18,500 (+80)" style="margin-top:4px;">
+            </div>
+            <div style="flex:1;min-width:100px;">
+              <label>USD/JPY</label>
+              <input type="text" id="forex" placeholder="155.30円" style="margin-top:4px;">
+            </div>
+          </div>
+          <div style="margin-bottom:12px;">
+            <label style="display:block;margin-bottom:6px;font-size:.78rem;color:var(--text-muted);">主要ニュース（1行1件）</label>
+            <textarea id="newsItems" rows="5" placeholder="・米国FRBが利下げを発表&#10;・トヨタ、EV戦略を修正" style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:.86rem;resize:vertical;font-family:inherit;"></textarea>
+          </div>
+          <div style="margin-bottom:14px;">
+            <label style="display:block;margin-bottom:6px;font-size:.78rem;color:var(--text-muted);">補足・追加指示</label>
+            <input type="text" id="newsNote" placeholder="例: 円安に特にフォーカスして" style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);">
+          </div>
+          <button class="btn btn-secondary" style="width:100%;padding:12px;font-weight:700;" onclick="generateNews()">🦉 AI一括生成（台本 + 投稿情報 + サムネ案）</button>
+          <div id="newsGenProgress" style="display:none;margin-top:12px;">
+            <div style="font-size:.84rem;color:var(--text-muted);" id="newsStep1">⬜ 生成中...</div>
+            <div style="font-size:.84rem;color:var(--text-muted);" id="newsStep2"></div>
+          </div>
         </div>
-      </div>
+      </details>
     </div>
     <div id="planResults" class="plan-grid"></div>
   </div>`;
+}
+
+function parseAndSetAll() {
+  const text = (document.getElementById('pasteAll')?.value || '').trim();
+  if (!text) { showToast('テキストを貼り付けてください'); return; }
+
+  // ⸻ または --- などで区切る
+  const sections = text.split(/\n[⸻─—\-]{2,}\n/).map(s => s.trim()).filter(Boolean);
+
+  let summary = '', script = '', thumbTexts = [], postText = '';
+
+  for (const sec of sections) {
+    const lines = sec.split('\n');
+    const hdr = lines[0].trim();
+    const body = lines.slice(1).join('\n').trim();
+
+    if (/要約/.test(hdr)) {
+      summary = body;
+    } else if (/台本/.test(hdr)) {
+      script = body;
+    } else if (/サムネ/.test(hdr)) {
+      thumbTexts = body.split('\n')
+        .filter(l => /^\d+[\.\．]/.test(l.trim()))
+        .map(l => l.replace(/^\d+[\.\．]\s*[「『]?/, '').replace(/[」』]?\s*$/, '').trim())
+        .filter(Boolean);
+    } else if (/投稿/.test(hdr)) {
+      postText = body;
+    }
+  }
+
+  // 台本をgeneratedScriptにセット
+  if (script) {
+    generatedScript = JSON.stringify({ lines: script, source: 'paste' });
+  }
+
+  // メタ情報をgeneratedMetaにセット
+  generatedMeta = generatedMeta || {};
+  if (thumbTexts.length > 0) {
+    generatedMeta.title = thumbTexts[0];
+    generatedMeta.thumb_text_horizontal = thumbTexts[0];
+    generatedMeta.thumb_texts = thumbTexts;
+  }
+  const descParts = [];
+  if (summary) descParts.push(summary);
+  if (postText) descParts.push(postText);
+  if (descParts.length) generatedMeta.description = descParts.join('\n\n');
+
+  // サムネ文言案をグローバルに保持
+  window._parsedThumbTexts = thumbTexts;
+
+  // 放送日から動画タイトルを設定
+  const newsDate = document.getElementById('newsDate')?.value || new Date().toISOString().slice(0,10);
+  if (!currentEpisodeId) {
+    const ep = { id: 't_' + Date.now(), title: `${newsDate} モーニングニュース`, date: newsDate, charId: currentCharId, createdAt: new Date().toISOString() };
+    data.episodes = [ep, ...(data.episodes || [])];
+    currentEpisodeId = ep.id;
+    saveData(data);
+  }
+
+  // タブに通知マーク
+  ['script','meta','thumb'].forEach(t => {
+    const el = document.getElementById('tab_' + t);
+    if (el && !el.querySelector('.notif-dot')) {
+      const dot = document.createElement('span');
+      dot.className = 'notif-dot';
+      dot.style.cssText = 'display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--accent);margin-left:5px;vertical-align:middle;';
+      el.appendChild(dot);
+    }
+  });
+
+  showToast('✅ セット完了 — 台本タブを確認してください');
+  setTimeout(() => switchTab('script'), 350);
 }
 
 async function generateNews() {
