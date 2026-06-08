@@ -401,6 +401,8 @@ const GD_CLIENT_SK  = 'channelos_gd_client_id';
 const GD_FOLDER_SK  = 'channelos_gd_folder_id';
 const YT_TOKEN_SK   = 'channelos_yt_token';
 const GEMINI_KEY_SK    = 'channelos_gemini_api_key';
+const DEFAULT_GEMINI_KEY = 'AIzaSyB2m8LX6sTrjQnWMfTmsk-F4RbV6YlOmi8';
+const getGeminiKey = () => localStorage.getItem(GEMINI_KEY_SK) || DEFAULT_GEMINI_KEY;
 const STABILITY_KEY_SK = 'channelos_stability_api_key';
 const SA_JSON_SK    = 'channelos_sa_json';
 const SA_TOKEN_SK   = 'channelos_sa_token';
@@ -2124,7 +2126,7 @@ async function convertToPng(blob) {
 //  Meta Panel
 // ════════════════════════════════════
 function renderMetaPanel(char) {
-  const hasGemini = !!localStorage.getItem(GEMINI_KEY_SK);
+  const hasGemini = !!getGeminiKey();
   return `
   <div class="panel ${currentTab==='meta'?'active':''}" id="panelMeta">
     <div class="card" style="border:1px solid var(--char-color,#c9a84c);background:linear-gradient(135deg,rgba(201,168,76,.08),transparent);">
@@ -2150,7 +2152,7 @@ function renderMetaPanel(char) {
 async function generateMetaWithGemini() {
   const char = data.characters.find(c => c.id === currentCharId);
   if (!char) { showToast('キャラクターが見つかりません'); return; }
-  const geminiKey = localStorage.getItem(GEMINI_KEY_SK);
+  const geminiKey = getGeminiKey();
   if (!geminiKey) { showToast('設定タブでGemini APIキーを入力してください'); return; }
   if (!generatedScript) { showToast('先に台本を設定してください'); return; }
 
@@ -3183,7 +3185,7 @@ JSONのみ出力: [{"date":"YYYY-MM-DD","episode":1,"format":"horizontal|shorts"
 function renderSettingsPanel() {
   const ytToken = !!getYtToken(currentCharId);
   const hasClaudeKey  = !!localStorage.getItem(API_KEY_SK);
-  const hasGeminiKey  = !!localStorage.getItem(GEMINI_KEY_SK);
+  const hasGeminiKey  = true; // デフォルトキー設定済み
   const keyStatus = (ok) => ok
     ? `<span style="font-size:.74rem;color:#4caf50;">✅ 設定済み</span>`
     : `<span style="font-size:.74rem;color:#e55;">未設定</span>`;
@@ -3755,7 +3757,7 @@ async function callClaude(prompt) {
 //  Gemini Image Generation
 // ════════════════════════════════════
 async function generateGeminiImage(prompt) {
-  const key = localStorage.getItem(GEMINI_KEY_SK);
+  const key = getGeminiKey();
   if (!key) throw new Error('Gemini APIキーを設定してください（設定タブ）');
   const res = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-preview-image-generation:generateContent?key=${key}`,
