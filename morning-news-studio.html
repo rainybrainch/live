@@ -434,7 +434,7 @@ function aiEnd(notifTab) {
 function defaultData() {
   return {
     characters: [{
-      id: 'manebou_news', name: 'マネぼうモーニングニュース', species: 'ふくろう（経済解説）',
+      id: 'manebou_news', name: 'マネぼうモーニングニュース', species: 'RB（経済解説）',
       theme: '経済・株式・為替・マネーニュース', tone: '明るく・わかりやすく・テンポよく',
       color: '#F5C842', channel_id: 'UCQNWDJh_KoFMFVz5QRU3k6Q',
       ai_personality: 'マネぼう塾のふくろうキャラ。毎朝の経済ニュースを初心者にもわかりやすく1分で解説する。明るくテンポよく、専門用語を噛み砕いて伝える。視聴者を「みなさん」と呼ぶ。',
@@ -453,7 +453,7 @@ function loadData() {
     // manebou_newsキャラが存在しない場合は自動追加
     if (!saved.characters.find(c => c.id === 'manebou_news')) {
       saved.characters.unshift({
-        id: 'manebou_news', name: 'マネぼうモーニングニュース', species: 'ふくろう（経済解説）',
+        id: 'manebou_news', name: 'マネぼうモーニングニュース', species: 'RB（経済解説）',
         theme: '経済・株式・為替・マネーニュース', tone: '明るく・わかりやすく・テンポよく',
         color: '#F5C842', channel_id: 'UCQNWDJh_KoFMFVz5QRU3k6Q',
         ai_personality: 'マネぼう塾のふくろうキャラ。毎朝の経済ニュースを初心者にもわかりやすく1分で解説する。明るくテンポよく、専門用語を噛み砕いて伝える。視聴者を「みなさん」と呼ぶ。',
@@ -463,9 +463,14 @@ function loadData() {
       });
       saveData(saved);
     }
-    // 既存manebou_newsにavatar_urlが未設定なら更新
+    // 既存manebou_newsのフィールドをマイグレーション
     const mn = saved.characters.find(c => c.id === 'manebou_news');
-    if (mn && !mn.avatar_url) { mn.avatar_url = 'rb-icon.png'; saveData(saved); }
+    if (mn) {
+      let changed = false;
+      if (!mn.avatar_url || mn.avatar_url === 'rb-icon.png') { mn.avatar_url = 'ms-icon.png'; changed = true; }
+      if (mn.species === 'ふくろう（経済解説）') { mn.species = 'RB（経済解説）'; changed = true; }
+      if (changed) saveData(saved);
+    }
     return saved;
   } catch { return defaultData(); }
 }
@@ -912,8 +917,8 @@ function renderMain() {
     </div>
 
     <div class="tabs">
-      ${['news','script','meta','thumb','publish'].map(t => {
-        const labels = {news:'📰 ニュース入力',script:'📝 台本',meta:'🎯 概要・タイトル',thumb:'🖼 サムネ作成',publish:'📦 投稿'};
+      ${['news','meta','thumb','publish'].map(t => {
+        const labels = {news:'📰 ニュース入力',meta:'🎯 概要・タイトル',thumb:'🖼 サムネ作成',publish:'📦 投稿'};
         return `<button class="tab ${currentTab===t?'active':''}" id="tab_${t}" onclick="switchTab('${t}')">${labels[t]}<span class="notif-dot"></span></button>`;
       }).join('')}
     </div>
@@ -990,44 +995,36 @@ function renderNewsPanel() {
         ${currentEpisodeId ? `<span style="font-size:.72rem;color:var(--text-muted);">📁 ${escHtml((data.episodes||[]).find(e=>e.id===currentEpisodeId)?.title||'')}</span>` : `<button class="btn btn-secondary btn-sm" onclick="newEpisode()">＋ 新規動画</button>`}
       </div>
 
-      <div style="margin-bottom:10px;">
-        <label style="display:block;margin-bottom:8px;font-size:.78rem;color:var(--text-muted);font-weight:600;letter-spacing:.04em;">
-          要約・台本・サムネ文言案・投稿文を含むテキストをそのまま貼り付け
-        </label>
-        <textarea id="pasteAll" rows="14"
-          placeholder="【貼り付け例】
-要約（3行）
+      <!-- 放送日 + ボタンを上部に配置 -->
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <label style="font-size:.76rem;color:var(--text-muted);white-space:nowrap;">📅 放送日</label>
+          <input type="date" id="newsDate" value="${today}" style="padding:6px 10px;border-radius:7px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:.84rem;">
+        </div>
+        <button class="btn btn-primary" style="flex:1;min-width:180px;padding:9px 16px;font-size:.92rem;font-weight:700;letter-spacing:.03em;" onclick="parseAndSetAll()">
+          🔍 読み取ってセット
+        </button>
+      </div>
+
+      <div style="margin-bottom:4px;">
+        <label style="display:block;margin-bottom:6px;font-size:.75rem;color:var(--text-muted);">ChatGPT出力をそのまま貼り付け（要約・台本・サムネ文言案・投稿文）</label>
+        <textarea id="pasteAll" rows="9"
+          placeholder="要約（3行）
 ・米国株急落の主因は…
-・ハイテク株が…
-・ただ「景気が強い…
 
 ⸻
-
 1分ショート台本（話者：ふくろう）
 おはようございます！…
 
 ⸻
-
 サムネ文言案（3つ）
 1.「雇用が良すぎて株が下がる!?」
-2.「利上げ不安でNASDAQ急落」
-3.「日経先物 -2500円…朝の見方」
 
 ⸻
-
 投稿文（必要なら）
-おはようございます☀️…#経済ニュース"
-          style="width:100%;padding:14px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:.86rem;line-height:1.7;resize:vertical;font-family:inherit;"></textarea>
+おはようございます☀️…"
+          style="width:100%;padding:12px 14px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:.86rem;line-height:1.7;resize:vertical;font-family:inherit;min-height:180px;max-height:400px;"></textarea>
       </div>
-
-      <div style="margin-bottom:18px;">
-        <label style="display:block;margin-bottom:6px;font-size:.78rem;color:var(--text-muted);">放送日</label>
-        <input type="date" id="newsDate" value="${today}" style="width:180px;">
-      </div>
-
-      <button class="btn btn-primary" style="width:100%;padding:14px;font-size:1rem;font-weight:700;letter-spacing:.04em;" onclick="parseAndSetAll()">
-        🔍 全部読み取ってセット → 台本タブへ
-      </button>
 
       <details style="margin-top:20px;">
         <summary style="cursor:pointer;font-size:.78rem;color:var(--text-muted);padding:8px 0;border-top:1px solid var(--border);user-select:none;">
@@ -1130,7 +1127,7 @@ function parseAndSetAll() {
   }
 
   // タブに通知マーク
-  ['script','meta','thumb'].forEach(t => {
+  ['meta','thumb'].forEach(t => {
     const el = document.getElementById('tab_' + t);
     if (el && !el.querySelector('.notif-dot')) {
       const dot = document.createElement('span');
@@ -1140,8 +1137,8 @@ function parseAndSetAll() {
     }
   });
 
-  showToast('✅ セット完了 — 台本タブを確認してください');
-  setTimeout(() => switchTab('script'), 350);
+  showToast('✅ セット完了 — 概要・タイトルタブへ');
+  setTimeout(() => switchTab('meta'), 350);
 }
 
 async function generateNews() {
@@ -1238,13 +1235,7 @@ ${char.ai_personality}
         const el = document.getElementById('panelScript');
         if (el) el.outerHTML = renderScriptPanel(char2);
       }
-      document.querySelectorAll('.tab').forEach(b => b.classList.toggle('active',
-        b.textContent.includes('台本')
-      ));
-      ['news','script','meta','thumb','publish','settings'].forEach(t => {
-        const el = document.getElementById('panel' + t.charAt(0).toUpperCase() + t.slice(1));
-        if (el) el.classList.toggle('active', t === 'script');
-      });
+      switchTab('meta');
     }, 600);
   } catch(e) {
     aiEnd(null);
@@ -1321,7 +1312,7 @@ function renderPlanPanel(char) {
     </div>
     <div id="planResults" class="plan-grid"></div>
     <div id="planSelected" style="display:none;">
-      <button class="btn btn-primary" onclick="switchTab('script')">この企画で台本を生成 →</button>
+      <button class="btn btn-primary" onclick="switchTab('meta')">この企画で概要・タイトルを生成 →</button>
     </div>
 
     <div class="card" style="border:1px solid #4a9edd44;background:linear-gradient(135deg,rgba(74,158,221,.06),transparent);margin-top:4px;">
@@ -1747,7 +1738,7 @@ ${isShorts ? `
     aiEnd('script');
     document.getElementById('scriptLoading').style.display = 'none';
     saveCurrentEpisode();
-    switchTab('script');
+    switchTab('meta');
   } catch(e) {
     aiEnd(null);
     document.getElementById('scriptLoading').style.display = 'none';
@@ -2141,7 +2132,7 @@ function renderMetaPanel(char) {
     <div class="card" style="border:1px solid var(--char-color,#c9a84c);background:linear-gradient(135deg,rgba(201,168,76,.08),transparent);">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
         <div style="font-size:.9rem;font-weight:700;color:var(--char-color);">🎯 概要欄・SEOタイトル生成</div>
-        <button class="btn btn-secondary btn-sm" onclick="switchTab('script')">← 台本に戻る</button>
+        <button class="btn btn-secondary btn-sm" onclick="switchTab('news')">← ニュース入力に戻る</button>
       </div>
       <p style="font-size:.78rem;color:var(--text-muted);margin-bottom:14px;">台本をもとに Gemini がSEOタイトル・概要欄・タグを自動生成します</p>
       ${!hasGemini ? `<div style="background:rgba(229,85,85,.1);border:1px solid #e55;border-radius:6px;padding:10px 14px;margin-bottom:12px;font-size:.78rem;color:#e55;">⚠️ Gemini APIキーが未設定です。設定タブで入力してください。<button class="btn btn-secondary btn-sm" style="margin-left:8px;" onclick="switchTab('settings')">設定へ</button></div>` : ''}
