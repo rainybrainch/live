@@ -106,16 +106,16 @@
   .char-header {
     background: linear-gradient(135deg, rgba(15,28,44,.9) 0%, rgba(10,20,32,.9) 100%);
     border: 1px solid var(--border-accent);
-    border-radius: 12px; padding: 18px 22px;
-    display: flex; align-items: center; gap: 16px;
+    border-radius: 10px; padding: 12px 18px;
+    display: flex; align-items: center; gap: 12px;
     border-left: 3px solid var(--char-color);
     backdrop-filter: blur(8px);
   }
-  .char-header-icon { width: 52px; height: 52px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.7rem; overflow: hidden; flex-shrink: 0; background: rgba(212,168,67,.12); border: 1px solid var(--border-accent); }
+  .char-header-icon { width: 38px; height: 38px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; overflow: hidden; flex-shrink: 0; background: rgba(212,168,67,.12); border: 1px solid var(--border-accent); }
   .char-header-icon img { width: 100%; height: 100%; object-fit: cover; }
-  .char-header-info h2 { font-size: 1.15rem; font-weight: 700; color: var(--accent2); letter-spacing: .02em; }
-  .char-header-info p { font-size: .78rem; color: var(--text-muted); margin-top: 2px; }
-  .char-header-badges { margin-top: 6px; display: flex; gap: 6px; flex-wrap: wrap; }
+  .char-header-info h2 { font-size: 1rem; font-weight: 700; color: var(--accent2); letter-spacing: .02em; }
+  .char-header-info p { font-size: .74rem; color: var(--text-muted); margin-top: 1px; }
+  .char-header-badges { margin-top: 5px; display: flex; gap: 5px; flex-wrap: wrap; }
   .badge {
     background: rgba(212,168,67,.12); border: 1px solid var(--border-accent);
     border-radius: 4px; padding: 2px 8px; font-size: .7rem; color: var(--accent);
@@ -307,8 +307,7 @@
   <img src="ms-icon.png" alt="MS" style="width:32px;height:32px;border-radius:7px;flex-shrink:0;">
   <h1>MS <span class="sub">Morning news Studio</span></h1>
   <span id="headerSub" style="font-size:.78rem;color:var(--text-muted);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
-  <span id="syncStatus" style="margin-left:auto;font-size:.72rem;color:var(--text-muted);white-space:nowrap;flex-shrink:0;">Drive未接続</span>
-  <span id="saveIndicator" style="margin-left:6px;font-size:.72rem;color:var(--text-muted);opacity:0;transition:opacity .5s;flex-shrink:0;">💾</span>
+  <span id="saveIndicator" style="margin-left:auto;font-size:.72rem;color:var(--text-muted);opacity:0;transition:opacity .5s;flex-shrink:0;">💾</span>
   <button onclick="switchTab('settings')" style="margin-left:8px;background:none;border:1px solid var(--border);border-radius:6px;color:var(--text-muted);padding:5px 10px;cursor:pointer;font-size:.78rem;flex-shrink:0;white-space:nowrap;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">⚙️ 設定</button>
 </header>
 
@@ -773,8 +772,7 @@ async function autoSaveToDrive() {
 }
 
 function setSyncStatus(status, msg) {
-  const el = document.getElementById('syncStatus');
-  if (!el) return;
+  return; // Drive機能削除済み
   const icons = { ok:'☁️', error:'⚠️', loading:'🔄', none:'—' };
   el.textContent = `${icons[status]||''} ${msg}`;
   el.style.color = status === 'error' ? '#e55' : status === 'ok' ? '#4caf50' : 'var(--text-muted)';
@@ -3183,65 +3181,58 @@ JSONのみ出力: [{"date":"YYYY-MM-DD","episode":1,"format":"horizontal|shorts"
 //  Settings Panel
 // ════════════════════════════════════
 function renderSettingsPanel() {
-  const gdToken = !!localStorage.getItem(GD_TOKEN_SK);
   const ytToken = !!getYtToken(currentCharId);
-  const hasKey  = !!localStorage.getItem(API_KEY_SK);
+  const hasClaudeKey  = !!localStorage.getItem(API_KEY_SK);
+  const hasGeminiKey  = !!localStorage.getItem(GEMINI_KEY_SK);
+  const keyStatus = (ok) => ok
+    ? `<span style="font-size:.74rem;color:#4caf50;">✅ 設定済み</span>`
+    : `<span style="font-size:.74rem;color:#e55;">未設定</span>`;
   return `
   <div class="panel ${currentTab==='settings'?'active':''}" id="panelSettings">
 
-    <!-- Google ログイン（ドライブ＋キー共有） -->
-    <div class="card" style="border-color:var(--char-color);">
-      <div class="card-title">☁️ Google ログイン</div>
-      <p style="font-size:.78rem;color:var(--text-muted);margin-bottom:12px;">
-        ログインするとDriveが使えるようになり、APIキーが自動で読み込まれます。
-      </p>
-      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-        <button class="btn btn-primary btn-sm" onclick="gdAuth()">Google でログイン</button>
-        <span style="font-size:.78rem;color:${gdToken?'#4a8':'var(--text-muted)'};">${gdToken ? '✅ ログイン済み' : '未ログイン'}</span>
-        ${gdToken ? `<button class="btn btn-secondary btn-sm" onclick="gdLogout()">ログアウト</button>` : ''}
+    <!-- APIキー設定 -->
+    <div class="card" style="border:1px solid var(--border-accent);">
+      <div class="card-title">🔑 APIキー設定</div>
+      <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:14px;">
+        <div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+            <label style="font-size:.78rem;">Gemini APIキー（概要欄・タイトル生成）</label>
+            ${keyStatus(hasGeminiKey)}
+          </div>
+          <input type="password" id="geminiApiKey" placeholder="AIzaSy..." value="${localStorage.getItem(GEMINI_KEY_SK)||''}" autocomplete="off">
+        </div>
+        <div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+            <label style="font-size:.78rem;">Claude APIキー（台本AI生成・任意）</label>
+            ${keyStatus(hasClaudeKey)}
+          </div>
+          <input type="password" id="claudeApiKey" placeholder="sk-ant-..." value="${localStorage.getItem(API_KEY_SK)||''}" autocomplete="off">
+        </div>
       </div>
-      ${gdToken && !hasKey ? `<div style="margin-top:8px;"><button class="btn btn-secondary btn-sm" onclick="autoLoadKeysFromDrive(localStorage.getItem('channelos_gd_token'))">🔑 APIキーを読み込む</button></div>` : ''}
-      ${hasKey ? `<p style="font-size:.75rem;color:#4a8;margin-top:8px;">✅ APIキー読込済み</p>` : ''}
+      <button class="btn btn-primary" style="width:100%;" onclick="saveApiKey();saveGeminiKey();showToast('✅ APIキーを保存しました')">💾 保存</button>
     </div>
 
-    <!-- YouTube認証はキャラヘッダーで個別管理 -->
+    <!-- YouTube認証 -->
     <div class="card">
       <div class="card-title">📺 YouTube 認証</div>
-      <p style="font-size:.78rem;color:var(--text-muted);">キャラクターを選択すると、ヘッダーに「YouTube認証」ボタンが表示されます。キャラごとに別のGoogleアカウントで認証できます。</p>
+      <p style="font-size:.78rem;color:var(--text-muted);margin-bottom:10px;">
+        認証すると、動画IDを入力してタイトル・概要欄・タグ・サムネイルを自動適用できます。
+      </p>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+        <button class="btn btn-primary btn-sm" onclick="ytAuth()">${ytToken ? '🔄 再認証' : '📺 YouTube認証（Google OAuth）'}</button>
+        <span style="font-size:.78rem;color:${ytToken?'#4caf50':'var(--text-muted)'};">${ytToken ? '✅ 認証済み' : '未認証'}</span>
+        ${ytToken ? `<button class="btn btn-secondary btn-sm" onclick="ytLogout()">ログアウト</button>` : ''}
+      </div>
     </div>
 
-    <!-- 管理者用：APIキーをDriveに保存 -->
-    <details style="margin-top:4px;">
-      <summary style="cursor:pointer;font-size:.8rem;color:var(--text-muted);padding:8px 0;">⚙️ 詳細設定（管理者用）</summary>
-      <div class="card" style="margin-top:8px;">
-        <div class="card-title">APIキーを手動入力</div>
-        <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:10px;">
-          <div><label style="font-size:.78rem;">Claude APIキー</label>
-            <input type="password" id="claudeApiKey" placeholder="sk-ant-..." value="${localStorage.getItem(API_KEY_SK)||''}" autocomplete="off" style="margin-top:4px;">
-          </div>
-          <div><label style="font-size:.78rem;">Stability AI APIキー（画像生成）</label>
-            <input type="password" id="stabilityApiKey" placeholder="sk-..." value="${localStorage.getItem(STABILITY_KEY_SK)||''}" autocomplete="off" style="margin-top:4px;">
-          </div>
-          <div><label style="font-size:.78rem;">Gemini APIキー（テキスト生成補助）</label>
-            <input type="password" id="geminiApiKey" placeholder="AIza..." value="${localStorage.getItem(GEMINI_KEY_SK)||''}" autocomplete="off" style="margin-top:4px;">
-          </div>
-          <div><label style="font-size:.78rem;">OpenAI APIキー（DALL-E用）</label>
-            <input type="password" id="openaiApiKey" placeholder="sk-..." value="${localStorage.getItem('channelos_openai_api_key')||''}" autocomplete="off" style="margin-top:4px;">
-          </div>
-        </div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;">
-          <button class="btn btn-secondary btn-sm" onclick="saveApiKey();saveOpenAIKey();saveGeminiKey();">キーを保存</button>
-          <button class="btn btn-secondary btn-sm" onclick="saveKeysToDrive()">📤 Driveに保存（チーム共有）</button>
-        </div>
+    <!-- データ管理 -->
+    <div class="card">
+      <div class="card-title">📦 データ管理</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="btn btn-secondary btn-sm" onclick="exportData()">エクスポート</button>
+        <button class="btn btn-secondary btn-sm" onclick="importData()">インポート</button>
       </div>
-      <div class="card" style="margin-top:8px;">
-        <div class="card-title">データ管理</div>
-        <div style="display:flex;gap:8px;">
-          <button class="btn btn-secondary btn-sm" onclick="exportData()">エクスポート</button>
-          <button class="btn btn-secondary btn-sm" onclick="importData()">インポート</button>
-        </div>
-      </div>
-    </details>
+    </div>
 
   </div>`;
 }
