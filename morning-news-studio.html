@@ -881,7 +881,6 @@ function selectChar(id) {
     if (last) { currentEpisodeId = last.id; selectedPlan = last.plan||null; generatedScript = last.script||''; generatedMeta = last.meta||null; }
   }
   renderSidebar(); renderMain();
-  loadFromDrive();
 }
 
 // ════════════════════════════════════
@@ -1119,6 +1118,7 @@ function parseAndSetAll() {
 
   // 放送日から動画タイトルを設定
   const newsDate = document.getElementById('newsDate')?.value || new Date().toISOString().slice(0,10);
+  _parsedNewsDate = newsDate;
   if (!currentEpisodeId) {
     const ep = { id: 't_' + Date.now(), title: `${newsDate} モーニングニュース`, date: newsDate, charId: currentCharId, createdAt: new Date().toISOString() };
     data.episodes = [ep, ...(data.episodes || [])];
@@ -2134,12 +2134,12 @@ function renderMetaPanel(char) {
         <div style="font-size:.9rem;font-weight:700;color:var(--char-color);">🎯 概要欄・SEOタイトル生成</div>
         <button class="btn btn-secondary btn-sm" onclick="switchTab('news')">← ニュース入力に戻る</button>
       </div>
-      <p style="font-size:.78rem;color:var(--text-muted);margin-bottom:14px;">台本をもとに Gemini がSEOタイトル・概要欄・タグを自動生成します</p>
+      <p style="font-size:.78rem;color:var(--text-muted);margin-bottom:14px;">貼り付けた台本をもとに Gemini がSEOタイトル・概要欄・タグを自動生成します</p>
       ${!hasGemini ? `<div style="background:rgba(229,85,85,.1);border:1px solid #e55;border-radius:6px;padding:10px 14px;margin-bottom:12px;font-size:.78rem;color:#e55;">⚠️ Gemini APIキーが未設定です。設定タブで入力してください。<button class="btn btn-secondary btn-sm" style="margin-left:8px;" onclick="switchTab('settings')">設定へ</button></div>` : ''}
-      ${!generatedScript ? `<div style="background:rgba(229,85,85,.1);border:1px solid #e55;border-radius:6px;padding:10px 14px;margin-bottom:12px;font-size:.78rem;color:#e55;">⚠️ 先に台本タブで台本を設定してください</div>` : ''}
+      ${generatedScript ? `<div style="background:rgba(76,175,80,.08);border:1px solid rgba(76,175,80,.3);border-radius:6px;padding:8px 12px;margin-bottom:12px;font-size:.76rem;color:#7bcf7e;">✅ 台本セット済み — Geminiで生成できます</div>` : `<div style="background:rgba(229,175,85,.08);border:1px solid rgba(229,175,85,.3);border-radius:6px;padding:8px 12px;margin-bottom:12px;font-size:.76rem;color:#daa560;">⚠️ ニュース入力タブで台本を貼り付けてセットしてください</div>`}
       <div style="display:flex;gap:8px;flex-wrap:wrap;">
-        <button class="btn btn-primary" style="flex:1;" onclick="generateMetaWithGemini()" ${(!generatedScript||!hasGemini)?'disabled':''}>
-          ✨ Gemini で生成
+        <button class="btn btn-primary" style="flex:1;" onclick="generateMetaWithGemini()" ${!hasGemini?'disabled':''}>
+          ✨ Gemini でSEOタイトル・概要欄を生成
         </button>
         ${generatedMeta ? `<button class="btn btn-secondary btn-sm" onclick="generateMetaWithGemini()">🔄 再生成</button>` : ''}
       </div>
@@ -2720,62 +2720,80 @@ function useAssetInScene(idx) {
 // ════════════════════════════════════
 //  Thumb Panel（サムネ作成）
 // ════════════════════════════════════
-let thumbBgDataUrl  = '';
+let thumbBgDataUrl  = localStorage.getItem('ms_thumb_bg_v1') || '';
 let thumbRefDataUrl = '';
 let thumbCanvas, thumbCtx;
+let _parsedNewsDate = '';
 
 function renderThumbPanel() {
-  const suggestedText = generatedMeta?.thumb_text_horizontal || '';
-  const today = new Date().toLocaleDateString('ja-JP', {month:'numeric',day:'numeric'});
+  const suggestedText = generatedMeta?.thumb_text_horizontal || (window._parsedThumbTexts?.[0] || '');
+  // 日付: newsDate → M/D 形式
+  const autoDate = (() => {
+    const d = _parsedNewsDate || document.getElementById('newsDate')?.value || new Date().toISOString().slice(0,10);
+    const m = d.match(/(\d{4})-(\d{2})-(\d{2})/);
+    return m ? `${parseInt(m[2])}/${parseInt(m[3])}` : d;
+  })();
+  const thumbTexts = window._parsedThumbTexts || [];
   return `
   <div class="panel ${currentTab==='thumb'?'active':''}" id="panelThumb">
 
-    <div class="card" style="border:1px solid var(--char-color,#c9a84c);background:linear-gradient(135deg,rgba(201,168,76,.08),transparent);">
+    <div class="card" style="border:1px solid var(--border-accent);background:linear-gradient(135deg,rgba(212,168,67,.06),transparent);">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
         <div style="font-size:.9rem;font-weight:700;color:var(--char-color);">🖼 サムネイル作成</div>
         <button class="btn btn-secondary btn-sm" onclick="switchTab('meta')">← 概要・タイトルへ</button>
       </div>
 
-      <!-- 背景画像 -->
-      <div style="margin-bottom:14px;">
-        <label style="display:block;font-size:.78rem;color:var(--text-muted);margin-bottom:6px;font-weight:600;">① 背景画像（必須）</label>
-        <div style="display:flex;gap:8px;align-items:center;">
-          <label for="thumbBgInput" class="btn btn-secondary btn-sm" style="cursor:pointer;">📁 画像を選択</label>
+      <!-- 背景画像（localStorage保存） -->
+      <div style="margin-bottom:12px;">
+        <label style="display:block;font-size:.78rem;color:var(--text-muted);margin-bottom:6px;font-weight:600;">① 背景画像</label>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+          <label for="thumbBgInput" class="btn btn-secondary btn-sm" style="cursor:pointer;">📁 ${thumbBgDataUrl ? '画像を変更' : '画像を選択'}</label>
           <input type="file" id="thumbBgInput" accept="image/*" style="display:none;" onchange="loadThumbBg(this)">
-          <span id="thumbBgName" style="font-size:.75rem;color:var(--text-muted);">${thumbBgDataUrl ? '✅ 画像読込済み' : '未選択'}</span>
+          ${thumbBgDataUrl
+            ? `<span style="font-size:.75rem;color:#4caf50;">✅ 設定済み（次回も保持）</span>
+               <button class="btn btn-secondary btn-sm" style="font-size:.7rem;padding:3px 8px;" onclick="clearThumbBg()">✕ クリア</button>`
+            : `<span style="font-size:.75rem;color:var(--text-muted);">未選択（一度設定すると記憶します）</span>`}
         </div>
       </div>
 
-      <!-- テキスト設定 -->
-      <div style="margin-bottom:14px;">
-        <label style="display:block;font-size:.78rem;color:var(--text-muted);margin-bottom:6px;font-weight:600;">② 重ねるテキスト（メインタイトル）</label>
+      <!-- メインタイトルテキスト + 文言案ボタン -->
+      <div style="margin-bottom:12px;">
+        <label style="display:block;font-size:.78rem;color:var(--text-muted);margin-bottom:6px;font-weight:600;">② メインタイトル文字</label>
+        ${thumbTexts.length > 0 ? `
+        <div style="display:flex;flex-direction:column;gap:4px;margin-bottom:8px;">
+          ${thumbTexts.map((t, i) => `
+            <button class="btn btn-secondary btn-sm" style="text-align:left;padding:7px 12px;font-size:.8rem;white-space:normal;height:auto;"
+              onclick="document.getElementById('thumbMainText').value=this.dataset.t;redrawThumb();" data-t="${escHtml(t)}">
+              ${i+1}. ${escHtml(t)}
+            </button>`).join('')}
+        </div>` : ''}
         <input type="text" id="thumbMainText" value="${escHtml(suggestedText)}" placeholder="例: 日経38,500円突破！今日の注目ニュース" oninput="redrawThumb()">
       </div>
 
-      <!-- サブテキスト（日付） -->
-      <div class="form-row" style="margin-bottom:14px;gap:12px;">
+      <!-- 日付テキスト（自動セット） -->
+      <div class="form-row" style="margin-bottom:12px;gap:10px;align-items:flex-end;">
         <div style="flex:1;">
-          <label style="display:block;font-size:.78rem;color:var(--text-muted);margin-bottom:6px;font-weight:600;">③ 日付テキスト</label>
-          <input type="text" id="thumbDateText" value="${today}" placeholder="例: 6/8" oninput="redrawThumb()">
+          <label style="display:block;font-size:.78rem;color:var(--text-muted);margin-bottom:6px;font-weight:600;">③ 日付テキスト（自動）</label>
+          <input type="text" id="thumbDateText" value="${escHtml(autoDate)}" placeholder="例: 6/8" oninput="redrawThumb()">
         </div>
         <div style="flex:1;">
-          <label style="display:block;font-size:.78rem;color:var(--text-muted);margin-bottom:6px;font-weight:600;">テキストカラー</label>
-          <input type="color" id="thumbTextColor" value="#FFFFFF" oninput="redrawThumb()" style="height:36px;cursor:pointer;width:100%;">
+          <label style="display:block;font-size:.78rem;color:var(--text-muted);margin-bottom:6px;">テキスト色</label>
+          <input type="color" id="thumbTextColor" value="#FFFFFF" oninput="redrawThumb()" style="height:36px;width:100%;cursor:pointer;">
         </div>
         <div style="flex:1;">
-          <label style="display:block;font-size:.78rem;color:var(--text-muted);margin-bottom:6px;font-weight:600;">影カラー</label>
-          <input type="color" id="thumbShadowColor" value="#000000" oninput="redrawThumb()" style="height:36px;cursor:pointer;width:100%;">
+          <label style="display:block;font-size:.78rem;color:var(--text-muted);margin-bottom:6px;">影の色</label>
+          <input type="color" id="thumbShadowColor" value="#000000" oninput="redrawThumb()" style="height:36px;width:100%;cursor:pointer;">
         </div>
       </div>
 
       <!-- 参照画像（任意） -->
       <div style="margin-bottom:14px;">
-        <label style="display:block;font-size:.78rem;color:var(--text-muted);margin-bottom:6px;font-weight:600;">④ 参照画像（任意・右下に小さく表示）</label>
+        <label style="display:block;font-size:.78rem;color:var(--text-muted);margin-bottom:6px;font-weight:600;">④ 参照画像（任意・右下に配置）</label>
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-          <label for="thumbRefInput" class="btn btn-secondary btn-sm" style="cursor:pointer;">📁 参照画像を選択</label>
+          <label for="thumbRefInput" class="btn btn-secondary btn-sm" style="cursor:pointer;">📁 参照画像</label>
           <input type="file" id="thumbRefInput" accept="image/*" style="display:none;" onchange="loadThumbRef(this)">
-          <span id="thumbRefName" style="font-size:.75rem;color:var(--text-muted);">${thumbRefDataUrl ? '✅ 読込済み' : '未選択（任意）'}</span>
-          ${thumbRefDataUrl ? `<button class="btn btn-secondary btn-sm" onclick="clearThumbRef()">✕ クリア</button>` : ''}
+          <span style="font-size:.75rem;color:var(--text-muted);">${thumbRefDataUrl ? '✅ 読込済み' : '未選択（任意）'}</span>
+          ${thumbRefDataUrl ? `<button class="btn btn-secondary btn-sm" onclick="clearThumbRef()">✕</button>` : ''}
         </div>
       </div>
 
@@ -2810,11 +2828,21 @@ function loadThumbBg(input) {
   const reader = new FileReader();
   reader.onload = e => {
     thumbBgDataUrl = e.target.result;
-    const nameEl = document.getElementById('thumbBgName');
-    if (nameEl) nameEl.textContent = '✅ ' + file.name;
-    redrawThumb();
+    localStorage.setItem('ms_thumb_bg_v1', thumbBgDataUrl);
+    // ボタンラベル更新
+    const panel = document.getElementById('panelThumb');
+    if (panel) panel.outerHTML = renderThumbPanel();
+    setTimeout(() => { initThumbCanvas(); redrawThumb(); }, 50);
   };
   reader.readAsDataURL(file);
+}
+
+function clearThumbBg() {
+  thumbBgDataUrl = '';
+  localStorage.removeItem('ms_thumb_bg_v1');
+  const panel = document.getElementById('panelThumb');
+  if (panel) panel.outerHTML = renderThumbPanel();
+  setTimeout(() => { initThumbCanvas(); redrawThumb(); }, 50);
 }
 
 function loadThumbRef(input) {
@@ -3281,7 +3309,7 @@ function ytAuth(charId) {
   const id = charId || currentCharId;
   if (!id) { showToast('キャラクターを選択してください'); return; }
   const clientId = localStorage.getItem(GD_CLIENT_SK) || '420800714761-ui9g88fgbrocu4a1nim1m3mv908s0gos.apps.googleusercontent.com';
-  const redirect = encodeURIComponent('https://rainybrainch.github.io/channel-os/');
+  const redirect = encodeURIComponent('https://rainybrainch.github.io/live/morning-news-studio.html');
   const scope    = encodeURIComponent('https://www.googleapis.com/auth/youtube');
   const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${redirect}&response_type=token&scope=${scope}&prompt=consent&state=youtube_${id}`;
   window.location.href = url;
@@ -3297,93 +3325,139 @@ function getYtToken(charId) {
 }
 
 // ════════════════════════════════════
-//  Publish Panel
+//  Publish Panel（MS専用）
 // ════════════════════════════════════
 function renderPublishPanel() {
-  const ep = currentEpisodeId ? (loadData().episodes || []).find(e => e.id === currentEpisodeId) : null;
-  const meta = ep?.generatedMeta || {};
-  const hasPlan   = !!(ep?.theme || ep?.plan);
-  const hasScript = !!(ep?.script);
-  const hasMeta   = !!(meta.title);
+  const ep   = currentEpisodeId ? (loadData().episodes || []).find(e => e.id === currentEpisodeId) : null;
+  const meta = generatedMeta || ep?.generatedMeta || {};
+  const hasScript = !!generatedScript;
+  const hasMeta   = !!meta.title;
+  const hasThumb  = !!(ep?.thumbnailDataUrl || thumbBgDataUrl);
   const ytToken   = !!getYtToken(currentCharId);
   const thumbUrl  = ep?.thumbnailDataUrl || '';
 
-  const checkItem = (ok, label) =>
-    `<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);">
-      <span style="font-size:1.1rem">${ok ? '✅' : '⬜'}</span>
-      <span style="font-size:.85rem;color:${ok?'var(--text)':'var(--text-muted)'}">${label}</span>
+  // デフォルトスケジュール: 翌平日の6:30
+  const schedDefault = (() => {
+    const d = new Date(); d.setDate(d.getDate() + 1);
+    if (d.getDay() === 0) d.setDate(d.getDate() + 1);
+    if (d.getDay() === 6) d.setDate(d.getDate() + 2);
+    return d.toISOString().slice(0,10) + 'T06:30';
+  })();
+
+  const check = (ok, label, action) =>
+    `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);">
+      <span style="font-size:1.2rem;flex-shrink:0;">${ok ? '✅' : '⬜'}</span>
+      <span style="font-size:.84rem;color:${ok?'var(--text)':'var(--text-muted)'};">${label}</span>
+      ${action ? `<span style="margin-left:auto;">${action}</span>` : ''}
     </div>`;
 
   return `
   <div class="panel ${currentTab==='publish'?'active':''}" id="panelPublish">
+
     <!-- チェックリスト -->
-    <div class="card">
-      <div class="card-title">📋 投稿前チェックリスト</div>
-      ${checkItem(hasPlan,   '企画・テーマ設定済み')}
-      ${checkItem(hasScript, '台本生成済み')}
-      ${checkItem(hasMeta,   '投稿情報（タイトル・説明文・タグ）生成済み')}
-      ${checkItem(ytToken,   'YouTube 認証済み')}
-      ${!ytToken ? `<div style="margin-top:8px;"><button class="btn btn-primary btn-sm" onclick="ytAuth()">YouTube 認証</button></div>` : ''}
+    <div class="card" style="border:1px solid var(--border-accent);">
+      <div class="card-title" style="margin-bottom:8px;">📋 投稿前チェックリスト</div>
+      ${check(hasScript, '台本セット済み',    !hasScript ? `<button class="btn btn-secondary btn-sm" onclick="switchTab('news')">入力へ</button>` : '')}
+      ${check(hasMeta,   'SEOタイトル・概要欄生成済み', !hasMeta ? `<button class="btn btn-secondary btn-sm" onclick="switchTab('meta')">生成へ</button>` : '')}
+      ${check(hasThumb,  'サムネイル保存済み', !hasThumb ? `<button class="btn btn-secondary btn-sm" onclick="switchTab('thumb')">作成へ</button>` : '')}
+      ${check(ytToken,   'YouTube認証済み',   !ytToken ? `<button class="btn btn-primary btn-sm" onclick="ytAuth()">認証する</button>` : `<button class="btn btn-secondary btn-sm" onclick="ytLogout()">ログアウト</button>`)}
     </div>
 
-    <!-- サムネイル生成 -->
+    <!-- 投稿情報プレビュー -->
+    ${meta.title ? `
     <div class="card">
-      <div class="card-title">🖼 サムネイル生成</div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
-        <button class="btn btn-primary btn-sm" onclick="buildThumbnailForPublish('horizontal')">💎 横型 1280×720 生成（Gemini）</button>
-        <button class="btn btn-primary btn-sm" onclick="buildThumbnailForPublish('shorts')">💎 縦型 720×1280 生成（Gemini）</button>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <div class="card-title" style="margin:0;">📝 投稿情報</div>
+        <button class="btn btn-secondary btn-sm" onclick="switchTab('meta')">✏️ 編集</button>
       </div>
-      ${thumbUrl ? `
-        <img src="${thumbUrl}" style="max-width:100%;border-radius:8px;margin-bottom:8px;" id="publishThumbPreview">
-        <div style="display:flex;gap:8px;">
-          <button class="btn btn-secondary btn-sm" onclick="downloadThumbnail()">💾 ダウンロード</button>
-        </div>` : `<p style="font-size:.78rem;color:var(--text-muted);">まだサムネイルがありません。上のボタンで生成してください。</p>`}
-    </div>
 
-    <!-- 投稿情報コピー -->
-    <div class="card">
-      <div class="card-title">📝 投稿情報</div>
-      ${meta.title ? `
-        <div style="margin-bottom:10px;">
-          <label style="font-size:.78rem;color:var(--text-muted);">タイトル</label>
-          <div style="display:flex;gap:6px;align-items:center;margin-top:4px;">
-            <input type="text" value="${(meta.title||'').replace(/"/g,'&quot;')}" readonly style="flex:1;font-size:.85rem;">
-            <button class="btn btn-secondary btn-sm" onclick="navigator.clipboard.writeText('${(meta.title||'').replace(/'/g,"\\'")}');showToast('コピーしました')">コピー</button>
-          </div>
+      <div style="margin-bottom:10px;">
+        <label style="font-size:.75rem;color:var(--text-muted);">タイトル（推奨）</label>
+        <div style="display:flex;gap:6px;align-items:center;margin-top:4px;">
+          <div style="flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:9px 12px;font-size:.88rem;font-weight:600;">${escHtml(meta.title)}</div>
+          <button class="btn btn-secondary btn-sm" onclick="copyText(${JSON.stringify(meta.title)})">📋</button>
         </div>
-        <div style="margin-bottom:10px;">
-          <label style="font-size:.78rem;color:var(--text-muted);">説明文</label>
-          <textarea readonly rows="4" style="font-size:.78rem;margin-top:4px;">${meta.description||''}</textarea>
-          <button class="btn btn-secondary btn-sm" style="margin-top:4px;" onclick="copyText(${JSON.stringify(meta.description||'')})">コピー</button>
-        </div>
-        <div style="margin-bottom:10px;">
-          <label style="font-size:.78rem;color:var(--text-muted);">タグ（カンマ区切り）</label>
-          <div style="display:flex;gap:6px;align-items:center;margin-top:4px;">
-            <input type="text" value="${((meta.tags||[]).join(', ')).replace(/"/g,'&quot;')}" readonly style="flex:1;font-size:.82rem;">
-            <button class="btn btn-secondary btn-sm" onclick="copyText('${((meta.tags||[]).join(', ')).replace(/'/g,"\\'")}')">コピー</button>
-          </div>
-        </div>
-      ` : `<p style="font-size:.78rem;color:var(--text-muted);">「🎯 投稿情報」タブで投稿情報を生成してください。</p>`}
-    </div>
-
-    <!-- YouTube Studio 直接適用 -->
-    <div class="card">
-      <div class="card-title">📺 YouTube に直接適用</div>
-      <p style="font-size:.78rem;color:var(--text-muted);line-height:1.6;margin-bottom:10px;">
-        動画をアップロード後、動画 ID を入力して「適用」すると<br>
-        タイトル・説明・タグ・サムネイルが自動で設定されます。
-      </p>
-      <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px;">
-        <input type="text" id="ytVideoId" placeholder="動画ID（例: dQw4w9WgXcQ）" style="flex:1;">
-        <button class="btn btn-primary btn-sm" onclick="applyMetaToYouTube()">適用</button>
+        ${meta.title_alt ? `<div style="font-size:.73rem;color:var(--text-muted);margin-top:4px;">代替案: ${escHtml(meta.title_alt)}</div>` : ''}
       </div>
-      <a href="https://studio.youtube.com" target="_blank" class="btn btn-secondary btn-sm">YouTube Studio を開く</a>
+
+      <div style="margin-bottom:10px;">
+        <label style="font-size:.75rem;color:var(--text-muted);">概要欄</label>
+        <textarea readonly rows="5" style="font-size:.78rem;margin-top:4px;width:100%;padding:10px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--text);resize:vertical;">${escHtml(meta.description||'')}</textarea>
+        <button class="btn btn-secondary btn-sm" style="margin-top:4px;" onclick="copyText(${JSON.stringify(meta.description||'')})">📋 概要欄コピー</button>
+      </div>
+
+      ${meta.hashtags?.length ? `
+      <div>
+        <label style="font-size:.75rem;color:var(--text-muted);">ハッシュタグ</label>
+        <div style="display:flex;gap:6px;align-items:center;margin-top:4px;">
+          <div style="flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:8px 12px;font-size:.8rem;">${escHtml((meta.hashtags||[]).join(' '))}</div>
+          <button class="btn btn-secondary btn-sm" onclick="copyText(${JSON.stringify((meta.hashtags||[]).join(' '))})">📋</button>
+        </div>
+      </div>` : ''}
+    </div>` : ''}
+
+    <!-- スケジュール設定 -->
+    <div class="card">
+      <div class="card-title">🗓 投稿スケジュール</div>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px;">
+        <div>
+          <label style="display:block;font-size:.75rem;color:var(--text-muted);margin-bottom:4px;">投稿日時</label>
+          <input type="datetime-local" id="schedDatetime" value="${schedDefault}" style="padding:8px 12px;border-radius:7px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:.84rem;">
+        </div>
+        <div style="align-self:flex-end;padding-bottom:2px;">
+          <button class="btn btn-secondary btn-sm" onclick="setSchedulePreset(0)">今日6:30</button>
+          <button class="btn btn-secondary btn-sm" style="margin-left:4px;" onclick="setSchedulePreset(1)">翌朝6:30</button>
+        </div>
+      </div>
+      ${meta.best_post_time ? `<div style="font-size:.74rem;color:var(--text-muted);">💡 Gemini推奨: ${escHtml(meta.best_post_time)}</div>` : ''}
     </div>
+
+    <!-- サムネイル確認 -->
+    ${thumbUrl ? `
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <div class="card-title" style="margin:0;">🖼 サムネイル</div>
+        <div style="display:flex;gap:6px;">
+          <button class="btn btn-secondary btn-sm" onclick="downloadThumbnail()">💾 保存</button>
+          <button class="btn btn-secondary btn-sm" onclick="switchTab('thumb')">✏️ 編集</button>
+        </div>
+      </div>
+      <img src="${thumbUrl}" style="width:100%;border-radius:6px;">
+    </div>` : ''}
+
+    <!-- YouTube投稿 -->
+    <div class="card">
+      <div class="card-title">📺 YouTube へ投稿</div>
+      ${ytToken ? `
+        <p style="font-size:.78rem;color:var(--text-muted);margin-bottom:10px;">認証済み。動画をアップロード後、動画IDを入力してメタデータを適用できます。</p>
+        <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px;">
+          <input type="text" id="ytVideoId" placeholder="動画ID（例: dQw4w9WgXcQ）" style="flex:1;">
+          <button class="btn btn-primary btn-sm" onclick="applyMetaToYouTube()">メタデータを適用</button>
+        </div>
+        <a href="https://studio.youtube.com/channel/UCQNWDJh_KoFMFVz5QRU3k6Q/videos/upload" target="_blank" class="btn btn-secondary" style="display:block;text-align:center;text-decoration:none;padding:11px;">▶️ YouTube Studio でアップロード</a>
+      ` : `
+        <p style="font-size:.78rem;color:var(--text-muted);margin-bottom:12px;">YouTube認証後、タイトル・概要欄・タグ・サムネイルを自動適用できます。</p>
+        <button class="btn btn-primary" style="width:100%;" onclick="ytAuth()">📺 YouTube 認証（Google OAuth）</button>
+        <p style="font-size:.71rem;color:var(--text-muted);margin-top:8px;">認証が不要な場合: YouTube Studioを開いて情報を手動で貼り付けることもできます。</p>
+        <a href="https://studio.youtube.com/channel/UCQNWDJh_KoFMFVz5QRU3k6Q/videos/upload" target="_blank" class="btn btn-secondary" style="display:block;text-align:center;text-decoration:none;padding:10px;margin-top:8px;">▶️ YouTube Studio を開く</a>
+      `}
+    </div>
+
   </div>`;
 }
 
 function copyText(text) {
   navigator.clipboard.writeText(text).then(() => showToast('コピーしました'));
+}
+
+function setSchedulePreset(daysAhead) {
+  const d = new Date();
+  if (daysAhead > 0) d.setDate(d.getDate() + daysAhead);
+  if (d.getDay() === 0) d.setDate(d.getDate() + 1);
+  if (d.getDay() === 6) d.setDate(d.getDate() + 2);
+  d.setHours(6, 30, 0, 0);
+  const el = document.getElementById('schedDatetime');
+  if (el) el.value = d.toISOString().slice(0, 16);
 }
 
 async function buildThumbnailForPublish(orientation) {
@@ -4273,7 +4347,6 @@ renderSidebar();
 const _aside = document.querySelector('aside');
 if (_aside) _aside.classList.add('closed');
 selectChar('manebou_news');
-loadFromDrive();
 </script>
 </body>
 </html>
