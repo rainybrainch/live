@@ -403,6 +403,20 @@ const YT_TOKEN_SK   = 'channelos_yt_token';
 const GEMINI_KEY_SK    = 'channelos_gemini_api_key';
 const DEFAULT_GEMINI_KEY = 'AIzaSyB2m8LX6sTrjQnWMfTmsk-F4RbV6YlOmi8';
 const getGeminiKey = () => localStorage.getItem(GEMINI_KEY_SK) || DEFAULT_GEMINI_KEY;
+
+async function geminiErrorMessage(res) {
+  try {
+    const j = await res.json();
+    const msg = j?.error?.message || '';
+    const status = res.status;
+    if (status === 429 || msg.includes('quota') || msg.includes('RESOURCE_EXHAUSTED')) {
+      return '⚠️ Gemini APIの無料枠（リクエスト上限）に達しました。しばらく待ってから再試行してください。';
+    }
+    if (status === 400) return '❌ Gemini API: リクエスト形式エラー（' + (msg || status) + '）';
+    if (status === 401 || status === 403) return '❌ Gemini API: 認証エラー。APIキーを確認してください。';
+    return '❌ Gemini API エラー ' + status + (msg ? ': ' + msg : '');
+  } catch { return '❌ Gemini API エラー ' + res.status; }
+}
 const STABILITY_KEY_SK = 'channelos_stability_api_key';
 const SA_JSON_SK    = 'channelos_sa_json';
 const SA_TOKEN_SK   = 'channelos_sa_token';
@@ -825,12 +839,18 @@ function showSaveIndicator() {
   setTimeout(() => { el.style.opacity = '0'; }, 2000);
 }
 
-function showToast(msg) {
+function showToast(msg, duration) {
+  const ms = duration || 3000;
+  const isError = msg.startsWith('❌') || msg.startsWith('⚠️');
   const t = document.createElement('div');
   t.textContent = msg;
-  t.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:10px 20px;border-radius:20px;font-size:.82rem;z-index:9999;';
+  t.style.cssText = `position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
+    background:${isError ? '#4a1a1a' : '#333'};
+    border:${isError ? '1px solid #e55' : 'none'};
+    color:#fff;padding:12px 22px;border-radius:10px;font-size:.82rem;z-index:9999;
+    max-width:80vw;text-align:center;line-height:1.5;box-shadow:0 4px 16px rgba(0,0,0,.5);`;
   document.body.appendChild(t);
-  setTimeout(() => t.remove(), 3000);
+  setTimeout(() => t.remove(), ms);
 }
 
 // Scene state
@@ -2185,7 +2205,7 @@ ${scriptLines.slice(0, 1200)}
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
     });
-    if (!res.ok) throw new Error('Gemini API エラー: ' + res.status);
+    if (!res.ok) { const msg = await geminiErrorMessage(res); throw new Error(msg); }
     const json = await res.json();
     const text = json.candidates?.[0]?.content?.parts?.[0]?.text || '';
     generatedMeta = JSON.parse(text.match(/\{[\s\S]*\}/)[0]);
@@ -2199,7 +2219,7 @@ ${scriptLines.slice(0, 1200)}
   } catch(e) {
     aiEnd(null);
     document.getElementById('metaLoading').style.display = 'none';
-    showToast('❌ Gemini エラー: ' + e.message);
+    showToast(e.message, 6000);
   }
 }
 
