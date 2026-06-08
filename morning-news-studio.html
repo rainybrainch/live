@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🦉 マネぼうモーニングニューススタジオ</title>
+<style>
+  :root {
+    --accent: #F5C842;
+    --accent-dark: #D4A017;
+    --bg: #0d0d0d;
+    --surface: #1a1a1a;
+    --surface2: #242424;
+    --text: #e8e8e8;
+    --text-muted: #888;
+    --border: #333;
+    --green: #4CAF7D;
+    --red: #e55;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'Noto Sans JP', 'Hiragino Sans', sans-serif; min-height: 100vh; display: flex; flex-direction: column; font-size: 14px; }
+
+  header { background: var(--surface); border-bottom: 2px solid var(--accent); padding: 12px 20px; display: flex; align-items: center; gap: 12px; }
+  header h1 { font-size: 1rem; font-weight: 700; color: var(--accent); letter-spacing: .05em; }
+  header .sub { color: var(--text-muted); font-size: .75rem; }
+  #syncStatus { margin-left: auto; font-size: .72rem; color: var(--text-muted); }
+  #saveIndicator { font-size: .72rem; color: var(--green); opacity: 0; transition: opacity .5s; }
+
+  .layout { display: flex; flex: 1; overflow: hidden; height: calc(100vh - 49px); }
+
+  /* Sidebar */
+  aside { width: 200px; background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; flex-shrink: 0; overflow-y: auto; }
+  .sidebar-title { padding: 12px 14px 6px; font-size: .68rem; color: var(--text-muted); letter-spacing: .1em; text-transform: uppercase; }
+  .ep-item { padding: 10px 14px; cursor: pointer; border-left: 3px solid transparent; transition: all .15s; }
+  .ep-item:hover { background: var(--surface2); }
+  .ep-item.active { border-left-color: var(--accent); background: var(--surface2); }
+  .ep-date { font-size: .82rem; font-weight: 700; color: var(--text); }
+  .ep-title { font-size: .7rem; color: var(--text-muted); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 160px; }
+  .ep-status { display: inline-block; font-size: .62rem; padding: 1px 6px; border-radius: 3px; margin-top: 3px; }
+  .status-draft { background: #333; color: #aaa; }
+  .status-ready { background: #1a3a2a; color: var(--green); }
+  .status-posted { background: #1a1a3a; color: #7ab; }
+  .add-ep-btn { margin: 10px; padding: 9px; background: none; border: 1px dashed var(--border); border-radius: 6px; color: var(--text-muted); cursor: pointer; font-size: .78rem; transition: all .2s; }
+  .add-ep-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* Main */
+  main { flex: 1; overflow-y: auto; display: flex; flex-direction: column; }
+  .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; gap: 12px; color: var(--text-muted); }
+  .empty-state .icon { font-size: 3rem; }
+
+  /* Tabs */
+  .tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--border); background: var(--surface); padding: 0 20px; flex-shrink: 0; }
+  .tab { padding: 10px 14px; background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: .82rem; border-bottom: 2px solid transparent; transition: all .15s; font-family: inherit; white-space: nowrap; }
+  .tab:hover { color: var(--text); }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  /* Panels */
+  .panels { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 16px; }
+  .panel { display: none; flex-direction: column; gap: 14px; }
+  .panel.active { display: flex; }
+
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px 18px; }
+  .card-title { font-size: .72rem; color: var(--text-muted); letter-spacing: .08em; text-transform: uppercase; margin-bottom: 10px; font-weight: 700; }
+
+  label { font-size: .78rem; color: var(--text-muted); margin-bottom: 4px; display: block; }
+  input, textarea, select { background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; color: var(--text); padding: 8px 10px; font-family: inherit; font-size: .86rem; width: 100%; transition: border-color .15s; }
+  input:focus, textarea:focus { outline: none; border-color: var(--accent); }
+  textarea { resize: vertical; line-height: 1.7; }
+
+  .btn { padding: 8px 16px; border-radius: 6px; border: none; cursor: pointer; font-size: .82rem; font-family: inherit; font-weight: 600; transition: all .15s; }
+  .btn-primary { background: var(--accent); color: #0d0d0d; }
+  .btn-primary:hover { background: var(--accent-dark); }
+  .btn-secondary { background: var(--surface2); border: 1px solid var(--border); color: var(--text); }
+  .btn-secondary:hover { border-color: var(--accent); }
+  .btn-green { background: var(--green); color: #0d0d0d; }
+  .btn-sm { padding: 5px 10px; font-size: .75rem; }
+  .btn:disabled { opacity: .4; cursor: not-allowed; }
+
+  .row { display: flex; gap: 8px; align-items: flex-end; }
+  .row.wrap { flex-wrap: wrap; }
+
+  /* Copy field */
+  .copy-field { position: relative; }
+  .copy-field textarea, .copy-field input { padding-right: 70px; }
+  .copy-btn { position: absolute; right: 6px; top: 6px; background: var(--surface); border: 1px solid var(--border); border-radius: 4px; padding: 3px 8px; font-size: .68rem; cursor: pointer; color: var(--text-muted); transition: all .15s; }
+  .copy-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .copy-btn.copied { border-color: var(--green); color: var(--green); }
+
+  /* Title selector */
+  .title-options { display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
+  .title-opt { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; cursor: pointer; transition: all .15s; }
+  .title-opt:hover { border-color: var(--accent); }
+  .title-opt.selected { border-color: var(--accent); background: #1e1a0e; }
+  .title-opt input[type="radio"] { accent-color: var(--accent); flex-shrink: 0; }
+  .title-opt-text { font-size: .88rem; font-weight: 600; flex: 1; }
+  .title-opt-edit { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: .72rem; padding: 2px 4px; }
+
+  /* Tags */
+  .tags-wrap { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+  .tag-chip { background: var(--surface2); border: 1px solid var(--border); border-radius: 20px; padding: 3px 10px; font-size: .75rem; display: flex; align-items: center; gap: 6px; }
+  .tag-chip button { background: none; border: none; cursor: pointer; color: var(--text-muted); font-size: .8rem; padding: 0; line-height: 1; }
+  .tag-chip button:hover { color: var(--red); }
+
+  /* Checklist */
+  .checklist { display: flex; flex-direction: column; gap: 8px; }
+  .check-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; }
+  .check-item input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--accent); flex-shrink: 0; }
+  .check-item label { margin: 0; color: var(--text); cursor: pointer; font-size: .86rem; }
+  .check-item.done label { text-decoration: line-through; color: var(--text-muted); }
+
+  /* Summary box */
+  .summary-box { background: var(--surface2); border-left: 3px solid var(--accent); border-radius: 0 6px 6px 0; padding: 12px 14px; font-size: .84rem; line-height: 1.8; white-space: pre-wrap; }
+
+  /* Status bar */
+  .status-bar { background: var(--surface); border-top: 1px solid var(--border); padding: 8px 20px; display: flex; align-items: center; gap: 16px; font-size: .72rem; color: var(--text-muted); }
+  .status-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .status-dot.green { background: var(--green); }
+  .status-dot.yellow { background: var(--accent); }
+  .status-dot.gray { background: #555; }
+
+  .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #333; color: #fff; padding: 8px 18px; border-radius: 20px; font-size: .8rem; z-index: 9999; pointer-events: none; }
+
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  @media (max-width: 600px) {
+    aside { width: 56px; }
+    .ep-date, .ep-title, .ep-status, .sidebar-title, .add-ep-btn span { display: none; }
+    .ep-item { padding: 10px 8px; text-align: center; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🦉 マネぼうモーニングニューススタジオ</h1>
+  <span class="sub">Morning News Studio</span>
+  <span id="syncStatus" style="margin-left:auto;">—</span>
+  <span id="saveIndicator">💾 保存済</span>
+</header>
+
+<div class="layout">
+  <aside>
+    <div class="sidebar-title">エピソード</div>
+    <div id="epList"></div>
+    <button class="add-ep-btn" onclick="newEpisode()">＋ <span>新規エピソード</span></button>
+  </aside>
+
+  <main id="mainArea">
+    <div class="empty-state">
+      <div class="icon">🦉</div>
+      <div style="font-weight:700;">エピソードを選択 または 新規作成</div>
+      <div style="font-size:.8rem;">左の「＋ 新規エピソード」からスタート</div>
+    </div>
+  </main>
+</div>
+
+<script>
+// ══════════════════════════════
+//  Data
+// ══════════════════════════════
+const SK = 'morning_news_studio_v1';
+
+function save(d) {
+  localStorage.setItem(SK, JSON.stringify(d));
+  showSaveIndicator();
+}
+
+function load() {
+  try {
+    const d = JSON.parse(localStorage.getItem(SK));
+    return d && d.episodes ? d : { episodes: [] };
+  } catch { return { episodes: [] }; }
+}
+
+let data = load();
+let currentId = null;
+
+function today() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function ep() {
+  return data.episodes.find(e => e.id === currentId);
+}
+
+function saveEp(patch) {
+  const e = ep();
+  if (!e) return;
+  Object.assign(e, patch, { updatedAt: new Date().toISOString() });
+  save(data);
+}
+
+// ══════════════════════════════
+//  Episode management
+// ══════════════════════════════
+function newEpisode() {
+  const id = 'ep_' + Date.now();
+  data.episodes.unshift({
+    id, date: today(), title: '新しいエピソード',
+    rawInput: '', summary: '', script: '',
+    titleOptions: ['', '', ''], selectedTitle: 0,
+    description: '', tags: [], checks: [false,false,false,false,false],
+    status: 'draft', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString()
+  });
+  save(data);
+  selectEp(id);
+  renderSidebar();
+}
+
+function selectEp(id) {
+  currentId = id;
+  renderSidebar();
+  renderMain();
+}
+
+function deleteEp(id) {
+  if (!confirm('このエピソードを削除しますか？')) return;
+  data.episodes = data.episodes.filter(e => e.id !== id);
+  save(data);
+  if (currentId === id) {
+    currentId = null;
+    document.getElementById('mainArea').innerHTML = `
+      <div class="empty-state"><div class="icon">🦉</div><div>エピソードを選択してください</div></div>`;
+  }
+  renderSidebar();
+}
+
+// ══════════════════════════════
+//  Sidebar
+// ══════════════════════════════
+function renderSidebar() {
+  const statusLabel = { draft: '下書き', ready: '投稿準備完了', posted: '投稿済み' };
+  document.getElementById('epList').innerHTML = data.episodes.map(e => `
+    <div class="ep-item ${e.id === currentId ? 'active' : ''}" onclick="selectEp('${e.id}')">
+      <div class="ep-date">${e.date}</div>
+      <div class="ep-title">${escHtml(e.title)}</div>
+      <span class="ep-status status-${e.status}">${statusLabel[e.status] || '下書き'}</span>
+    </div>`).join('');
+}
+
+// ══════════════════════════════
+//  Main render
+// ══════════════════════════════
+let currentTab = 'input';
+
+function renderMain() {
+  const e = ep();
+  if (!e) return;
+
+  const tabs = [
+    { id: 'input',    label: '📥 入力' },
+    { id: 'script',   label: '📝 台本' },
+    { id: 'meta',     label: '🎯 投稿情報' },
+    { id: 'publish',  label: '📦 投稿準備' },
+  ];
+
+  document.getElementById('mainArea').innerHTML = `
+    <div class="tabs">
+      ${tabs.map(t => `<button class="tab ${currentTab===t.id?'active':''}" onclick="switchTab('${t.id}')">${t.label}</button>`).join('')}
+    </div>
+    <div class="panels" id="panels">
+      ${renderInputPanel(e)}
+      ${renderScriptPanel(e)}
+      ${renderMetaPanel(e)}
+      ${renderPublishPanel(e)}
+    </div>
+  `;
+}
+
+function switchTab(tab) {
+  currentTab = tab;
+  // save current fields before switching
+  collectAndSave();
+  renderMain();
+}
+
+// ══════════════════════════════
+//  Panel: 入力
+// ══════════════════════════════
+function renderInputPanel(e) {
+  return `
+  <div class="panel ${currentTab==='input'?'active':''}" id="panelInput">
+    <div class="card">
+      <div class="card-title">📅 日付 / エピソード名</div>
+      <div class="row">
+        <div style="flex:1"><label>放送日</label><input type="date" id="epDate" value="${e.date}" onchange="saveEp({date:this.value});renderSidebar()"></div>
+        <div style="flex:2"><label>エピソードタイトル（管理用）</label><input type="text" id="epTitle" value="${escHtml(e.title)}" placeholder="例: 2026-06-08 雇用統計ショック"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📋 AI生成テキストを貼り付ける</div>
+      <p style="font-size:.78rem;color:var(--text-muted);margin-bottom:10px;line-height:1.6;">
+        文字起こし→台本AIで生成した内容をそのまま貼り付けてください。<br>
+        「自動解析」ボタンで各フィールドに自動分割します。
+      </p>
+      <textarea id="rawInput" style="min-height:260px;font-size:.82rem;" placeholder="要約（3行）&#10;・...&#10;&#10;1分ショート台本（話者：ふくろう）&#10;...&#10;&#10;サムネ文言案（3つ）&#10;1.&#10;2.&#10;3.&#10;&#10;投稿文&#10;...">${escHtml(e.rawInput)}</textarea>
+      <div class="row" style="margin-top:10px;">
+        <button class="btn btn-primary" onclick="autoparse()">✨ 自動解析して各フィールドへ</button>
+        <button class="btn btn-secondary" onclick="clearRaw()">クリア</button>
+      </div>
+      <div id="parseStatus" style="font-size:.75rem;color:var(--text-muted);margin-top:6px;"></div>
+    </div>
+  </div>`;
+}
+
+// ══════════════════════════════
+//  Panel: 台本
+// ══════════════════════════════
+function renderScriptPanel(e) {
+  return `
+  <div class="panel ${currentTab==='script'?'active':''}" id="panelScript">
+    <div class="card">
+      <div class="card-title">📌 要約（3行）</div>
+      <textarea id="summary" style="min-height:100px;">${escHtml(e.summary)}</textarea>
+    </div>
+    <div class="card">
+      <div class="card-title">🎙 台本</div>
+      <p style="font-size:.75rem;color:var(--text-muted);margin-bottom:8px;">話者: 🦉 ふくろう</p>
+      <textarea id="script" style="min-height:380px;font-size:.86rem;line-height:1.8;">${escHtml(e.script)}</textarea>
+      <div class="row" style="margin-top:10px;justify-content:flex-end;">
+        <button class="btn btn-secondary btn-sm" onclick="copyField('script')">📋 台本をコピー</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+// ══════════════════════════════
+//  Panel: 投稿情報
+// ══════════════════════════════
+function renderMetaPanel(e) {
+  const opts = e.titleOptions || ['', '', ''];
+  const sel  = e.selectedTitle ?? 0;
+
+  return `
+  <div class="panel ${currentTab==='meta'?'active':''}" id="panelMeta">
+    <div class="card">
+      <div class="card-title">🏷 タイトル候補</div>
+      <div class="title-options">
+        ${opts.map((t, i) => `
+        <label class="title-opt ${sel===i?'selected':''}" onclick="selectTitle(${i})">
+          <input type="radio" name="titleSel" value="${i}" ${sel===i?'checked':''}>
+          <input type="text" id="titleOpt${i}" value="${escHtml(t)}" placeholder="サムネ文言案 ${i+1}"
+            style="background:transparent;border:none;padding:0;font-weight:600;font-size:.88rem;"
+            onclick="event.stopPropagation()" onchange="saveTitleOpt(${i},this.value)">
+        </label>`).join('')}
+      </div>
+      <div style="font-size:.75rem;color:var(--text-muted);">選択中: <span id="selectedTitlePreview" style="color:var(--accent);">${escHtml(opts[sel]||'未選択')}</span></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📄 概要欄（投稿文）</div>
+      <div class="copy-field">
+        <textarea id="description" style="min-height:180px;">${escHtml(e.description)}</textarea>
+        <button class="copy-btn" onclick="copyId('description',this)">コピー</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🏷 タグ</div>
+      <div class="row" style="margin-bottom:8px;">
+        <input type="text" id="tagInput" placeholder="タグを入力してEnter" style="flex:1" onkeydown="if(event.key==='Enter'){addTag();event.preventDefault();}">
+        <button class="btn btn-secondary btn-sm" onclick="addTag()">追加</button>
+      </div>
+      <div class="tags-wrap" id="tagsWrap">
+        ${(e.tags||[]).map((t,i) => `<span class="tag-chip">${escHtml(t)}<button onclick="removeTag(${i})">✕</button></span>`).join('')}
+      </div>
+      <div style="margin-top:10px;">
+        <button class="btn btn-secondary btn-sm" onclick="copyTags()">📋 タグをコピー（カンマ区切り）</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+// ══════════════════════════════
+//  Panel: 投稿準備
+// ══════════════════════════════
+function renderPublishPanel(e) {
+  const checkLabels = [
+    '台本の読み合わせ完了',
+    'サムネイル画像を作成済み',
+    '動画ファイルを書き出し済み',
+    'YouTube Studioにアップロード済み',
+    '投稿・公開完了'
+  ];
+  const checks = e.checks || [false,false,false,false,false];
+  const selectedTitle = (e.titleOptions||[])[e.selectedTitle||0] || '（未選択）';
+
+  return `
+  <div class="panel ${currentTab==='publish'?'active':''}" id="panelPublish">
+
+    <div class="card" style="border-color:var(--accent);">
+      <div class="card-title">📋 投稿サマリー</div>
+      <div style="display:grid;gap:10px;">
+        <div>
+          <div style="font-size:.72rem;color:var(--text-muted);margin-bottom:3px;">タイトル</div>
+          <div style="font-weight:700;font-size:.95rem;color:var(--accent);">${escHtml(selectedTitle)}</div>
+        </div>
+        <div>
+          <div style="font-size:.72rem;color:var(--text-muted);margin-bottom:3px;">要約</div>
+          <div class="summary-box">${escHtml(e.summary||'（未入力）')}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📦 YouTube Studioへコピー</div>
+      <div style="display:grid;gap:8px;">
+        <div>
+          <label>タイトル</label>
+          <div class="copy-field">
+            <input type="text" id="publishTitle" value="${escHtml(selectedTitle)}" readonly>
+            <button class="copy-btn" onclick="copyId('publishTitle',this)">コピー</button>
+          </div>
+        </div>
+        <div>
+          <label>概要欄</label>
+          <div class="copy-field">
+            <textarea id="publishDesc" style="min-height:120px;" readonly>${escHtml(e.description)}</textarea>
+            <button class="copy-btn" onclick="copyId('publishDesc',this)">コピー</button>
+          </div>
+        </div>
+        <div>
+          <label>タグ（カンマ区切り）</label>
+          <div class="copy-field">
+            <input type="text" id="publishTags" value="${escHtml((e.tags||[]).join(', '))}" readonly>
+            <button class="copy-btn" onclick="copyId('publishTags',this)">コピー</button>
+          </div>
+        </div>
+      </div>
+      <div style="margin-top:12px;">
+        <a href="https://studio.youtube.com/channel/UCQNWDJh_KoFMFVz5QRU3k6Q/videos/upload" target="_blank" rel="noopener"
+          class="btn btn-primary" style="display:inline-block;text-decoration:none;">▶ YouTube Studioを開く ↗</a>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">✅ 投稿チェックリスト</div>
+      <div class="checklist">
+        ${checkLabels.map((lbl, i) => `
+        <div class="check-item ${checks[i]?'done':''}" id="chk${i}">
+          <input type="checkbox" id="cb${i}" ${checks[i]?'checked':''} onchange="toggleCheck(${i},this.checked)">
+          <label for="cb${i}">${lbl}</label>
+        </div>`).join('')}
+      </div>
+      <div style="margin-top:14px;display:flex;gap:8px;align-items:center;">
+        <button class="btn btn-green" onclick="markPosted()" ${checks[4]?'disabled':''}>🚀 投稿完了としてマーク</button>
+        ${e.status==='posted'?'<span style="color:var(--green);font-size:.82rem;">✅ 投稿済み</span>':''}
+      </div>
+    </div>
+
+  </div>`;
+}
+
+// ══════════════════════════════
+//  Auto-parse
+// ══════════════════════════════
+function autoparse() {
+  collectAndSave();
+  const e = ep();
+  if (!e) return;
+  const raw = e.rawInput;
+  if (!raw.trim()) { showToast('テキストを貼り付けてください'); return; }
+
+  let summary = '', script = '', titleOptions = ['','',''], description = '';
+
+  // --- 要約
+  const summaryMatch = raw.match(/要約[（(].*?[）)][\s\S]*?\n([\s\S]*?)(?=\n(?:1分|ショート|台本|⸻|---|\n\n))/i)
+    || raw.match(/要約[\s\S]*?\n([\s\S]*?)(?=\n\n)/i);
+  if (summaryMatch) summary = summaryMatch[1].trim();
+
+  // --- 台本（「おはよう」や「おはようございます」から始まるブロック）
+  const scriptMatch = raw.match(/(?:1分|ショート|台本)[^\n]*\n+([\s\S]*?)(?=\n*⸻|\n*---|\n*サムネ|\n*投稿文|$)/i);
+  if (scriptMatch) script = scriptMatch[1].trim();
+  // フォールバック：「おはよう」で始まる行を探す
+  if (!script) {
+    const idx = raw.search(/おはよう/);
+    if (idx >= 0) {
+      const rest = raw.slice(idx);
+      const end = rest.search(/\n*⸻|\n*---|\n*サムネ|\n*投稿文/);
+      script = (end >= 0 ? rest.slice(0, end) : rest).trim();
+    }
+  }
+
+  // --- サムネ文言
+  const thumbSection = raw.match(/サムネ[^\n]*\n+([\s\S]*?)(?=\n*⸻|\n*---|\n*投稿文|$)/i);
+  if (thumbSection) {
+    const lines = thumbSection[1].trim().split('\n').filter(l => l.trim());
+    lines.forEach((l, i) => {
+      if (i < 3) titleOptions[i] = l.replace(/^[\d１２３\-\.、。）)]\s*[「『"]?/, '').replace(/[」』"]$/, '').trim();
+    });
+  }
+
+  // --- 投稿文
+  const descMatch = raw.match(/投稿文[^\n]*\n+([\s\S]*?)(?=\n*⸻|\n*---|$)/i);
+  if (descMatch) description = descMatch[1].trim();
+
+  // --- タグ（#から始まる語を収集）
+  const tagMatches = [...raw.matchAll(/#([\w぀-鿿０-９Ａ-ｚ]+)/g)];
+  const tags = [...new Set(tagMatches.map(m => m[1]))].slice(0, 20);
+
+  saveEp({ summary, script, titleOptions, selectedTitle: 0, description, tags });
+
+  const filled = [summary, script, titleOptions[0], description].filter(Boolean).length;
+  document.getElementById('parseStatus').textContent = `✅ ${filled}/4 フィールドを解析しました`;
+  showToast('✨ 解析完了');
+}
+
+// ══════════════════════════════
+//  Collect & Save
+// ══════════════════════════════
+function collectAndSave() {
+  const e = ep();
+  if (!e) return;
+  const patch = {};
+  const fields = {
+    epDate: 'date', epTitle: 'title',
+    rawInput: 'rawInput', summary: 'summary', script: 'script', description: 'description'
+  };
+  for (const [id, key] of Object.entries(fields)) {
+    const el = document.getElementById(id);
+    if (el) patch[key] = el.value;
+  }
+  // title options
+  const opts = [...(e.titleOptions || ['','',''])];
+  [0,1,2].forEach(i => { const el = document.getElementById('titleOpt'+i); if (el) opts[i] = el.value; });
+  patch.titleOptions = opts;
+  saveEp(patch);
+}
+
+// ══════════════════════════════
+//  Actions
+// ══════════════════════════════
+function selectTitle(i) {
+  collectAndSave();
+  saveEp({ selectedTitle: i });
+  const e = ep();
+  document.querySelectorAll('.title-opt').forEach((el, idx) => el.classList.toggle('selected', idx === i));
+  const preview = document.getElementById('selectedTitlePreview');
+  if (preview && e) preview.textContent = (e.titleOptions||[])[i] || '未選択';
+}
+
+function saveTitleOpt(i, val) {
+  const e = ep();
+  if (!e) return;
+  const opts = [...(e.titleOptions || ['','',''])];
+  opts[i] = val;
+  saveEp({ titleOptions: opts });
+}
+
+function addTag() {
+  collectAndSave();
+  const input = document.getElementById('tagInput');
+  if (!input) return;
+  const val = input.value.replace(/^#/, '').trim();
+  if (!val) return;
+  const e = ep();
+  const tags = [...(e.tags || [])];
+  if (!tags.includes(val)) { tags.push(val); saveEp({ tags }); }
+  input.value = '';
+  const wrap = document.getElementById('tagsWrap');
+  if (wrap) wrap.innerHTML = tags.map((t,i) => `<span class="tag-chip">${escHtml(t)}<button onclick="removeTag(${i})">✕</button></span>`).join('');
+}
+
+function removeTag(i) {
+  const e = ep();
+  const tags = [...(e.tags || [])];
+  tags.splice(i, 1);
+  saveEp({ tags });
+  renderMain();
+}
+
+function copyTags() {
+  const e = ep();
+  if (!e) return;
+  navigator.clipboard.writeText((e.tags||[]).join(', ')).then(() => showToast('📋 タグをコピーしました'));
+}
+
+function toggleCheck(i, val) {
+  const e = ep();
+  const checks = [...(e.checks || [false,false,false,false,false])];
+  checks[i] = val;
+  saveEp({ checks });
+  const item = document.getElementById('chk'+i);
+  if (item) item.classList.toggle('done', val);
+}
+
+function markPosted() {
+  saveEp({ status: 'posted', checks: [true,true,true,true,true] });
+  renderSidebar();
+  renderMain();
+  showToast('🚀 投稿完了としてマークしました');
+}
+
+function clearRaw() {
+  const el = document.getElementById('rawInput');
+  if (el) el.value = '';
+  saveEp({ rawInput: '' });
+}
+
+function copyField(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  navigator.clipboard.writeText(el.value).then(() => showToast('📋 コピーしました'));
+}
+
+function copyId(id, btn) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  navigator.clipboard.writeText(el.value).then(() => {
+    if (btn) { btn.textContent = '✓'; btn.classList.add('copied'); setTimeout(() => { btn.textContent = 'コピー'; btn.classList.remove('copied'); }, 1500); }
+    showToast('📋 コピーしました');
+  });
+}
+
+// ══════════════════════════════
+//  Utils
+// ══════════════════════════════
+function escHtml(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function showToast(msg) {
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 2500);
+}
+
+function showSaveIndicator() {
+  const el = document.getElementById('saveIndicator');
+  if (!el) return;
+  el.style.opacity = '1';
+  setTimeout(() => { el.style.opacity = '0'; }, 1800);
+}
+
+// ══════════════════════════════
+//  Auto-save on beforeunload
+// ══════════════════════════════
+window.addEventListener('beforeunload', collectAndSave);
+
+// ══════════════════════════════
+//  Init
+// ══════════════════════════════
+renderSidebar();
+if (data.episodes.length > 0) selectEp(data.episodes[0].id);
+</script>
+</body>
+</html>
