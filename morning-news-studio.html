@@ -4,649 +4,3528 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>🦉 マネぼうモーニングニューススタジオ</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://unpkg.com/@ffmpeg/ffmpeg@0.11.6/dist/ffmpeg.min.js"></script>
 <style>
   :root {
-    --accent: #F5C842;
-    --accent-dark: #D4A017;
+    --accent: #c9a84c;
     --bg: #0d0d0d;
     --surface: #1a1a1a;
     --surface2: #242424;
     --text: #e8e8e8;
     --text-muted: #888;
     --border: #333;
-    --green: #4CAF7D;
-    --red: #e55;
+    --char-color: #c9a84c;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { background: var(--bg); color: var(--text); font-family: 'Noto Sans JP', 'Hiragino Sans', sans-serif; min-height: 100vh; display: flex; flex-direction: column; font-size: 14px; }
+  body { background: var(--bg); color: var(--text); font-family: 'Noto Serif JP','Hiragino Serif',serif; min-height: 100vh; display: flex; flex-direction: column; }
 
-  header { background: var(--surface); border-bottom: 2px solid var(--accent); padding: 12px 20px; display: flex; align-items: center; gap: 12px; }
-  header h1 { font-size: 1rem; font-weight: 700; color: var(--accent); letter-spacing: .05em; }
-  header .sub { color: var(--text-muted); font-size: .75rem; }
-  #syncStatus { margin-left: auto; font-size: .72rem; color: var(--text-muted); }
-  #saveIndicator { font-size: .72rem; color: var(--green); opacity: 0; transition: opacity .5s; }
+  header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 14px 24px; display: flex; align-items: center; gap: 16px; }
+  header h1 { font-size: 1.1rem; font-weight: 700; color: var(--accent); letter-spacing: .05em; }
+  header span { color: var(--text-muted); font-size: .8rem; }
 
-  .layout { display: flex; flex: 1; overflow: hidden; height: calc(100vh - 49px); }
+  .layout { display: flex; flex: 1; overflow: hidden; }
 
-  /* Sidebar */
-  aside { width: 200px; background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; flex-shrink: 0; overflow-y: auto; }
-  .sidebar-title { padding: 12px 14px 6px; font-size: .68rem; color: var(--text-muted); letter-spacing: .1em; text-transform: uppercase; }
-  .ep-item { padding: 10px 14px; cursor: pointer; border-left: 3px solid transparent; transition: all .15s; }
-  .ep-item:hover { background: var(--surface2); }
-  .ep-item.active { border-left-color: var(--accent); background: var(--surface2); }
-  .ep-date { font-size: .82rem; font-weight: 700; color: var(--text); }
-  .ep-title { font-size: .7rem; color: var(--text-muted); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 160px; }
-  .ep-status { display: inline-block; font-size: .62rem; padding: 1px 6px; border-radius: 3px; margin-top: 3px; }
-  .status-draft { background: #333; color: #aaa; }
-  .status-ready { background: #1a3a2a; color: var(--green); }
-  .status-posted { background: #1a1a3a; color: #7ab; }
-  .add-ep-btn { margin: 10px; padding: 9px; background: none; border: 1px dashed var(--border); border-radius: 6px; color: var(--text-muted); cursor: pointer; font-size: .78rem; transition: all .2s; }
-  .add-ep-btn:hover { border-color: var(--accent); color: var(--accent); }
+  aside { width: 220px; background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; overflow-y: auto; flex-shrink: 0; }
+  .sidebar-title { padding: 14px 16px 8px; font-size: .7rem; color: var(--text-muted); letter-spacing: .1em; text-transform: uppercase; }
+  .char-item { padding: 12px 16px; cursor: pointer; border-left: 3px solid transparent; transition: all .2s; display: flex; align-items: center; gap: 10px; }
+  .char-item:hover { background: var(--surface2); }
+  .char-item.active { border-left-color: var(--char-color); background: var(--surface2); }
+  .char-icon { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1rem; flex-shrink: 0; overflow: hidden; }
+  .char-icon img { width: 100%; height: 100%; object-fit: cover; }
+  .char-name { font-size: .9rem; font-weight: 600; }
+  .char-theme { font-size: .7rem; color: var(--text-muted); }
+  .add-char-btn { margin: 12px; padding: 10px; background: none; border: 1px dashed var(--border); border-radius: 6px; color: var(--text-muted); cursor: pointer; font-size: .82rem; transition: all .2s; }
+  .add-char-btn:hover { border-color: var(--accent); color: var(--accent); }
 
-  /* Main */
-  main { flex: 1; overflow-y: auto; display: flex; flex-direction: column; }
-  .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; gap: 12px; color: var(--text-muted); }
-  .empty-state .icon { font-size: 3rem; }
+  main { flex: 1; overflow-y: auto; padding: 24px; display: flex; flex-direction: column; gap: 20px; }
 
-  /* Tabs */
-  .tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--border); background: var(--surface); padding: 0 20px; flex-shrink: 0; }
-  .tab { padding: 10px 14px; background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: .82rem; border-bottom: 2px solid transparent; transition: all .15s; font-family: inherit; white-space: nowrap; }
+  .char-header { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 20px 24px; display: flex; align-items: center; gap: 16px; border-left: 4px solid var(--char-color); }
+  .char-header-icon { width: 56px; height: 56px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; overflow: hidden; flex-shrink: 0; }
+  .char-header-icon img { width: 100%; height: 100%; object-fit: cover; }
+  .char-header-info h2 { font-size: 1.3rem; color: var(--char-color); }
+  .char-header-info p { font-size: .82rem; color: var(--text-muted); margin-top: 2px; }
+  .char-header-badges { margin-top: 6px; display: flex; gap: 6px; flex-wrap: wrap; }
+  .badge { background: var(--surface2); border: 1px solid var(--border); border-radius: 4px; padding: 2px 8px; font-size: .72rem; color: var(--text-muted); }
+
+  .tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+  .tab { padding: 8px 14px; background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: .82rem; border-bottom: 2px solid transparent; transition: all .2s; font-family: inherit; position: relative; }
   .tab:hover { color: var(--text); }
-  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .tab.active { color: var(--char-color); border-bottom-color: var(--char-color); }
+  .tab .notif-dot { position: absolute; top: 5px; right: 5px; width: 7px; height: 7px; border-radius: 50%; background: #e53935; display: none; box-shadow: 0 0 0 2px var(--bg); }
+  .tab.has-notif .notif-dot { display: block; }
 
-  /* Panels */
-  .panels { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 16px; }
-  .panel { display: none; flex-direction: column; gap: 14px; }
+  /* グローバルAIスピナー */
+  #globalAiSpinner {
+    position: fixed; bottom: 20px; right: 20px; z-index: 9999;
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 24px; padding: 8px 14px 8px 10px;
+    display: none; align-items: center; gap: 8px;
+    font-size: .78rem; color: var(--text-muted);
+    box-shadow: 0 4px 16px rgba(0,0,0,.4);
+  }
+  #globalAiSpinner.visible { display: flex; }
+  #globalAiSpinner .spin {
+    width: 16px; height: 16px; border-radius: 50%;
+    border: 2px solid var(--border); border-top-color: var(--char-color,#c9a84c);
+    animation: spin360 .8s linear infinite; flex-shrink: 0;
+  }
+  @keyframes spin360 { to { transform: rotate(360deg); } }
+
+  .panel { display: none; flex-direction: column; gap: 16px; }
   .panel.active { display: flex; }
 
-  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px 18px; }
-  .card-title { font-size: .72rem; color: var(--text-muted); letter-spacing: .08em; text-transform: uppercase; margin-bottom: 10px; font-weight: 700; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 18px 20px; }
+  .card-title { font-size: .78rem; color: var(--text-muted); letter-spacing: .08em; margin-bottom: 12px; text-transform: uppercase; }
 
-  label { font-size: .78rem; color: var(--text-muted); margin-bottom: 4px; display: block; }
-  input, textarea, select { background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; color: var(--text); padding: 8px 10px; font-family: inherit; font-size: .86rem; width: 100%; transition: border-color .15s; }
-  input:focus, textarea:focus { outline: none; border-color: var(--accent); }
-  textarea { resize: vertical; line-height: 1.7; }
+  .form-row { display: flex; gap: 10px; align-items: flex-end; }
+  .form-row.col { flex-direction: column; align-items: stretch; }
+  label { font-size: .8rem; color: var(--text-muted); margin-bottom: 4px; display: block; }
+  input, textarea, select { background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; color: var(--text); padding: 8px 12px; font-family: inherit; font-size: .88rem; width: 100%; transition: border-color .2s; }
+  input:focus, textarea:focus, select:focus { outline: none; border-color: var(--char-color); }
+  textarea { resize: vertical; min-height: 80px; }
 
-  .btn { padding: 8px 16px; border-radius: 6px; border: none; cursor: pointer; font-size: .82rem; font-family: inherit; font-weight: 600; transition: all .15s; }
-  .btn-primary { background: var(--accent); color: #0d0d0d; }
-  .btn-primary:hover { background: var(--accent-dark); }
+  .btn { padding: 9px 18px; border-radius: 6px; border: none; cursor: pointer; font-size: .85rem; font-family: inherit; font-weight: 600; transition: all .2s; white-space: nowrap; }
+  .btn-primary { background: var(--char-color); color: #0d0d0d; }
+  .btn-primary:hover { opacity: .85; }
   .btn-secondary { background: var(--surface2); border: 1px solid var(--border); color: var(--text); }
-  .btn-secondary:hover { border-color: var(--accent); }
-  .btn-green { background: var(--green); color: #0d0d0d; }
-  .btn-sm { padding: 5px 10px; font-size: .75rem; }
+  .btn-secondary:hover { border-color: var(--char-color); }
+  .btn-sm { padding: 6px 12px; font-size: .78rem; }
   .btn:disabled { opacity: .4; cursor: not-allowed; }
 
-  .row { display: flex; gap: 8px; align-items: flex-end; }
-  .row.wrap { flex-wrap: wrap; }
+  .result-box { background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 14px; font-size: .85rem; line-height: 1.7; white-space: pre-wrap; word-break: break-word; min-height: 80px; color: var(--text); }
+  .result-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .result-label { font-size: .75rem; color: var(--char-color); font-weight: 700; }
 
-  /* Copy field */
-  .copy-field { position: relative; }
-  .copy-field textarea, .copy-field input { padding-right: 70px; }
-  .copy-btn { position: absolute; right: 6px; top: 6px; background: var(--surface); border: 1px solid var(--border); border-radius: 4px; padding: 3px 8px; font-size: .68rem; cursor: pointer; color: var(--text-muted); transition: all .15s; }
-  .copy-btn:hover { border-color: var(--accent); color: var(--accent); }
-  .copy-btn.copied { border-color: var(--green); color: var(--green); }
+  .plan-grid { display: flex; flex-direction: column; gap: 10px; }
+  .plan-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; cursor: pointer; transition: all .2s; }
+  .plan-card:hover { border-color: var(--char-color); }
+  .plan-card.selected { border-color: var(--char-color); background: #1e1a14; }
+  .plan-card-label { font-size: .72rem; color: var(--char-color); font-weight: 700; margin-bottom: 4px; }
+  .plan-card-title { font-size: .95rem; font-weight: 600; margin-bottom: 4px; }
+  .plan-card-desc { font-size: .8rem; color: var(--text-muted); line-height: 1.5; }
 
-  /* Title selector */
-  .title-options { display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
-  .title-opt { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; cursor: pointer; transition: all .15s; }
-  .title-opt:hover { border-color: var(--accent); }
-  .title-opt.selected { border-color: var(--accent); background: #1e1a0e; }
-  .title-opt input[type="radio"] { accent-color: var(--accent); flex-shrink: 0; }
-  .title-opt-text { font-size: .88rem; font-weight: 600; flex: 1; }
-  .title-opt-edit { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: .72rem; padding: 2px 4px; }
+  .schedule-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px,1fr)); gap: 8px; }
+  .schedule-item { background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 10px 12px; font-size: .8rem; }
+  .schedule-date { color: var(--char-color); font-weight: 700; margin-bottom: 4px; }
+  .schedule-ep { color: var(--text-muted); font-size: .75rem; }
 
-  /* Tags */
-  .tags-wrap { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
-  .tag-chip { background: var(--surface2); border: 1px solid var(--border); border-radius: 20px; padding: 3px 10px; font-size: .75rem; display: flex; align-items: center; gap: 6px; }
-  .tag-chip button { background: none; border: none; cursor: pointer; color: var(--text-muted); font-size: .8rem; padding: 0; line-height: 1; }
-  .tag-chip button:hover { color: var(--red); }
+  /* ── Asset Manager ── */
+  .asset-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px,1fr)); gap: 10px; }
+  .asset-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; cursor: pointer; transition: all .2s; position: relative; }
+  .asset-card:hover { border-color: var(--char-color); }
+  .asset-card.selected { border-color: var(--char-color); border-width: 2px; }
+  .asset-thumb { width: 100%; aspect-ratio: 1; object-fit: cover; background: var(--surface); display: flex; align-items: center; justify-content: center; color: var(--text-muted); font-size: 2rem; }
+  .asset-thumb img { width: 100%; height: 100%; object-fit: cover; }
+  .asset-name { padding: 6px 8px; font-size: .72rem; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .asset-use-btn { position: absolute; top: 4px; right: 4px; background: var(--char-color); color: #0d0d0d; border: none; border-radius: 4px; padding: 3px 7px; font-size: .68rem; font-weight: 700; cursor: pointer; opacity: 0; transition: opacity .2s; }
+  .asset-card:hover .asset-use-btn { opacity: 1; }
 
-  /* Checklist */
-  .checklist { display: flex; flex-direction: column; gap: 8px; }
-  .check-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; }
-  .check-item input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--accent); flex-shrink: 0; }
-  .check-item label { margin: 0; color: var(--text); cursor: pointer; font-size: .86rem; }
-  .check-item.done label { text-decoration: line-through; color: var(--text-muted); }
+  .upload-zone { border: 2px dashed var(--border); border-radius: 8px; padding: 32px; text-align: center; cursor: pointer; transition: all .2s; color: var(--text-muted); }
+  .upload-zone:hover, .upload-zone.drag { border-color: var(--char-color); color: var(--char-color); }
+  .upload-zone .upload-icon { font-size: 2rem; margin-bottom: 8px; }
+  .upload-zone p { font-size: .82rem; }
 
-  /* Summary box */
-  .summary-box { background: var(--surface2); border-left: 3px solid var(--accent); border-radius: 0 6px 6px 0; padding: 12px 14px; font-size: .84rem; line-height: 1.8; white-space: pre-wrap; }
+  /* ── Storyboard ── */
+  .storyboard-grid { display: flex; flex-direction: column; gap: 14px; }
+  .sb-scene { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+  .sb-scene-header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 10px 14px; display: flex; align-items: center; gap: 10px; }
+  .sb-scene-badge { background: var(--char-color); color: #0d0d0d; border-radius: 4px; padding: 2px 8px; font-size: .72rem; font-weight: 700; }
+  .sb-scene-time { font-size: .75rem; color: var(--text-muted); }
+  .sb-scene-body { display: grid; grid-template-columns: 160px 1fr; gap: 0; }
+  .sb-image-col { border-right: 1px solid var(--border); padding: 12px; display: flex; flex-direction: column; gap: 8px; align-items: center; }
+  .sb-image-preview { width: 136px; height: 90px; object-fit: cover; border-radius: 6px; background: var(--surface); display: flex; align-items: center; justify-content: center; color: var(--text-muted); font-size: 1.8rem; border: 1px solid var(--border); overflow: hidden; }
+  .sb-image-preview img { width: 100%; height: 100%; object-fit: cover; }
+  .sb-text-col { padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+  .sb-script-lines { font-size: .78rem; color: var(--text-muted); line-height: 1.6; background: var(--surface); border-radius: 4px; padding: 8px 10px; max-height: 80px; overflow-y: auto; }
+  .sb-prompt-row { display: flex; gap: 6px; }
+  .sb-prompt-input { flex: 1; font-size: .8rem; padding: 6px 10px; }
+  @media (max-width: 600px) { .sb-scene-body { grid-template-columns: 1fr; } .sb-image-col { border-right: none; border-bottom: 1px solid var(--border); } }
 
-  /* Status bar */
-  .status-bar { background: var(--surface); border-top: 1px solid var(--border); padding: 8px 20px; display: flex; align-items: center; gap: 16px; font-size: .72rem; color: var(--text-muted); }
-  .status-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-  .status-dot.green { background: var(--green); }
-  .status-dot.yellow { background: var(--accent); }
-  .status-dot.gray { background: #555; }
+  /* ── Scene Composer ── */
+  .scene-layout { display: grid; grid-template-columns: 1fr 280px; gap: 16px; }
+  .canvas-wrap { background: #000; border-radius: 8px; overflow: hidden; display: flex; align-items: center; justify-content: center; position: relative; }
+  #sceneCanvas { display: block; max-width: 100%; max-height: 460px; }
+  .scene-controls { display: flex; flex-direction: column; gap: 12px; }
+  .format-toggle { display: flex; gap: 6px; }
+  .format-btn { flex: 1; padding: 8px; background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; color: var(--text-muted); cursor: pointer; font-size: .78rem; text-align: center; transition: all .2s; }
+  .format-btn.active { border-color: var(--char-color); color: var(--char-color); background: #1e1a14; }
+  .layer-item { background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 10px 12px; display: flex; align-items: center; gap: 8px; font-size: .82rem; }
+  .layer-thumb { width: 32px; height: 32px; object-fit: cover; border-radius: 4px; background: var(--surface); flex-shrink: 0; }
+  .export-btns { display: flex; gap: 8px; }
 
-  .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #333; color: #fff; padding: 8px 18px; border-radius: 20px; font-size: .8rem; z-index: 9999; pointer-events: none; }
+  .loading { display: flex; align-items: center; gap: 8px; color: var(--text-muted); font-size: .82rem; padding: 8px 0; }
+  .spinner { width: 14px; height: 14px; border: 2px solid var(--border); border-top-color: var(--char-color); border-radius: 50%; animation: spin .8s linear infinite; flex-shrink: 0; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .empty { text-align: center; padding: 48px 24px; color: var(--text-muted); }
+  .empty-icon { font-size: 2.5rem; margin-bottom: 12px; }
+  .empty h3 { font-size: 1rem; margin-bottom: 6px; color: var(--text); }
+  .empty p { font-size: .82rem; line-height: 1.6; }
+
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.75); display: none; align-items: center; justify-content: center; z-index: 100; }
+  .modal-overlay.open { display: flex; }
+  .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 24px; width: 90%; max-width: 460px; display: flex; flex-direction: column; gap: 14px; max-height: 90vh; overflow-y: auto; }
+  .modal h2 { font-size: 1rem; color: var(--accent); }
+  .modal-actions { display: flex; gap: 8px; justify-content: flex-end; }
 
   ::-webkit-scrollbar { width: 4px; }
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 
-  @media (max-width: 600px) {
-    aside { width: 56px; }
-    .ep-date, .ep-title, .ep-status, .sidebar-title, .add-ep-btn span { display: none; }
-    .ep-item { padding: 10px 8px; text-align: center; }
+  @media (max-width: 768px) {
+    aside { width: 60px; }
+    .char-name, .char-theme, .sidebar-title { display: none; }
+    .char-item { justify-content: center; padding: 12px 8px; }
+    main { padding: 16px; }
+    .scene-layout { grid-template-columns: 1fr; }
   }
 </style>
 </head>
 <body>
 
+<div id="globalAiSpinner">
+  <div class="spin"></div>
+  <span id="globalAiLabel">AI処理中...</span>
+</div>
+
 <header>
   <h1>🦉 マネぼうモーニングニューススタジオ</h1>
-  <span class="sub">Morning News Studio</span>
-  <span id="syncStatus" style="margin-left:auto;">—</span>
-  <span id="saveIndicator">💾 保存済</span>
+  <span id="headerSub">キャラクターを選択してください</span>
+  <span id="syncStatus" style="margin-left:auto;font-size:.75rem;color:var(--text-muted);">— Drive未確認</span>
+  <span id="saveIndicator" style="margin-left:8px;font-size:.75rem;color:var(--text-muted);opacity:0;transition:opacity .5s;">💾 保存済</span>
+  <button onclick="switchTab('settings')" style="margin-left:12px;background:none;border:1px solid var(--border);border-radius:6px;color:var(--text-muted);padding:6px 12px;cursor:pointer;font-size:.8rem;flex-shrink:0;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">⚙️ 設定</button>
 </header>
 
 <div class="layout">
   <aside>
-    <div class="sidebar-title">エピソード</div>
-    <div id="epList"></div>
-    <button class="add-ep-btn" onclick="newEpisode()">＋ <span>新規エピソード</span></button>
+    <div class="sidebar-title">キャラクター</div>
+    <div id="charList"></div>
+    <div class="sidebar-title" id="epSidebarTitle" style="display:none;margin-top:8px;border-top:1px solid var(--border);padding-top:14px;">動画プロジェクト</div>
+    <div id="episodeList"></div>
+    <button class="add-char-btn" onclick="openAddCharModal()">＋ キャラ追加</button>
   </aside>
-
   <main id="mainArea">
-    <div class="empty-state">
-      <div class="icon">🦉</div>
-      <div style="font-weight:700;">エピソードを選択 または 新規作成</div>
-      <div style="font-size:.8rem;">左の「＋ 新規エピソード」からスタート</div>
+    <div class="empty">
+      <div class="empty-icon">🦁</div>
+      <h3>キャラクターを選択</h3>
+      <p>左のサイドバーからキャラクターを選択するか<br>新しいキャラクターを追加してください</p>
     </div>
   </main>
 </div>
 
+<!-- Drive Asset Picker Modal -->
+<div class="modal-overlay" id="drivePickerModal">
+  <div class="modal" style="max-width:680px;">
+    <h2>📂 Drive素材から選択</h2>
+    <p style="font-size:.78rem;color:var(--text-muted);margin:6px 0 16px;">キャラのDriveフォルダから画像を選択してシーンに適用します</p>
+    <div id="drivePickerGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;max-height:400px;overflow-y:auto;padding:4px;"></div>
+    <div style="display:flex;gap:10px;margin-top:16px;justify-content:flex-end;">
+      <button class="btn btn-secondary" onclick="closeModal('drivePickerModal')">キャンセル</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add/Edit Char Modal -->
+<div class="modal-overlay" id="addCharModal">
+  <div class="modal">
+    <h2 id="modalTitle">🎭 新しいキャラクターを追加</h2>
+
+    <!-- アイコン + 名前 横並び -->
+    <div style="display:flex;gap:16px;align-items:flex-start;margin-bottom:16px;">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:6px;flex-shrink:0;">
+        <img id="charIconPreview" src="" style="width:72px;height:72px;border-radius:50%;object-fit:cover;border:2px solid #c9a84c;display:none;">
+        <div id="charIconPlaceholder" style="width:72px;height:72px;border-radius:50%;background:var(--surface2);border:2px dashed var(--border);display:flex;align-items:center;justify-content:center;font-size:1.8rem;">🎭</div>
+        <button type="button" class="btn btn-secondary btn-sm" style="font-size:.7rem;padding:4px 8px;" onclick="generateCharIconInModal()">💎 AI生成</button>
+        <span id="charIconStatus" style="font-size:.7rem;color:#aaa;text-align:center;max-width:72px;"></span>
+        <input type="hidden" id="newCharAvatarDataUrl">
+      </div>
+      <div style="flex:1;display:flex;flex-direction:column;gap:10px;">
+        <div><label>キャラクター名 <span style="color:#e55;">*</span></label><input type="text" id="newCharName" placeholder="例: ガオル" style="margin-top:4px;"></div>
+        <div><label>種族・見た目 <span style="color:#e55;">*</span></label><input type="text" id="newCharSpecies" placeholder="例: ライオン（筋トレ）" style="margin-top:4px;"></div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <div style="flex:1;"><label>シンボルカラー</label><input type="color" id="newCharColor" value="#FF4500" style="height:36px;cursor:pointer;width:100%;margin-top:4px;"></div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:12px;">
+      <div><label>テーマ・ジャンル <span style="color:#e55;">*</span></label><input type="text" id="newCharTheme" placeholder="例: 筋トレ・フィットネス" style="margin-top:4px;"></div>
+      <div><label>トーン・口調 <span style="color:#e55;">*</span></label><input type="text" id="newCharTone" placeholder="例: 熱血・ポジティブ・体育会系" style="margin-top:4px;"></div>
+    </div>
+
+    <details style="margin-bottom:12px;">
+      <summary style="font-size:.8rem;color:var(--text-muted);cursor:pointer;padding:6px 0;border-top:1px solid var(--border);">▸ 詳細設定（後から変更可）</summary>
+      <div style="display:flex;flex-direction:column;gap:10px;margin-top:12px;">
+        <div><label>AI人格メモ</label><textarea id="newCharPersonality" placeholder="例: 熱血で前向きなライオン。ギャグ多め。視聴者を仲間と呼ぶ。" style="min-height:56px;margin-top:4px;"></textarea></div>
+        <div><label>YouTubeチャンネルID</label><input type="text" id="newCharChannelId" placeholder="UCxxxxxxxxxx" style="margin-top:4px;"></div>
+        <div><label>Google DriveフォルダID</label><input type="text" id="newCharFolderId" placeholder="1ABCxyz...（DriveフォルダURLの末尾）" style="margin-top:4px;"></div>
+        <div><label>VOICEVOX 話者ID（デフォルト: 3＝ずんだもん）</label><input type="number" id="newCharVoicevox" placeholder="3" min="0" value="3" style="margin-top:4px;"></div>
+        <div><label>ChatGPT URL</label><input type="text" id="newCharGptUrl" placeholder="https://chatgpt.com/g/g-..." style="margin-top:4px;"></div>
+        <div><label>Gemini Gem URL</label><input type="text" id="newCharGemUrl" placeholder="https://gemini.google.com/gem/..." style="margin-top:4px;"></div>
+      </div>
+    </details>
+
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('addCharModal')">キャンセル</button>
+      <button class="btn btn-primary" id="modalSaveBtn" onclick="saveNewChar()">追加</button>
+    </div>
+  </div>
+</div>
+
 <script>
-// ══════════════════════════════
-//  Data
-// ══════════════════════════════
-const SK = 'morning_news_studio_v1';
+// ════════════════════════════════════
+//  Storage & State
+// ════════════════════════════════════
+const STORAGE_KEY   = 'morning_news_studio_v1';
+const API_KEY_SK    = 'channelos_claude_api_key';
+const GD_TOKEN_SK   = 'channelos_gd_token';
+const GD_CLIENT_SK  = 'channelos_gd_client_id';
+const GD_FOLDER_SK  = 'channelos_gd_folder_id';
+const YT_TOKEN_SK   = 'channelos_yt_token';
+const GEMINI_KEY_SK    = 'channelos_gemini_api_key';
+const STABILITY_KEY_SK = 'channelos_stability_api_key';
+const SA_JSON_SK    = 'channelos_sa_json';
+const SA_TOKEN_SK   = 'channelos_sa_token';
+const SA_EXPIRY_SK  = 'channelos_sa_expiry';
+const GIST_ID_SK    = 'channelos_gist_id';
+const GIST_PAT_SK   = 'channelos_gist_pat';
 
-function save(d) {
-  localStorage.setItem(SK, JSON.stringify(d));
-  showSaveIndicator();
+function saveData(d) { localStorage.setItem(STORAGE_KEY, JSON.stringify(d)); }
+
+// ── グローバルAIスピナー & タブ通知 ──
+let _aiTaskCount = 0;
+function aiStart(label) {
+  _aiTaskCount++;
+  const el = document.getElementById('globalAiSpinner');
+  const lb = document.getElementById('globalAiLabel');
+  if (el) el.classList.add('visible');
+  if (lb && label) lb.textContent = label;
+}
+function aiEnd(notifTab) {
+  _aiTaskCount = Math.max(0, _aiTaskCount - 1);
+  if (_aiTaskCount === 0) {
+    const el = document.getElementById('globalAiSpinner');
+    if (el) el.classList.remove('visible');
+  }
+  if (notifTab && notifTab !== currentTab) {
+    const tabEl = document.getElementById('tab_' + notifTab);
+    if (tabEl) tabEl.classList.add('has-notif');
+  }
+}
+function defaultData() {
+  return {
+    characters: [{
+      id: 'manebou_news', name: 'マネぼうモーニングニュース', species: 'ふくろう（経済解説）',
+      theme: '経済・株式・為替・マネーニュース', tone: '明るく・わかりやすく・テンポよく',
+      color: '#F5C842', channel_id: 'UCQNWDJh_KoFMFVz5QRU3k6Q',
+      ai_personality: 'マネぼう塾のふくろうキャラ。毎朝の経済ニュースを初心者にもわかりやすく1分で解説する。明るくテンポよく、専門用語を噛み砕いて伝える。視聴者を「みなさん」と呼ぶ。',
+      icon: '🦉', avatar_url: '', drive_folder_id: '',
+      gpt_url: 'https://chatgpt.com/g/g-6a26338c271881918e9ea284f3cafe14-manehou-moninkuniyusu',
+      gem_url: ''
+    }],
+    episodes: [], schedules: [], assets: []
+  };
 }
 
-function load() {
+function loadData() {
   try {
-    const d = JSON.parse(localStorage.getItem(SK));
-    return d && d.episodes ? d : { episodes: [] };
-  } catch { return { episodes: [] }; }
-}
-
-let data = load();
-let currentId = null;
-
-function today() {
-  return new Date().toISOString().slice(0, 10);
-}
-
-function ep() {
-  return data.episodes.find(e => e.id === currentId);
-}
-
-function saveEp(patch) {
-  const e = ep();
-  if (!e) return;
-  Object.assign(e, patch, { updatedAt: new Date().toISOString() });
-  save(data);
-}
-
-// ══════════════════════════════
-//  Episode management
-// ══════════════════════════════
-function newEpisode() {
-  const id = 'ep_' + Date.now();
-  data.episodes.unshift({
-    id, date: today(), title: '新しいエピソード',
-    rawInput: '', summary: '', script: '',
-    titleOptions: ['', '', ''], selectedTitle: 0,
-    description: '', tags: [], checks: [false,false,false,false,false],
-    status: 'draft', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString()
-  });
-  save(data);
-  selectEp(id);
-  renderSidebar();
-}
-
-function selectEp(id) {
-  currentId = id;
-  renderSidebar();
-  renderMain();
-}
-
-function deleteEp(id) {
-  if (!confirm('このエピソードを削除しますか？')) return;
-  data.episodes = data.episodes.filter(e => e.id !== id);
-  save(data);
-  if (currentId === id) {
-    currentId = null;
-    document.getElementById('mainArea').innerHTML = `
-      <div class="empty-state"><div class="icon">🦉</div><div>エピソードを選択してください</div></div>`;
-  }
-  renderSidebar();
-}
-
-// ══════════════════════════════
-//  Sidebar
-// ══════════════════════════════
-function renderSidebar() {
-  const statusLabel = { draft: '下書き', ready: '投稿準備完了', posted: '投稿済み' };
-  document.getElementById('epList').innerHTML = data.episodes.map(e => `
-    <div class="ep-item ${e.id === currentId ? 'active' : ''}" onclick="selectEp('${e.id}')">
-      <div class="ep-date">${e.date}</div>
-      <div class="ep-title">${escHtml(e.title)}</div>
-      <span class="ep-status status-${e.status}">${statusLabel[e.status] || '下書き'}</span>
-    </div>`).join('');
-}
-
-// ══════════════════════════════
-//  Main render
-// ══════════════════════════════
-let currentTab = 'input';
-
-function renderMain() {
-  const e = ep();
-  if (!e) return;
-
-  const tabs = [
-    { id: 'input',    label: '📥 入力' },
-    { id: 'script',   label: '📝 台本' },
-    { id: 'meta',     label: '🎯 投稿情報' },
-    { id: 'publish',  label: '📦 投稿準備' },
-  ];
-
-  document.getElementById('mainArea').innerHTML = `
-    <div class="tabs">
-      ${tabs.map(t => `<button class="tab ${currentTab===t.id?'active':''}" onclick="switchTab('${t.id}')">${t.label}</button>`).join('')}
-    </div>
-    <div class="panels" id="panels">
-      ${renderInputPanel(e)}
-      ${renderScriptPanel(e)}
-      ${renderMetaPanel(e)}
-      ${renderPublishPanel(e)}
-    </div>
-  `;
-}
-
-function switchTab(tab) {
-  currentTab = tab;
-  // save current fields before switching
-  collectAndSave();
-  renderMain();
-}
-
-// ══════════════════════════════
-//  Panel: 入力
-// ══════════════════════════════
-function renderInputPanel(e) {
-  return `
-  <div class="panel ${currentTab==='input'?'active':''}" id="panelInput">
-    <div class="card">
-      <div class="card-title">📅 日付 / エピソード名</div>
-      <div class="row">
-        <div style="flex:1"><label>放送日</label><input type="date" id="epDate" value="${e.date}" onchange="saveEp({date:this.value});renderSidebar()"></div>
-        <div style="flex:2"><label>エピソードタイトル（管理用）</label><input type="text" id="epTitle" value="${escHtml(e.title)}" placeholder="例: 2026-06-08 雇用統計ショック"></div>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">📋 AI生成テキストを貼り付ける</div>
-      <p style="font-size:.78rem;color:var(--text-muted);margin-bottom:10px;line-height:1.6;">
-        文字起こし→台本AIで生成した内容をそのまま貼り付けてください。<br>
-        「自動解析」ボタンで各フィールドに自動分割します。
-      </p>
-      <textarea id="rawInput" style="min-height:260px;font-size:.82rem;" placeholder="要約（3行）&#10;・...&#10;&#10;1分ショート台本（話者：ふくろう）&#10;...&#10;&#10;サムネ文言案（3つ）&#10;1.&#10;2.&#10;3.&#10;&#10;投稿文&#10;...">${escHtml(e.rawInput)}</textarea>
-      <div class="row" style="margin-top:10px;">
-        <button class="btn btn-primary" onclick="autoparse()">✨ 自動解析して各フィールドへ</button>
-        <button class="btn btn-secondary" onclick="clearRaw()">クリア</button>
-      </div>
-      <div id="parseStatus" style="font-size:.75rem;color:var(--text-muted);margin-top:6px;"></div>
-    </div>
-  </div>`;
-}
-
-// ══════════════════════════════
-//  Panel: 台本
-// ══════════════════════════════
-function renderScriptPanel(e) {
-  return `
-  <div class="panel ${currentTab==='script'?'active':''}" id="panelScript">
-    <div class="card">
-      <div class="card-title">📌 要約（3行）</div>
-      <textarea id="summary" style="min-height:100px;">${escHtml(e.summary)}</textarea>
-    </div>
-    <div class="card">
-      <div class="card-title">🎙 台本</div>
-      <p style="font-size:.75rem;color:var(--text-muted);margin-bottom:8px;">話者: 🦉 ふくろう</p>
-      <textarea id="script" style="min-height:380px;font-size:.86rem;line-height:1.8;">${escHtml(e.script)}</textarea>
-      <div class="row" style="margin-top:10px;justify-content:flex-end;">
-        <button class="btn btn-secondary btn-sm" onclick="copyField('script')">📋 台本をコピー</button>
-      </div>
-    </div>
-  </div>`;
-}
-
-// ══════════════════════════════
-//  Panel: 投稿情報
-// ══════════════════════════════
-function renderMetaPanel(e) {
-  const opts = e.titleOptions || ['', '', ''];
-  const sel  = e.selectedTitle ?? 0;
-
-  return `
-  <div class="panel ${currentTab==='meta'?'active':''}" id="panelMeta">
-    <div class="card">
-      <div class="card-title">🏷 タイトル候補</div>
-      <div class="title-options">
-        ${opts.map((t, i) => `
-        <label class="title-opt ${sel===i?'selected':''}" onclick="selectTitle(${i})">
-          <input type="radio" name="titleSel" value="${i}" ${sel===i?'checked':''}>
-          <input type="text" id="titleOpt${i}" value="${escHtml(t)}" placeholder="サムネ文言案 ${i+1}"
-            style="background:transparent;border:none;padding:0;font-weight:600;font-size:.88rem;"
-            onclick="event.stopPropagation()" onchange="saveTitleOpt(${i},this.value)">
-        </label>`).join('')}
-      </div>
-      <div style="font-size:.75rem;color:var(--text-muted);">選択中: <span id="selectedTitlePreview" style="color:var(--accent);">${escHtml(opts[sel]||'未選択')}</span></div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">📄 概要欄（投稿文）</div>
-      <div class="copy-field">
-        <textarea id="description" style="min-height:180px;">${escHtml(e.description)}</textarea>
-        <button class="copy-btn" onclick="copyId('description',this)">コピー</button>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">🏷 タグ</div>
-      <div class="row" style="margin-bottom:8px;">
-        <input type="text" id="tagInput" placeholder="タグを入力してEnter" style="flex:1" onkeydown="if(event.key==='Enter'){addTag();event.preventDefault();}">
-        <button class="btn btn-secondary btn-sm" onclick="addTag()">追加</button>
-      </div>
-      <div class="tags-wrap" id="tagsWrap">
-        ${(e.tags||[]).map((t,i) => `<span class="tag-chip">${escHtml(t)}<button onclick="removeTag(${i})">✕</button></span>`).join('')}
-      </div>
-      <div style="margin-top:10px;">
-        <button class="btn btn-secondary btn-sm" onclick="copyTags()">📋 タグをコピー（カンマ区切り）</button>
-      </div>
-    </div>
-  </div>`;
-}
-
-// ══════════════════════════════
-//  Panel: 投稿準備
-// ══════════════════════════════
-function renderPublishPanel(e) {
-  const checkLabels = [
-    '台本の読み合わせ完了',
-    'サムネイル画像を作成済み',
-    '動画ファイルを書き出し済み',
-    'YouTube Studioにアップロード済み',
-    '投稿・公開完了'
-  ];
-  const checks = e.checks || [false,false,false,false,false];
-  const selectedTitle = (e.titleOptions||[])[e.selectedTitle||0] || '（未選択）';
-
-  return `
-  <div class="panel ${currentTab==='publish'?'active':''}" id="panelPublish">
-
-    <div class="card" style="border-color:var(--accent);">
-      <div class="card-title">📋 投稿サマリー</div>
-      <div style="display:grid;gap:10px;">
-        <div>
-          <div style="font-size:.72rem;color:var(--text-muted);margin-bottom:3px;">タイトル</div>
-          <div style="font-weight:700;font-size:.95rem;color:var(--accent);">${escHtml(selectedTitle)}</div>
-        </div>
-        <div>
-          <div style="font-size:.72rem;color:var(--text-muted);margin-bottom:3px;">要約</div>
-          <div class="summary-box">${escHtml(e.summary||'（未入力）')}</div>
-        </div>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">📦 YouTube Studioへコピー</div>
-      <div style="display:grid;gap:8px;">
-        <div>
-          <label>タイトル</label>
-          <div class="copy-field">
-            <input type="text" id="publishTitle" value="${escHtml(selectedTitle)}" readonly>
-            <button class="copy-btn" onclick="copyId('publishTitle',this)">コピー</button>
-          </div>
-        </div>
-        <div>
-          <label>概要欄</label>
-          <div class="copy-field">
-            <textarea id="publishDesc" style="min-height:120px;" readonly>${escHtml(e.description)}</textarea>
-            <button class="copy-btn" onclick="copyId('publishDesc',this)">コピー</button>
-          </div>
-        </div>
-        <div>
-          <label>タグ（カンマ区切り）</label>
-          <div class="copy-field">
-            <input type="text" id="publishTags" value="${escHtml((e.tags||[]).join(', '))}" readonly>
-            <button class="copy-btn" onclick="copyId('publishTags',this)">コピー</button>
-          </div>
-        </div>
-      </div>
-      <div style="margin-top:12px;">
-        <a href="https://studio.youtube.com/channel/UCQNWDJh_KoFMFVz5QRU3k6Q/videos/upload" target="_blank" rel="noopener"
-          class="btn btn-primary" style="display:inline-block;text-decoration:none;">▶ YouTube Studioを開く ↗</a>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">✅ 投稿チェックリスト</div>
-      <div class="checklist">
-        ${checkLabels.map((lbl, i) => `
-        <div class="check-item ${checks[i]?'done':''}" id="chk${i}">
-          <input type="checkbox" id="cb${i}" ${checks[i]?'checked':''} onchange="toggleCheck(${i},this.checked)">
-          <label for="cb${i}">${lbl}</label>
-        </div>`).join('')}
-      </div>
-      <div style="margin-top:14px;display:flex;gap:8px;align-items:center;">
-        <button class="btn btn-green" onclick="markPosted()" ${checks[4]?'disabled':''}>🚀 投稿完了としてマーク</button>
-        ${e.status==='posted'?'<span style="color:var(--green);font-size:.82rem;">✅ 投稿済み</span>':''}
-      </div>
-    </div>
-
-  </div>`;
-}
-
-// ══════════════════════════════
-//  Auto-parse
-// ══════════════════════════════
-function autoparse() {
-  collectAndSave();
-  const e = ep();
-  if (!e) return;
-  const raw = e.rawInput;
-  if (!raw.trim()) { showToast('テキストを貼り付けてください'); return; }
-
-  let summary = '', script = '', titleOptions = ['','',''], description = '';
-
-  // --- 要約
-  const summaryMatch = raw.match(/要約[（(].*?[）)][\s\S]*?\n([\s\S]*?)(?=\n(?:1分|ショート|台本|⸻|---|\n\n))/i)
-    || raw.match(/要約[\s\S]*?\n([\s\S]*?)(?=\n\n)/i);
-  if (summaryMatch) summary = summaryMatch[1].trim();
-
-  // --- 台本（「おはよう」や「おはようございます」から始まるブロック）
-  const scriptMatch = raw.match(/(?:1分|ショート|台本)[^\n]*\n+([\s\S]*?)(?=\n*⸻|\n*---|\n*サムネ|\n*投稿文|$)/i);
-  if (scriptMatch) script = scriptMatch[1].trim();
-  // フォールバック：「おはよう」で始まる行を探す
-  if (!script) {
-    const idx = raw.search(/おはよう/);
-    if (idx >= 0) {
-      const rest = raw.slice(idx);
-      const end = rest.search(/\n*⸻|\n*---|\n*サムネ|\n*投稿文/);
-      script = (end >= 0 ? rest.slice(0, end) : rest).trim();
+    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    if (!saved || !saved.characters || saved.characters.length === 0) return defaultData();
+    // manebou_newsキャラが存在しない場合は自動追加
+    if (!saved.characters.find(c => c.id === 'manebou_news')) {
+      saved.characters.unshift({
+        id: 'manebou_news', name: 'マネぼうモーニングニュース', species: 'ふくろう（経済解説）',
+        theme: '経済・株式・為替・マネーニュース', tone: '明るく・わかりやすく・テンポよく',
+        color: '#F5C842', channel_id: 'UCQNWDJh_KoFMFVz5QRU3k6Q',
+        ai_personality: 'マネぼう塾のふくろうキャラ。毎朝の経済ニュースを初心者にもわかりやすく1分で解説する。明るくテンポよく、専門用語を噛み砕いて伝える。視聴者を「みなさん」と呼ぶ。',
+        icon: '🦉', avatar_url: '', drive_folder_id: '',
+        gpt_url: 'https://chatgpt.com/g/g-6a26338c271881918e9ea284f3cafe14-manehou-moninkuniyusu',
+        gem_url: ''
+      });
+      saveData(saved);
     }
-  }
+    return saved;
+  } catch { return defaultData(); }
+}
 
-  // --- サムネ文言
-  const thumbSection = raw.match(/サムネ[^\n]*\n+([\s\S]*?)(?=\n*⸻|\n*---|\n*投稿文|$)/i);
-  if (thumbSection) {
-    const lines = thumbSection[1].trim().split('\n').filter(l => l.trim());
-    lines.forEach((l, i) => {
-      if (i < 3) titleOptions[i] = l.replace(/^[\d１２３\-\.、。）)]\s*[「『"]?/, '').replace(/[」』"]$/, '').trim();
+// 旧キーを削除
+['channelos_data', 'channelos_data_v1'].forEach(k => localStorage.removeItem(k));
+
+let data = loadData();
+// loadStoryboard() は定義後に呼ぶ（ページ読み込み時 renderMain より前に DOMContentLoaded で実行）
+
+// デフォルトキャラのマージ（不足フィールドを常に補完）
+{
+  let changed = !data.characters || data.characters.length === 0;
+  if (changed) { data = defaultData(); }
+  else {
+    defaultData().characters.forEach(def => {
+      const existing = data.characters.find(c => c.id === def.id);
+      if (!existing) {
+        data.characters.push(def); changed = true;
+      } else {
+        // フィールドが未設定なら常にデフォルト値で補完
+        ['drive_folder_id','channel_id','ai_personality','icon','color','species','theme','tone','gpt_url','gem_url'].forEach(k => {
+          if ((existing[k] === undefined || existing[k] === '') && def[k]) { existing[k] = def[k]; changed = true; }
+        });
+      }
     });
   }
+  if (changed) saveData(data);
+}
+let currentCharId = null;
+let currentTab    = 'plan';
+let selectedPlan  = null;
+let generatedScript = '';
+let storyboardData = {};
+let generatedMeta   = null;
+let editingCharId   = null;
 
-  // --- 投稿文
-  const descMatch = raw.match(/投稿文[^\n]*\n+([\s\S]*?)(?=\n*⸻|\n*---|$)/i);
-  if (descMatch) description = descMatch[1].trim();
+// ── 動画プロジェクト管理 ──
+let currentEpisodeId = null;
 
-  // --- タグ（#から始まる語を収集）
-  const tagMatches = [...raw.matchAll(/#([\w぀-鿿０-９Ａ-ｚ]+)/g)];
-  const tags = [...new Set(tagMatches.map(m => m[1]))].slice(0, 20);
-
-  saveEp({ summary, script, titleOptions, selectedTitle: 0, description, tags });
-
-  const filled = [summary, script, titleOptions[0], description].filter(Boolean).length;
-  document.getElementById('parseStatus').textContent = `✅ ${filled}/4 フィールドを解析しました`;
-  showToast('✨ 解析完了');
+function getEpisodes() {
+  const char = data.characters.find(c => c.id === currentCharId);
+  if (!char) return [];
+  return (data.episodes || []).filter(e => e.charId === currentCharId);
 }
 
-// ══════════════════════════════
-//  Collect & Save
-// ══════════════════════════════
-function collectAndSave() {
-  const e = ep();
-  if (!e) return;
-  const patch = {};
-  const fields = {
-    epDate: 'date', epTitle: 'title',
-    rawInput: 'rawInput', summary: 'summary', script: 'script', description: 'description'
-  };
-  for (const [id, key] of Object.entries(fields)) {
-    const el = document.getElementById(id);
-    if (el) patch[key] = el.value;
-  }
-  // title options
-  const opts = [...(e.titleOptions || ['','',''])];
-  [0,1,2].forEach(i => { const el = document.getElementById('titleOpt'+i); if (el) opts[i] = el.value; });
-  patch.titleOptions = opts;
-  saveEp(patch);
-}
-
-// ══════════════════════════════
-//  Actions
-// ══════════════════════════════
-function selectTitle(i) {
-  collectAndSave();
-  saveEp({ selectedTitle: i });
-  const e = ep();
-  document.querySelectorAll('.title-opt').forEach((el, idx) => el.classList.toggle('selected', idx === i));
-  const preview = document.getElementById('selectedTitlePreview');
-  if (preview && e) preview.textContent = (e.titleOptions||[])[i] || '未選択';
-}
-
-function saveTitleOpt(i, val) {
-  const e = ep();
-  if (!e) return;
-  const opts = [...(e.titleOptions || ['','',''])];
-  opts[i] = val;
-  saveEp({ titleOptions: opts });
-}
-
-function addTag() {
-  collectAndSave();
-  const input = document.getElementById('tagInput');
-  if (!input) return;
-  const val = input.value.replace(/^#/, '').trim();
-  if (!val) return;
-  const e = ep();
-  const tags = [...(e.tags || [])];
-  if (!tags.includes(val)) { tags.push(val); saveEp({ tags }); }
-  input.value = '';
-  const wrap = document.getElementById('tagsWrap');
-  if (wrap) wrap.innerHTML = tags.map((t,i) => `<span class="tag-chip">${escHtml(t)}<button onclick="removeTag(${i})">✕</button></span>`).join('');
-}
-
-function removeTag(i) {
-  const e = ep();
-  const tags = [...(e.tags || [])];
-  tags.splice(i, 1);
-  saveEp({ tags });
-  renderMain();
-}
-
-function copyTags() {
-  const e = ep();
-  if (!e) return;
-  navigator.clipboard.writeText((e.tags||[]).join(', ')).then(() => showToast('📋 タグをコピーしました'));
-}
-
-function toggleCheck(i, val) {
-  const e = ep();
-  const checks = [...(e.checks || [false,false,false,false,false])];
-  checks[i] = val;
-  saveEp({ checks });
-  const item = document.getElementById('chk'+i);
-  if (item) item.classList.toggle('done', val);
-}
-
-function markPosted() {
-  saveEp({ status: 'posted', checks: [true,true,true,true,true] });
+function newEpisode() {
+  const id = 'ep_' + Date.now();
+  const ep = { id, charId: currentCharId, title: '新しい動画', createdAt: new Date().toISOString(),
+    plan: null, script: '', meta: null, status: 'draft' };
+  data.episodes = data.episodes || [];
+  data.episodes.push(ep);
+  saveData(data);
+  autoSaveToDrive();
+  loadEpisode(id);
   renderSidebar();
-  renderMain();
-  showToast('🚀 投稿完了としてマークしました');
 }
 
-function clearRaw() {
-  const el = document.getElementById('rawInput');
-  if (el) el.value = '';
-  saveEp({ rawInput: '' });
+function loadEpisode(id) {
+  const ep = (data.episodes || []).find(e => e.id === id);
+  if (!ep) return;
+  currentEpisodeId = id;
+  selectedPlan    = ep.plan   || null;
+  generatedScript = ep.script || '';
+  generatedMeta   = ep.meta   || null;
+  window._radioResult = ep.radioResult || null;
+  renderSidebar();
+  // 企画タブを再描画して内容を反映
+  const char = data.characters.find(c => c.id === currentCharId);
+  if (!char) return;
+  const planPanel = document.getElementById('panelPlan');
+  if (planPanel) planPanel.outerHTML = renderPlanPanel(char);
+  const scriptPanel = document.getElementById('panelScript');
+  if (scriptPanel) scriptPanel.outerHTML = renderScriptPanel(char);
+  const metaPanel = document.getElementById('panelMeta');
+  if (metaPanel) metaPanel.outerHTML = renderMetaPanel(char);
+  switchTab('plan');
 }
 
-function copyField(id) {
-  const el = document.getElementById(id);
-  if (!el) return;
-  navigator.clipboard.writeText(el.value).then(() => showToast('📋 コピーしました'));
+function saveCurrentEpisode() {
+  if (!currentEpisodeId) return;
+  const ep = (data.episodes || []).find(e => e.id === currentEpisodeId);
+  if (!ep) return;
+  ep.plan   = selectedPlan;
+  ep.script = generatedScript;
+  ep.meta   = generatedMeta;
+  if (window._radioResult) ep.radioResult = window._radioResult;
+  ep.updatedAt = new Date().toISOString();
+  if (selectedPlan) ep.title = selectedPlan.title;
+  else if (ep.radioResult?.title && !ep.title) ep.title = ep.radioResult.title;
+  saveData(data);
+  // Drive自動保存
+  autoSaveToDrive();
 }
 
-function copyId(id, btn) {
-  const el = document.getElementById(id);
-  if (!el) return;
-  navigator.clipboard.writeText(el.value).then(() => {
-    if (btn) { btn.textContent = '✓'; btn.classList.add('copied'); setTimeout(() => { btn.textContent = 'コピー'; btn.classList.remove('copied'); }, 1500); }
-    showToast('📋 コピーしました');
+// ════════════════════════════════════
+//  サービスアカウント認証（期限切れなし）
+// ════════════════════════════════════
+async function getGDToken() {
+  const saJson = localStorage.getItem(SA_JSON_SK);
+  if (saJson) {
+    const now = Date.now();
+    const expiry = parseInt(localStorage.getItem(SA_EXPIRY_SK) || '0');
+    if (expiry - now > 5 * 60 * 1000) return localStorage.getItem(SA_TOKEN_SK);
+    try { return await fetchSAToken(JSON.parse(saJson)); } catch(e) { showToast('SA認証エラー: ' + e.message); return null; }
+  }
+  return localStorage.getItem(GD_TOKEN_SK);
+}
+
+async function fetchSAToken(sa) {
+  const now = Math.floor(Date.now() / 1000);
+  const b64 = s => btoa(unescape(encodeURIComponent(JSON.stringify(s)))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'');
+  const header = { alg: 'RS256', typ: 'JWT' };
+  const claim  = { iss: sa.client_email, scope: 'https://www.googleapis.com/auth/drive', aud: 'https://oauth2.googleapis.com/token', exp: now+3600, iat: now };
+  const sigInput = `${b64(header)}.${b64(claim)}`;
+  const pem = sa.private_key.replace(/-----[^\n]+-----/g,'').replace(/\s/g,'');
+  const der = Uint8Array.from(atob(pem), c => c.charCodeAt(0));
+  const key = await crypto.subtle.importKey('pkcs8', der.buffer, { name:'RSASSA-PKCS1-v1_5', hash:'SHA-256' }, false, ['sign']);
+  const sig = await crypto.subtle.sign('RSASSA-PKCS1-v1_5', key, new TextEncoder().encode(sigInput));
+  const sigB64 = btoa(String.fromCharCode(...new Uint8Array(sig))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'');
+  const jwt = `${sigInput}.${sigB64}`;
+  const res = await fetch('https://oauth2.googleapis.com/token', {
+    method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: `grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=${jwt}`
   });
+  if (!res.ok) throw new Error('SA token failed: ' + res.status);
+  const json = await res.json();
+  localStorage.setItem(SA_TOKEN_SK, json.access_token);
+  localStorage.setItem(SA_EXPIRY_SK, String(Date.now() + json.expires_in * 1000));
+  return json.access_token;
 }
 
-// ══════════════════════════════
-//  Utils
-// ══════════════════════════════
-function escHtml(s) {
-  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+// ════════════════════════════════════
+//  Gist APIキー一元管理
+// ════════════════════════════════════
+async function loadGistConfig() {
+  const gistId = localStorage.getItem(GIST_ID_SK);
+  const pat    = localStorage.getItem(GIST_PAT_SK);
+  if (!gistId || !pat) { showToast('設定タブでGist IDとPATを入力してください'); return; }
+  try {
+    const res = await fetch(`https://api.github.com/gists/${gistId}`, {
+      headers: { Authorization: `Bearer ${pat}`, Accept: 'application/vnd.github+json' }
+    });
+    if (!res.ok) { showToast('Gist読み込み失敗: ' + res.status); return; }
+    const file = (await res.json()).files['channelos-keys.json'];
+    if (!file) { showToast('channelos-keys.json が見つかりません'); return; }
+    const keys = JSON.parse(file.content);
+    if (keys.claude)  localStorage.setItem(API_KEY_SK, keys.claude);
+    if (keys.openai)  localStorage.setItem('channelos_openai_api_key', keys.openai);
+    showToast('✅ Gistからキーを読み込みました');
+  } catch(e) { showToast('Gistエラー: ' + e.message); }
+}
+
+async function saveGistConfig() {
+  const gistId = localStorage.getItem(GIST_ID_SK);
+  const pat    = localStorage.getItem(GIST_PAT_SK);
+  if (!gistId || !pat) { showToast('GistIDとPATを先に設定してください'); return; }
+  const keys = { claude: localStorage.getItem(API_KEY_SK)||'', openai: localStorage.getItem('channelos_openai_api_key')||'' };
+  try {
+    const res = await fetch(`https://api.github.com/gists/${gistId}`, {
+      method: 'PATCH',
+      headers: { Authorization: `Bearer ${pat}`, Accept: 'application/vnd.github+json', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ files: { 'channelos-keys.json': { content: JSON.stringify(keys, null, 2) } } })
+    });
+    if (!res.ok) throw new Error(res.status);
+    showToast('✅ GistにAPIキーを保存しました（チーム共有）');
+  } catch(e) { showToast('Gist保存エラー: ' + e.message); }
+}
+
+// ── Drive APIキー自動読み込み ──
+const KEYS_FILENAME = 'channelos-keys.json';
+
+async function autoLoadKeysFromDrive(token) {
+  try {
+    const res = await fetch(
+      `https://www.googleapis.com/drive/v3/files?q=name='${KEYS_FILENAME}'&spaces=drive&fields=files(id)`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    if (!res.ok) return;
+    const json = await res.json();
+    if (!json.files || !json.files.length) return;
+    const fileId = json.files[0].id;
+    const fileRes = await fetch(
+      `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    if (!fileRes.ok) return;
+    const keys = await fileRes.json();
+    if (keys.claude)  localStorage.setItem(API_KEY_SK, keys.claude);
+    if (keys.openai)  localStorage.setItem('channelos_openai_api_key', keys.openai);
+    if (keys.gemini)  localStorage.setItem(GEMINI_KEY_SK, keys.gemini);
+    showToast('🔑 APIキーをDriveから自動読み込みしました');
+  } catch(e) { /* 失敗しても無視 */ }
+}
+
+async function saveKeysToDrive() {
+  const token = localStorage.getItem(GD_TOKEN_SK);
+  if (!token) { showToast('先にGoogle Driveで認証してください'); return; }
+  const keys = {
+    claude: localStorage.getItem(API_KEY_SK) || '',
+    openai: localStorage.getItem('channelos_openai_api_key') || '',
+    gemini: localStorage.getItem(GEMINI_KEY_SK) || ''
+  };
+  try {
+    // 既存ファイルを検索
+    const res = await fetch(
+      `https://www.googleapis.com/drive/v3/files?q=name='${KEYS_FILENAME}'&spaces=drive&fields=files(id)`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    const json = await res.json();
+    const content = JSON.stringify(keys, null, 2);
+    if (json.files && json.files.length) {
+      // 上書き
+      await fetch(`https://www.googleapis.com/upload/drive/v3/files/${json.files[0].id}?uploadType=media`, {
+        method: 'PATCH',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: content
+      });
+    } else {
+      // 新規作成
+      const form = new FormData();
+      form.append('metadata', new Blob([JSON.stringify({ name: KEYS_FILENAME })], { type: 'application/json' }));
+      form.append('file', new Blob([content], { type: 'application/json' }));
+      await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body: form
+      });
+    }
+    showToast('✅ APIキーをDriveに保存しました（チーム共有）');
+  } catch(e) { showToast('Drive保存エラー: ' + e.message); }
+}
+
+// ── Drive 画像保存ユーティリティ ──
+async function saveImageToDrive(dataUrl, filename, folderId) {
+  const token = localStorage.getItem(GD_TOKEN_SK);
+  if (!token) return null;
+  try {
+    const [header, b64] = dataUrl.split(',');
+    const mime = header.match(/:(.*?);/)[1];
+    const bytes = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+    const blob = new Blob([bytes], { type: mime });
+    const meta = { name: filename, ...(folderId ? { parents: [folderId] } : {}) };
+    const form = new FormData();
+    form.append('metadata', new Blob([JSON.stringify(meta)], { type: 'application/json' }));
+    form.append('file', blob);
+    const res = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+      body: form
+    });
+    if (!res.ok) return null;
+    const json = await res.json();
+    return json.id;
+  } catch(e) { return null; }
+}
+
+// ── Drive 共有DB（channelos-shared.json）──
+const SHARED_FILENAME = 'channelos-shared.json';
+let sharedFileId = null;
+
+async function driveRequest(url, options = {}) {
+  const token = await getGDToken();
+  if (!token) { showToast('Drive未認証。設定タブでサービスアカウントを設定してください'); return null; }
+  const res = await fetch(url, { ...options, headers: { Authorization: `Bearer ${token}`, ...(options.headers||{}) } });
+  if (res.status === 401) { localStorage.removeItem(SA_EXPIRY_SK); showToast('Drive認証エラー。再試行してください'); return null; }
+  return res;
+}
+
+async function findSharedFile() {
+  const folderId = localStorage.getItem(GD_FOLDER_SK) || '1-QySS62i1cHPNh9lHg1quqPtyZ2zIp_x';
+  const res = await driveRequest(`https://www.googleapis.com/drive/v3/files?q=name='${SHARED_FILENAME}'+and+'${folderId}'+in+parents&fields=files(id)`);
+  if (!res) return null;
+  const json = await res.json();
+  return (json.files && json.files.length) ? json.files[0].id : null;
+}
+
+async function autoSaveToDrive() {
+  const token = localStorage.getItem(GD_TOKEN_SK);
+  if (!token) return;
+  const folderId = localStorage.getItem(GD_FOLDER_SK) || '1-QySS62i1cHPNh9lHg1quqPtyZ2zIp_x';
+  try {
+    if (!sharedFileId) sharedFileId = await findSharedFile();
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    if (sharedFileId) {
+      await driveRequest(`https://www.googleapis.com/upload/drive/v3/files/${sharedFileId}?uploadType=media`, {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: blob
+      });
+    } else {
+      const meta = JSON.stringify({ name: SHARED_FILENAME, parents: [folderId] });
+      const form = new FormData();
+      form.append('metadata', new Blob([meta], { type: 'application/json' }));
+      form.append('file', blob);
+      const res = await driveRequest('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id', { method: 'POST', body: form });
+      if (res) { const j = await res.json(); sharedFileId = j.id; }
+    }
+    showSaveIndicator();
+    setSyncStatus('ok', `保存済 (${(data.episodes||[]).length}プロジェクト)`);
+  } catch(e) { setSyncStatus('error', `保存失敗: ${e.message}`); }
+}
+
+function setSyncStatus(status, msg) {
+  const el = document.getElementById('syncStatus');
+  if (!el) return;
+  const icons = { ok:'☁️', error:'⚠️', loading:'🔄', none:'—' };
+  el.textContent = `${icons[status]||''} ${msg}`;
+  el.style.color = status === 'error' ? '#e55' : status === 'ok' ? '#4caf50' : 'var(--text-muted)';
+}
+
+async function loadFromDrive() {
+  const token = localStorage.getItem(GD_TOKEN_SK);
+  if (!token) { setSyncStatus('none', 'Drive未接続'); return; }
+  setSyncStatus('loading', '同期中...');
+  try {
+    if (!sharedFileId) sharedFileId = await findSharedFile();
+    if (!sharedFileId) { await autoSaveToDrive(); setSyncStatus('ok', '新規作成完了'); return; }
+    const res = await driveRequest(`https://www.googleapis.com/drive/v3/files/${sharedFileId}?alt=media`);
+    if (!res) { setSyncStatus('error', '読込失敗（認証切れ？）'); return; }
+    const remote = await res.json();
+    if (!remote || !remote.characters) { setSyncStatus('error', 'データ破損'); return; }
+    const localEpisodes = data.episodes || [];
+    data = remote;
+    data.episodes = data.episodes || [];
+    localEpisodes.forEach(local => {
+      if (!data.episodes.find(e => e.id === local.id)) data.episodes.push(local);
+    });
+    defaultData().characters.forEach(def => {
+      const existing = data.characters.find(c => c.id === def.id);
+      if (!existing) {
+        data.characters.push(def);
+      } else {
+        ['drive_folder_id','channel_id','ai_personality','icon','color','species','theme','tone','gpt_url','gem_url'].forEach(k => {
+          if ((existing[k] === undefined || existing[k] === '') && def[k]) existing[k] = def[k];
+        });
+      }
+    });
+    saveData(data);
+    renderSidebar();
+    if (currentCharId) renderMain();
+    const epCount = (data.episodes||[]).length;
+    setSyncStatus('ok', `同期完了 (${epCount}プロジェクト)`);
+  } catch(e) {
+    setSyncStatus('error', `エラー: ${e.message}`);
+  }
+}
+
+function showSaveIndicator() {
+  let el = document.getElementById('saveIndicator');
+  if (!el) return;
+  el.textContent = '☁️ 保存済';
+  el.style.opacity = '1';
+  setTimeout(() => { el.style.opacity = '0'; }, 2000);
 }
 
 function showToast(msg) {
   const t = document.createElement('div');
-  t.className = 'toast';
   t.textContent = msg;
+  t.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:10px 20px;border-radius:20px;font-size:.82rem;z-index:9999;';
   document.body.appendChild(t);
-  setTimeout(() => t.remove(), 2500);
+  setTimeout(() => t.remove(), 3000);
 }
 
-function showSaveIndicator() {
-  const el = document.getElementById('saveIndicator');
-  if (!el) return;
-  el.style.opacity = '1';
-  setTimeout(() => { el.style.opacity = '0'; }, 1800);
+// Scene state
+let sceneFormat   = 'horizontal'; // 'horizontal' | 'shorts'
+let sceneBg       = null;   // { url, name }
+let sceneChar     = null;   // { url, name, x, y, scale }
+let sceneTexts    = [];     // [{ text, x, y, size, color, bold }]
+let sceneCanvas, sceneCtx;
+
+// Assets (Drive + local cache)
+let driveAssets   = [];  // [{id, name, url, type:'char'|'bg'|'other', mimeType}]
+
+window.addEventListener('message', handleOAuthCallback);
+
+// ════════════════════════════════════
+//  Sidebar
+// ════════════════════════════════════
+function renderSidebar() {
+  document.getElementById('charList').innerHTML = data.characters.map(c => `
+    <div class="char-item ${c.id===currentCharId?'active':''}" onclick="selectChar('${c.id}')">
+      <div class="char-icon" style="background:${c.color}22;color:${c.color};">
+        ${c.avatar_url ? `<img src="${c.avatar_url}" onerror="this.style.display='none'">` : (c.icon||'🎭')}
+      </div>
+      <div><div class="char-name">${c.name}</div><div class="char-theme">${c.theme}</div></div>
+    </div>`).join('');
+
+  // 動画プロジェクト一覧
+  const epListEl = document.getElementById('episodeList');
+  if (!epListEl || !currentCharId) return;
+  const eps = getEpisodes();
+  const statusLabel = { draft:'📝 下書き', shooting:'🎥 撮影中', editing:'✂️ 編集中', done:'✅ 完成', posted:'🚀 投稿済' };
+  epListEl.innerHTML = `
+    <button class="add-char-btn" style="margin:8px 12px;width:calc(100% - 24px);" onclick="newEpisode()">＋ 新しい動画</button>
+    ${eps.length === 0 ? `<div style="padding:8px 16px;font-size:.75rem;color:var(--text-muted);">動画なし</div>` : ''}
+    ${eps.slice().reverse().map(ep => `
+    <div class="char-item ${ep.id===currentEpisodeId?'active':''}" onclick="loadEpisode('${ep.id}')" style="flex-direction:column;align-items:flex-start;gap:2px;padding:10px 14px;">
+      <div style="font-size:.8rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%;">${escHtml(ep.title)}</div>
+      <div style="font-size:.68rem;color:var(--text-muted);">${statusLabel[ep.status]||'下書き'} · ${(ep.updatedAt||ep.createdAt||'').slice(0,10)}</div>
+    </div>`).join('')}`;
 }
 
-// ══════════════════════════════
-//  Auto-save on beforeunload
-// ══════════════════════════════
-window.addEventListener('beforeunload', collectAndSave);
+function selectChar(id) {
+  currentCharId = id; selectedPlan = null; generatedScript = ''; generatedMeta = null; currentEpisodeId = null;
+  document.getElementById('epSidebarTitle').style.display = 'block';
+  // 最後に開いていたエピソードを復元
+  const eps = (data.episodes || []).filter(e => e.charId === id);
+  if (eps.length > 0) {
+    const last = eps.slice().sort((a,b) => (b.updatedAt||b.createdAt||'').localeCompare(a.updatedAt||a.createdAt||'')).find(e => e.id);
+    if (last) { currentEpisodeId = last.id; selectedPlan = last.plan||null; generatedScript = last.script||''; generatedMeta = last.meta||null; }
+  }
+  renderSidebar(); renderMain();
+  loadFromDrive();
+}
 
-// ══════════════════════════════
-//  Init
-// ══════════════════════════════
+// ════════════════════════════════════
+//  Main render
+// ════════════════════════════════════
+function renderMain() {
+  const char = data.characters.find(c => c.id === currentCharId);
+  if (!char) return;
+  document.getElementById('headerSub').textContent = `${char.name} — ${char.theme}`;
+  document.documentElement.style.setProperty('--char-color', char.color);
+
+  const avatarHtml = char.avatar_url
+    ? `<img src="${char.avatar_url}" onerror="this.style.display='none'">`
+    : (char.icon || '🎭');
+
+  document.getElementById('mainArea').innerHTML = `
+    <div class="char-header">
+      <div class="char-header-icon" style="background:${char.color}22;color:${char.color};">${avatarHtml}</div>
+      <div class="char-header-info">
+        <h2>${char.name}</h2>
+        <p>${char.species} ／ ${char.tone}</p>
+        <div class="char-header-badges">
+          <span class="badge">${char.theme}</span>
+          ${char.channel_id?`<span class="badge">CH: ${char.channel_id}</span>`:''}
+        </div>
+      </div>
+      <div style="margin-left:auto;display:flex;gap:6px;align-items:center;">
+        ${getYtToken(char.id)
+          ? `<span style="font-size:.72rem;color:#4a8;">📺 YT認証済</span>
+             <button class="btn btn-secondary btn-sm" onclick="ytLogout('${char.id}')">YTログアウト</button>`
+          : `<button class="btn btn-primary btn-sm" onclick="ytAuth('${char.id}')">📺 YouTube認証</button>`}
+        <button class="btn btn-secondary btn-sm" onclick="openEditChar('${char.id}')">編集</button>
+      </div>
+    </div>
+
+    <div class="tabs">
+      ${['plan','script','meta','scene','assets','schedule','publish'].map(t => {
+        const labels = {plan:'📋 企画',script:'📝 台本',meta:'🎯 投稿情報',scene:'🎨 絵コンテ',assets:'🖼 素材',schedule:'📅 スケジュール',publish:'📦 投稿'};
+        return `<button class="tab ${currentTab===t?'active':''}" id="tab_${t}" onclick="switchTab('${t}')">${labels[t]}<span class="notif-dot"></span></button>`;
+      }).join('')}
+    </div>
+
+    ${renderPlanPanel(char)}
+    ${renderScriptPanel(char)}
+    ${renderMetaPanel(char)}
+    ${renderScenePanel()}
+    ${renderRadioPanel()}
+    ${renderAssetsPanel()}
+    ${renderSchedulePanel()}
+    ${renderPublishPanel()}
+    ${renderSettingsPanel()}
+  `;
+
+  if (currentTab === 'scene') initCanvas();
+  if (currentTab === 'assets') loadDriveAssets();
+}
+
+function switchTab(tab) {
+  currentTab = tab;
+  const char = data.characters.find(c => c.id === currentCharId);
+
+  // 設定：ヘッダーボタン専用
+  if (tab === 'settings') {
+    if (!currentCharId) {
+      document.getElementById('mainArea').innerHTML = renderSettingsPanel();
+    } else {
+      const el = document.getElementById('panelSettings');
+      if (el) el.outerHTML = renderSettingsPanel();
+      ['plan','script','meta','scene','assets','schedule','publish','settings'].forEach(t => {
+        const p = document.getElementById('panel' + t.charAt(0).toUpperCase() + t.slice(1));
+        if (p) p.classList.toggle('active', t === 'settings');
+      });
+      document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
+    }
+    return;
+  }
+
+  // 各パネルを最新状態で再描画してからアクティブ化
+  if (char) {
+    const renders = {
+      plan:     () => { const el = document.getElementById('panelPlan');     if (el) el.outerHTML = renderPlanPanel(char); },
+      script:   () => { const el = document.getElementById('panelScript');   if (el) el.outerHTML = renderScriptPanel(char); },
+      meta:     () => { const el = document.getElementById('panelMeta');     if (el) el.outerHTML = renderMetaPanel(char); },
+      assets:   () => { loadDriveAssets(); },
+      scene:    () => { setTimeout(initCanvas, 50); },
+    };
+    if (renders[tab]) renders[tab]();
+  }
+
+  // タブのバッジをクリア
+  const tabEl = document.getElementById('tab_' + tab);
+  if (tabEl) tabEl.classList.remove('has-notif');
+
+  // タブボタンactive
+  document.querySelectorAll('.tab').forEach(b => b.classList.toggle('active',
+    b.textContent.includes({plan:'企画',script:'台本',meta:'投稿情報',scene:'絵コンテ',assets:'素材',schedule:'スケジュール',publish:'投稿'}[tab]||'__none__')
+  ));
+  // パネルactive
+  ['plan','script','meta','scene','assets','schedule','publish','settings'].forEach(t => {
+    const el = document.getElementById('panel' + t.charAt(0).toUpperCase() + t.slice(1));
+    if (el) el.classList.toggle('active', t === tab);
+  });
+}
+
+// ════════════════════════════════════
+//  Plan Panel
+// ════════════════════════════════════
+function renderPlanPanel(char) {
+  return `
+  <div class="panel ${currentTab==='plan'?'active':''}" id="panelPlan">
+    <div class="card" style="border:1px solid var(--char-color,#c9a84c);background:linear-gradient(135deg,rgba(201,168,76,.08),transparent);">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+        <div class="card-title" style="margin:0;">🎬 動画を作る</div>
+        ${currentEpisodeId ? `<span style="font-size:.72rem;color:var(--text-muted);">📁 ${escHtml((data.episodes||[]).find(e=>e.id===currentEpisodeId)?.title||'')}</span>` : `<button class="btn btn-secondary btn-sm" onclick="newEpisode()">＋ 新規動画を開始</button>`}
+      </div>
+
+      <div style="margin-bottom:20px;">
+        <label style="display:block;font-size:.78rem;color:var(--text-muted);margin-bottom:10px;font-weight:600;letter-spacing:.05em;">STEP 1 ── 動画タイプを選ぶ</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <label id="formatCard_horizontal" onclick="selectFormat('horizontal')" style="cursor:pointer;border:2px solid var(--char-color,#c9a84c);border-radius:10px;padding:16px 14px;background:rgba(201,168,76,.12);display:flex;flex-direction:column;gap:4px;">
+            <span style="font-size:1.3rem;">📺</span>
+            <span style="font-weight:700;font-size:.95rem;">横動画 3分</span>
+            <span style="font-size:.72rem;color:var(--text-muted);">通常動画 / 1280×720</span>
+          </label>
+          <label id="formatCard_shorts" onclick="selectFormat('shorts')" style="cursor:pointer;border:2px solid var(--border);border-radius:10px;padding:16px 14px;background:transparent;display:flex;flex-direction:column;gap:4px;">
+            <span style="font-size:1.3rem;">📱</span>
+            <span style="font-weight:700;font-size:.95rem;">ショート 60秒</span>
+            <span style="font-size:.72rem;color:var(--text-muted);">Shorts / 720×1280</span>
+          </label>
+        </div>
+        <input type="hidden" id="allGenFormat" value="horizontal">
+      </div>
+
+      <div style="margin-bottom:16px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <label style="font-size:.78rem;color:var(--text-muted);font-weight:600;letter-spacing:.05em;">STEP 2 ── 企画テーマ</label>
+          <button class="btn btn-secondary btn-sm" style="font-size:.72rem;padding:4px 10px;" onclick="suggestTheme()">💡 AIが提案</button>
+        </div>
+        <div id="themeSuggestArea" style="display:none;margin-bottom:8px;"></div>
+        <input type="text" id="planTheme" placeholder="例: 初心者でも続く腕立て習慣、睡眠を劇的に改善する方法…"
+          style="width:100%;font-size:1rem;padding:12px 14px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);"
+          onkeydown="if(event.key==='Enter')generateAll()">
+      </div>
+
+      <div style="margin-bottom:16px;">
+        <label style="display:block;font-size:.78rem;color:var(--text-muted);margin-bottom:8px;font-weight:600;letter-spacing:.05em;">STEP 3 ── 追加指示（任意）</label>
+        <input type="text" id="allGenNote" placeholder="例: ギャグ多め、感情的に訴える、データ重視で信頼感を出す…"
+          style="width:100%;padding:10px 14px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);">
+      </div>
+
+      <div style="margin-bottom:20px;">
+        <label style="display:block;font-size:.78rem;color:var(--text-muted);margin-bottom:8px;font-weight:600;letter-spacing:.05em;">STEP 4 ── 詳細指示（任意）</label>
+        <textarea id="allGenDetail" placeholder="例: この動画は新規視聴者向け。冒頭に統計データを入れる。最後はLINE登録に誘導する。"
+          style="width:100%;padding:10px 14px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);min-height:72px;resize:vertical;font-size:.88rem;line-height:1.6;"></textarea>
+      </div>
+
+      <div style="display:flex;gap:10px;">
+        <button class="btn btn-primary" style="flex:3;padding:13px;font-size:.95rem;font-weight:700;" onclick="generateAll()">🚀 一括生成（企画→台本→投稿情報）</button>
+        <button class="btn btn-secondary" style="flex:1;padding:13px;" onclick="generatePlan()">企画3案だけ</button>
+      </div>
+
+      <div id="planLoading" class="loading" style="display:none;margin-top:14px;"><div class="spinner"></div><span>企画を考えています...</span></div>
+      <div id="allGenProgress" style="display:none;margin-top:14px;">
+        <div style="display:flex;flex-direction:column;gap:8px;font-size:.84rem;">
+          <div id="allStep1" style="color:var(--text-muted);">⬜ [1/3] Claude が一括生成中（30〜60秒）...</div>
+          <div id="allStep2" style="color:var(--text-muted);">⬜ [2/3] 結果を反映中...</div>
+          <div id="allStep3" style="color:var(--text-muted);">⬜ [3/3] 完了</div>
+        </div>
+      </div>
+    </div>
+    <div id="planResults" class="plan-grid"></div>
+    <div id="planSelected" style="display:none;">
+      <button class="btn btn-primary" onclick="switchTab('script')">この企画で台本を生成 →</button>
+    </div>
+
+    <div class="card" style="border:1px solid #4a9edd44;background:linear-gradient(135deg,rgba(74,158,221,.06),transparent);margin-top:4px;">
+      <div class="card-title" style="margin-bottom:6px;">🎙 ラジオ・長尺を作る</div>
+      <p style="font-size:.78rem;color:var(--text-muted);margin:0 0 14px;">文字起こしや収録メモを貼り付けると、整理済み台本・投稿情報・絵コンテを自動生成します。</p>
+      <div style="margin-bottom:12px;">
+        <label style="display:block;font-size:.78rem;color:var(--text-muted);margin-bottom:6px;font-weight:600;">文字起こし / 収録メモ</label>
+        <textarea id="planRadioTranscript" placeholder="収録した内容をそのまま貼り付けてください。&#10;&#10;例:&#10;00:00 オープニング — 今日のテーマ&#10;02:30 セクション1 — ○○について..." style="width:100%;min-height:140px;padding:12px 14px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:.88rem;line-height:1.7;resize:vertical;font-family:inherit;"></textarea>
+      </div>
+      <div style="margin-bottom:14px;">
+        <label style="display:block;font-size:.78rem;color:var(--text-muted);margin-bottom:6px;font-weight:600;">補足情報（任意）</label>
+        <input type="text" id="planRadioNote" placeholder="例: ゲスト回、前後編の前編など"
+          style="width:100%;padding:10px 14px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);">
+      </div>
+      <button class="btn btn-primary" style="width:100%;padding:12px;font-size:.92rem;font-weight:700;background:#4a9edd;color:#fff;" onclick="startRadioFromPlan()">
+        🚀 ラジオ一括生成（台本整理→投稿情報→絵コンテ）
+      </button>
+      <div id="planRadioLoading" class="loading" style="display:none;margin-top:12px;"><div class="spinner"></div><span>Claude が分析中...</span></div>
+    </div>
+  </div>`;
+}
+
+async function suggestTheme() {
+  const char = data.characters.find(c => c.id === currentCharId);
+  if (!char) { showToast('キャラクターを選択してください'); return; }
+  const apiKey = localStorage.getItem(API_KEY_SK);
+  if (!apiKey) { showToast('設定タブでClaude APIキーを入力してください'); return; }
+  const fmt = document.getElementById('allGenFormat')?.value || 'horizontal';
+  const isShorts = fmt === 'shorts';
+
+  const area = document.getElementById('themeSuggestArea');
+  area.style.display = 'block';
+  area.innerHTML = '<span style="font-size:.78rem;color:var(--text-muted);">💡 提案を生成中...</span>';
+  aiStart('テーマを提案中...');
+
+  const prompt = `YouTubeチャンネルのキャラクター情報をもとに、次の動画の企画テーマ・追加指示・詳細指示を5案提案してください。
+
+キャラクター: ${char.name}（${char.species}）
+チャンネルテーマ: ${char.theme}
+トーン・口調: ${char.tone}
+AI人格: ${char.ai_personality || 'なし'}
+動画形式: ${isShorts ? 'ショート（60秒）' : '横動画（3分）'}
+
+各案は視聴者の興味を引き、チャンネルのコンセプトに沿ったものにしてください。
+JSONのみ出力:
+[
+  {
+    "theme": "企画テーマ（20字以内）",
+    "note": "追加指示（例: データ重視、感情的に、など20字以内）",
+    "detail": "詳細指示（例: 新規視聴者向け。○○を冒頭に入れる。など40字以内）"
+  }
+]`;
+
+  try {
+    const text = await callClaude(prompt);
+    const suggestions = JSON.parse(text.match(/\[[\s\S]*\]/)[0]);
+    area.innerHTML = `
+      <div style="display:flex;flex-direction:column;gap:6px;">
+        ${suggestions.map((s, i) => `
+        <button onclick="applySuggestion(${i})" data-idx="${i}"
+          style="text-align:left;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;cursor:pointer;transition:border-color .15s;"
+          onmouseover="this.style.borderColor='var(--char-color)'" onmouseout="this.style.borderColor='var(--border)'">
+          <div style="font-size:.82rem;font-weight:600;color:var(--text);margin-bottom:2px;">💡 ${escHtml(s.theme)}</div>
+          <div style="font-size:.72rem;color:var(--text-muted);">${escHtml(s.note)} ${s.detail ? '／ ' + escHtml(s.detail) : ''}</div>
+        </button>`).join('')}
+        <button onclick="document.getElementById('themeSuggestArea').style.display='none'"
+          style="font-size:.72rem;color:var(--text-muted);background:none;border:none;cursor:pointer;padding:2px 0;text-align:left;">✕ 閉じる</button>
+      </div>`;
+    // データをウィンドウに保持
+    window._themeSuggestions = suggestions;
+    aiEnd(null);
+  } catch(e) {
+    aiEnd(null);
+    area.innerHTML = `<span style="font-size:.78rem;color:#e55;">❌ ${e.message}</span>`;
+  }
+}
+
+function applySuggestion(idx) {
+  const s = (window._themeSuggestions || [])[idx];
+  if (!s) return;
+  const themeEl  = document.getElementById('planTheme');
+  const noteEl   = document.getElementById('allGenNote');
+  const detailEl = document.getElementById('allGenDetail');
+  if (themeEl)  themeEl.value  = s.theme  || '';
+  if (noteEl)   noteEl.value   = s.note   || '';
+  if (detailEl) detailEl.value = s.detail || '';
+  document.getElementById('themeSuggestArea').style.display = 'none';
+  // 入力フォームを軽くハイライト
+  [themeEl, noteEl].forEach(el => {
+    if (!el) return;
+    el.style.borderColor = 'var(--char-color)';
+    setTimeout(() => { el.style.borderColor = ''; }, 1200);
+  });
+}
+
+function selectFormat(fmt) {
+  document.getElementById('allGenFormat').value = fmt;
+  const cards = { horizontal: document.getElementById('formatCard_horizontal'), shorts: document.getElementById('formatCard_shorts') };
+  const color = getComputedStyle(document.documentElement).getPropertyValue('--char-color') || '#c9a84c';
+  if (cards.horizontal) {
+    cards.horizontal.style.border = fmt === 'horizontal' ? `2px solid ${color}` : '2px solid var(--border)';
+    cards.horizontal.style.background = fmt === 'horizontal' ? `rgba(201,168,76,.12)` : 'transparent';
+  }
+  if (cards.shorts) {
+    cards.shorts.style.border = fmt === 'shorts' ? `2px solid ${color}` : '2px solid var(--border)';
+    cards.shorts.style.background = fmt === 'shorts' ? `rgba(201,168,76,.12)` : 'transparent';
+  }
+}
+
+async function generateAll() {
+  const char = data.characters.find(c => c.id === currentCharId);
+  if (!char) { showToast('キャラクターを選択してください'); return; }
+  const apiKey = localStorage.getItem(API_KEY_SK);
+  if (!apiKey) { showToast('設定タブでClaude APIキーを入力してください'); return; }
+  const theme = document.getElementById('planTheme').value.trim();
+  if (!theme) { showToast('テーマを入力してください'); return; }
+  const format = document.getElementById('allGenFormat')?.value || 'horizontal';
+  const note   = document.getElementById('allGenNote')?.value.trim() || '';
+  const detail = document.getElementById('allGenDetail')?.value.trim() || '';
+  const isShorts = format === 'shorts';
+
+  const prog = document.getElementById('allGenProgress');
+  const s1 = document.getElementById('allStep1');
+  const s2 = document.getElementById('allStep2');
+  const s3 = document.getElementById('allStep3');
+  prog.style.display = 'block';
+  s1.textContent = '🔄 [1/3] Claude が一括生成中（30〜60秒かかります）...';
+  s1.style.color = 'var(--char-color)';
+  s2.textContent = '⬜ [2/3] 結果を反映中...';
+  s3.textContent = '⬜ [3/3] 完了';
+  aiStart('一括生成中...');
+
+  const strategy = isShorts ? SHORTS_STRATEGY_2026 : HORIZONTAL_STRATEGY_2026;
+  const prompt = `あなたはYouTubeチャンネルの企画・台本・投稿最適化の専門家です。
+キャラクター: ${char.name}（${char.species}）テーマ: ${char.theme} トーン: ${char.tone}
+AI人格: ${char.ai_personality}
+テーマキーワード: ${theme}
+動画形式: ${isShorts ? 'YouTubeショート（60秒以内・縦動画）' : '横動画（約3分）'}
+追加指示: ${note || 'なし'}
+詳細指示: ${detail || 'なし'}
+
+以下の戦略フレームワークで台本を作成すること:
+${strategy}
+
+以下のJSON形式のみで全て出力（他テキスト不要）:
+{
+  "plans": [
+    {"label":"案A（王道）","title":"","description":"","hook":""},
+    {"label":"案B（連携）","title":"","description":"","hook":""},
+    {"label":"案C（枠超え）","title":"","description":"","hook":""}
+  ],
+  "selected_index": 0,
+  "selection_reason": "選定理由（1行）",
+  "script": {
+    "info": "動画テーマ・構成・採用フックパターン・編集ポイント（3〜5行）",
+    "lines": "セリフのみ。キャラ名・括弧・映像指示は不要。話すセリフを改行区切りで。"
+  },
+  "meta": {
+    "title": "YouTubeタイトル（40字以内）",
+    "title_alt": "代替タイトル案",
+    "description": "概要欄（3〜5段落。冒頭1行フック、チャンネル説明、ハッシュタグ末尾）",
+    "tags": ["タグ1","タグ2","タグ3","タグ4","タグ5"],
+    "hashtags": ["#ハッシュタグ1","#ハッシュタグ2","#ハッシュタグ3"],
+    "best_post_time": "最適投稿日時",
+    "thumb_horizontal": "横サムネ画像プロンプト（英語・16:9・Gemini Imagen向け）",
+    "thumb_shorts": "縦サムネ画像プロンプト（英語・9:16・Gemini Imagen向け）",
+    "thumb_text_horizontal": "横サムネ重ねテキスト（20字以内）",
+    "thumb_text_shorts": "縦サムネ重ねテキスト（15字以内）"
+  }
+}`;
+
+  try {
+    const text = await callClaude(prompt);
+    s1.textContent = '✅ [1/3] 生成完了';
+    s2.textContent = '🔄 [2/3] 結果を反映中...';
+    s2.style.color = 'var(--char-color)';
+
+    const result = JSON.parse(text.match(/\{[\s\S]*\}/)[0]);
+
+    // 企画を反映
+    const plans = result.plans || [];
+    const selIdx = result.selected_index ?? 0;
+    document.getElementById('planResults').innerHTML = plans.map((p, i) => `
+      <div class="plan-card ${i === selIdx ? 'selected' : ''}" id="pc${i}" onclick='selectPlan(${i},${JSON.stringify(p).replace(/'/g,"&#39;")})'>
+        <div class="plan-card-label">${p.label}${i === selIdx ? ' ✅ 自動選定' : ''}</div>
+        <div class="plan-card-title">${p.title}</div>
+        <div class="plan-card-desc">${p.description}</div>
+        <div style="margin-top:8px;font-size:.75rem;color:var(--char-color);">つかみ: ${p.hook}</div>
+      </div>`).join('');
+    selectedPlan = plans[selIdx];
+    document.getElementById('planSelected').style.display = 'block';
+
+    // 台本を反映
+    generatedScript = JSON.stringify(result.script);
+    // 投稿情報を反映
+    generatedMeta = result.meta;
+
+    saveCurrentEpisode();
+
+    s2.textContent = '✅ [2/3] 反映完了';
+    s3.textContent = '✅ [3/3] 完了！';
+    s3.style.color = '#4caf50';
+    aiEnd(null); // 現タブにいるのでバッジ不要、ただしスピナーは消す
+    renderSidebar(); // プロジェクト名をサイドバーに反映
+    showToast(`✅ 一括生成完了 — 台本・投稿情報ができました`);
+    // 他タブへの通知
+    ['script','meta'].forEach(t => {
+      const el = document.getElementById('tab_' + t);
+      if (el) el.classList.add('has-notif');
+    });
+    // plan タブを再描画せずに meta タブへ切り替え（企画結果が消えるのを防ぐ）
+    setTimeout(() => {
+      currentTab = 'meta';
+      const char2 = data.characters.find(c => c.id === currentCharId);
+      if (char2) {
+        const el = document.getElementById('panelMeta');
+        if (el) el.outerHTML = renderMetaPanel(char2);
+      }
+      const tabEl = document.getElementById('tab_meta');
+      if (tabEl) tabEl.classList.remove('has-notif');
+      document.querySelectorAll('.tab').forEach(b => b.classList.toggle('active',
+        b.textContent.includes('投稿情報')
+      ));
+      ['plan','script','meta','scene','assets','schedule','publish','settings'].forEach(t => {
+        const el = document.getElementById('panel' + t.charAt(0).toUpperCase() + t.slice(1));
+        if (el) el.classList.toggle('active', t === 'meta');
+      });
+    }, 800);
+  } catch(e) {
+    aiEnd(null);
+    s1.textContent = '❌ エラー: ' + e.message;
+    s1.style.color = '#e55';
+    showToast('❌ 一括生成エラー: ' + e.message);
+  }
+}
+
+async function generatePlan() {
+  const char = data.characters.find(c => c.id === currentCharId);
+  const theme = document.getElementById('planTheme')?.value.trim();
+  if (!theme) { showToast('テーマを入力してください'); return; }
+  document.getElementById('planLoading').style.display = 'flex';
+  document.getElementById('planResults').innerHTML = '';
+  aiStart('企画を生成中...');
+  const prompt = `あなたはYouTubeチャンネルの企画プロデューサーです。
+キャラクター: ${char.name}（${char.species}）テーマ: ${char.theme} トーン: ${char.tone}
+AI人格: ${char.ai_personality}
+テーマキーワード: ${theme}
+
+以下のJSON形式のみ出力（他テキスト不要）:
+[{"label":"案A（王道）","title":"","description":"","hook":""},{"label":"案B（連携）","title":"","description":"","hook":""},{"label":"案C（枠超え）","title":"","description":"","hook":""}]`;
+  try {
+    const text = await callClaude(prompt);
+    const plans = JSON.parse(text.match(/\[[\s\S]*\]/)[0]);
+    aiEnd('plan');
+    document.getElementById('planLoading').style.display = 'none';
+    document.getElementById('planResults').innerHTML = plans.map((p,i) => `
+      <div class="plan-card" id="pc${i}" onclick='selectPlan(${i},${JSON.stringify(p).replace(/'/g,"&#39;")})'>
+        <div class="plan-card-label">${p.label}</div>
+        <div class="plan-card-title">${p.title}</div>
+        <div class="plan-card-desc">${p.description}</div>
+        <div style="margin-top:8px;font-size:.75rem;color:var(--char-color);">つかみ: ${p.hook}</div>
+      </div>`).join('');
+  } catch(e) {
+    aiEnd(null);
+    document.getElementById('planLoading').style.display = 'none';
+    document.getElementById('planResults').innerHTML = `<div style="color:#e55;font-size:.82rem;padding:10px;">エラー: ${e.message}</div>`;
+  }
+}
+
+function selectPlan(i, plan) {
+  selectedPlan = plan;
+  document.querySelectorAll('.plan-card').forEach((el,j) => el.classList.toggle('selected', i===j));
+  document.getElementById('planSelected').style.display = 'block';
+  saveCurrentEpisode();
+}
+
+// ════════════════════════════════════
+//  Script Panel
+// ════════════════════════════════════
+function renderScriptPanel(char) {
+  return `
+  <div class="panel ${currentTab==='script'?'active':''}" id="panelScript">
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <div class="card-title" style="margin:0;">台本生成</div>
+        <button class="btn btn-secondary btn-sm" onclick="switchTab('plan')">← 企画に戻る</button>
+      </div>
+      ${selectedPlan ? `<div style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:10px 14px;margin-bottom:12px;font-size:.82rem;color:var(--text-muted);">選択中: <strong style="color:var(--text);">${selectedPlan.title}</strong></div>` : `<p style="font-size:.82rem;color:var(--text-muted);margin-bottom:12px;">企画タブで企画を選択してください</p>`}
+      ${generatedScript ? `
+      <div style="background:rgba(76,175,80,.08);border:1px solid #4caf50;border-radius:6px;padding:8px 12px;margin-bottom:10px;font-size:.78rem;color:#4caf50;">✅ 台本生成済み（一括生成より）</div>` : ''}
+      <details ${generatedScript ? '' : 'open'} style="margin-bottom:4px;">
+        <summary style="font-size:.78rem;color:var(--text-muted);cursor:pointer;padding:4px 0;">${generatedScript ? '🔄 台本を再生成する' : '台本を個別生成'}</summary>
+        <div class="form-row" style="margin-top:8px;">
+          <div style="flex:1;"><label>動画形式</label>
+            <select id="scriptFormat"><option value="horizontal">横動画（約3分）</option><option value="shorts">ショート（60秒以内）</option></select></div>
+          <div style="flex:1;"><label>追加指示（任意）</label>
+            <input type="text" id="scriptNote" placeholder="例: ギャグ多め"></div>
+          <button class="btn ${generatedScript ? 'btn-secondary' : 'btn-primary'}" style="margin-top:18px;" onclick="generateScript()" ${!selectedPlan?'disabled':''}>生成</button>
+        </div>
+      </details>
+      <div id="scriptLoading" class="loading" style="display:none;margin-top:10px;"><div class="spinner"></div><span>台本を執筆中...</span></div>
+    </div>
+    ${generatedScript ? `
+    <div class="card">
+      <div class="card-title">📋 動画情報</div>
+      <div style="background:var(--surface2);border-radius:6px;padding:12px 14px;font-size:.82rem;line-height:1.8;white-space:pre-wrap;">${escHtml(parseScript(generatedScript).info)}</div>
+    </div>
+    <div class="card">
+      <div class="result-header">
+        <span class="card-title" style="margin:0;">🎤 セリフ（コピーしてそのまま使用）</span>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+          <button class="btn btn-secondary btn-sm" onclick="copyScriptLines()">全コピー</button>
+          <button class="btn btn-secondary btn-sm" onclick="generateVoicevox()" title="VOICEVOX（localhost:50021）で音声生成">🎙 音声生成</button>
+          <button class="btn btn-secondary btn-sm" onclick="switchTab('scene')">📽 絵コンテへ →</button>
+          <button class="btn btn-primary btn-sm" onclick="switchTab('meta')">投稿情報を生成 →</button>
+        </div>
+      </div>
+      <div style="background:var(--surface2);border:1px solid var(--accent);border-radius:6px;padding:14px;font-size:.9rem;line-height:2;white-space:pre-wrap;font-family:'Noto Serif JP',serif;">${escHtml(parseScript(generatedScript).lines)}</div>
+    </div>` : ''}
+  </div>`;
+}
+
+// 2026年横動画（3分）戦略フレームワーク（horizontal-strategy-2026.md より抽出）
+const HORIZONTAL_STRATEGY_2026 = `
+【KPI目標】CTR 4〜6%以上 / 視聴完了率55%以上 / 平均視聴割合45%以上
+
+【180秒タイムライン（750〜850文字）】
+0〜15秒（70字）: フック ── 常識破壊・衝撃の事実。挨拶・ロゴ一切なし
+15〜45秒（150字）: 課題提起 ── 視聴者の痛みを言語化。放置した場合の最悪シナリオ
+45〜150秒（500字）: 解決策（PREP法）── Point→Reason→Example→Point。90秒地点でコメントCTA1回のみ
+150〜180秒（80字）: 行動喚起 ── 結論を1フレーズで締める。「ありがとうございました」禁止
+
+【3大心理フレームワーク】
+①生産的違和感: 冒頭で常識を逆説的に否定 → 脳が「解決したい」と視聴継続
+②リテンションアンカー: エンディングの「認識変容」を先に決め、全解説をその証明として設計
+③PAS×PREP: Problem（痛み）→Agitation（危機感）→Solution の流れ + Point→Reason→Example→Point
+
+【台本執筆ルール（必須）】
+- 口語表現必須:「実は…」「マジで」「〜なんです」「驚きですよね」
+- 感情タグ挿入:（驚く）（少し声を落として）（笑）（汗）
+- 30秒ごとにパターン・インタラプト: Bロール・画角チェンジ・図解・テロップ強調
+- 数字・データを根拠に:「〇〇%」「〇〇人に1人」など具体値を必ず入れる
+- エンディング禁止ワード:「いかがでしたでしょうか」「ご視聴ありがとう」
+
+【5大フックパターン（0〜15秒で必ず1つ使う）】
+常識破壊型:「実は○○は逆効果です」/ 衝撃統計型:「○○の90%が損してます」
+ビフォーアフター型: 結果を先に見せて「なぜ？」/ 疑問提起型:「なぜ○○なのに△△？」/ 共感型:「○○で悩んでいる人、これ見て」
+`;
+
+// 2026年ショート動画戦略フレームワーク（shorts-strategy-2026.md より抽出）
+const SHORTS_STRATEGY_2026 = `
+【2026年アルゴリズム最重要ルール】
+- YouTube Shorts: 視聴者満足度・視聴完了率(52%以上)・シェアが最優先
+- Instagram Reels: DM送信数がいいねの5倍評価。Raw感（粗削り・リアル）優遇
+- TikTok: オリジナリティ最重視。テロップキーワードがSEOに直結
+
+【TaTap式3層設計モデル（必須）】
+第1層 フック 0〜2秒: 2カット法則・結論先出し・ターゲット絞り込み
+第2層 リテンション 2〜45秒: 3秒1カット・テロップ二重化・中盤に再フック
+第3層 CTA 最後3〜5秒: DM送信・保存・コメントを自然に誘導。結論を少し残して余白を作る
+
+【5大フックパターン（冒頭2秒で必ず使う）】
+衝撃事実型:「〇〇を知らないのは損」疑問提起型:「なぜ〇〇は△△？」
+ビフォーアフター型: 完成形を先に見せる。意外性型: 予測不能な開幕。共感型:「あるある」
+
+【撮影・編集原則】
+- 無音・間を完全カット（ジェットカット）
+- テロップは5〜7文字以内・音なし視聴でも内容が伝わる
+- 過剰演出より粗削り・リアル感を優先
+`;
+
+async function generateScript() {
+  const char = data.characters.find(c => c.id === currentCharId);
+  const format = document.getElementById('scriptFormat').value;
+  const note   = document.getElementById('scriptNote').value;
+  const isShorts = format === 'shorts';
+  document.getElementById('scriptLoading').style.display = 'flex';
+  aiStart('台本を生成中...');
+
+  const strategy = isShorts ? SHORTS_STRATEGY_2026 : HORIZONTAL_STRATEGY_2026;
+  const prompt = `あなたは2026年最新アルゴリズムに精通したYouTube台本ライターです。
+以下の戦略フレームワークを必ず適用して台本を作成してください。
+
+${strategy}
+
+【キャラクター】${char.name}（${char.species}）トーン: ${char.tone}
+AI人格: ${char.ai_personality}
+【企画】${selectedPlan.title} — ${selectedPlan.description}
+【動画形式】${isShorts ? 'YouTubeショート（60秒以内・縦動画）' : '横動画（約3分・750〜850文字）'}
+【追加指示】${note||'なし'}
+
+${isShorts ? `
+【ショート台本設計】
+0〜2秒: フック（2カット・結論先出し・5大フックパターンから選択）
+3〜10秒: 結論（1動画1メッセージ）
+11〜45秒: 理由・具体例（3秒1カット・テロップ対応・中盤再フック）
+46〜60秒: CTA（保存・DM・コメント誘導）
+` : `
+【横動画台本設計（180秒・750〜850文字厳守）】
+0〜15秒: フック（常識破壊 or 衝撃統計 or 疑問提起。挨拶なし）
+15〜45秒: 課題提起（視聴者の痛み＋放置した場合の最悪シナリオ）
+45〜150秒: 解決策（PREP法。90秒地点でコメントCTAを1回だけ入れる）
+150〜180秒: 行動喚起（結論を1フレーズで。「ありがとう」「いかがでしたか」禁止）
+`}
+
+以下のJSON形式のみで出力（他テキスト不要）:
+{"info":"動画テーマ・構成・採用したフックパターン・編集ポイントの説明（3〜5行）","lines":"セリフのみ。キャラ名・括弧書き・映像指示は一切不要。話すセリフだけを改行区切りで書く。テンポよく・間を作らず・テロップ映えする言葉で。"}
+`;
+  try {
+    generatedScript = await callClaude(prompt);
+    aiEnd('script');
+    document.getElementById('scriptLoading').style.display = 'none';
+    saveCurrentEpisode();
+    switchTab('script');
+  } catch(e) {
+    aiEnd(null);
+    document.getElementById('scriptLoading').style.display = 'none';
+    showToast('エラー: ' + e.message);
+  }
+}
+
+// ════════════════════════════════════
+//  VOICEVOX 音声生成
+// ════════════════════════════════════
+async function generateVoicevox() {
+  const char = data.characters.find(c => c.id === currentCharId);
+  if (!generatedScript) { showToast('先に台本を生成してください'); return; }
+  const speakerId = char.voicevox_speaker ?? 3;
+  const text = parseScript(generatedScript).lines;
+  if (!text) { showToast('台本のセリフが取得できませんでした'); return; }
+  showToast('🎙 VOICEVOX に送信中… (localhost:50021 が起動している必要があります)');
+  try {
+    const qRes = await fetch(`http://localhost:50021/audio_query?text=${encodeURIComponent(text)}&speaker=${speakerId}`, { method: 'POST' });
+    if (!qRes.ok) throw new Error('audio_query 失敗: ' + qRes.status + ' (VOICEVOXは起動していますか？)');
+    const query = await qRes.json();
+    const sRes = await fetch(`http://localhost:50021/synthesis?speaker=${speakerId}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(query)
+    });
+    if (!sRes.ok) throw new Error('synthesis 失敗: ' + sRes.status);
+    const blob = await sRes.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${char.name}_${(selectedPlan?.title||'script').replace(/[\\/:*?"<>|]/g,'_')}.wav`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 3000);
+    showToast('✅ 音声ファイルをダウンロードしました');
+  } catch(e) {
+    showToast('❌ ' + e.message);
+  }
+}
+
+// ════════════════════════════════════
+//  Storyboard（絵コンテ）
+// ════════════════════════════════════
+// storyboardData は上部で宣言済み
+
+function splitScriptToScenes(linesText, format) {
+  const lines = linesText.split('\n').filter(l => l.trim());
+  const total = lines.length;
+  const scenes = [];
+  let idx = 0;
+
+  function take(label, time, count) {
+    if (idx >= lines.length) return;
+    const n = Math.max(1, Math.min(count, lines.length - idx));
+    scenes.push({ label, time, lines: lines.slice(idx, idx + n), prompt: '', imageDataUrl: '' });
+    idx += n;
+  }
+
+  if (format === 'shorts') {
+    take('フック',  '0〜2秒',  Math.max(1, Math.round(total * 0.08)));
+    take('結論',    '3〜10秒', Math.max(1, Math.round(total * 0.13)));
+    const reserved = Math.max(1, Math.round(total * 0.12));
+    let ex = 1;
+    while (idx < lines.length - reserved) {
+      take(`理由・例${ex}`, '11〜45秒', 2);
+      ex++;
+    }
+    take('CTA', '46〜60秒', lines.length - idx);
+  } else {
+    take('フック',   '0〜15秒',    Math.max(1, Math.round(total * 0.08)));
+    take('課題提起', '15〜45秒',   Math.max(1, Math.round(total * 0.16)));
+    const reserved = Math.max(1, Math.round(total * 0.09));
+    let ex = 1;
+    while (idx < lines.length - reserved) {
+      take(`解決策 例${ex}`, '45〜150秒', 2);
+      ex++;
+    }
+    take('行動喚起', '150〜180秒', lines.length - idx);
+  }
+  return scenes;
+}
+
+function initStoryboard(format) {
+  if (!generatedScript) { showToast('先に台本を生成してください'); return; }
+  const linesText = parseScript(generatedScript).lines;
+  const scenes = splitScriptToScenes(linesText, format);
+  const prev = storyboardData[sbKey()];
+  // 既存プロンプト・画像を引き継ぐ
+  if (prev && prev.scenes && prev.scenes.length === scenes.length) {
+    scenes.forEach((s, i) => { s.prompt = prev.scenes[i].prompt || ''; s.imageDataUrl = prev.scenes[i].imageDataUrl || ''; });
+  }
+  storyboardData[sbKey()] = { format, scenes };
+  saveStoryboard();
+  const el = document.getElementById('storyboardContainer');
+  if (el) el.innerHTML = renderStoryboard();
+}
+
+function sbKey() {
+  // エピソードがあればepisodeId、なければcharIdをキーにする
+  return currentEpisodeId || currentCharId || '__global__';
+}
+
+function saveStoryboard() {
+  try {
+    localStorage.setItem('channelos_storyboard', JSON.stringify(storyboardData));
+  } catch(e) { showToast('⚠ 画像サイズが大きすぎてlocalStorageに保存できません'); }
+}
+
+function loadStoryboard() {
+  try {
+    const s = localStorage.getItem('channelos_storyboard');
+    if (s) storyboardData = JSON.parse(s);
+  } catch(e) { storyboardData = {}; }
+}
+
+function renderStoryboard() {
+  const sb = storyboardData[sbKey()];
+  if (!sb || !sb.scenes) return '<p style="font-size:.82rem;color:var(--text-muted);">「横動画で生成」または「ショートで生成」ボタンを押してください。</p>';
+  return sb.scenes.map((scene, i) => `
+  <div class="sb-scene">
+    <div class="sb-scene-header">
+      <span class="sb-scene-badge">${escHtml(scene.label)}</span>
+      <span class="sb-scene-time">${escHtml(scene.time)}</span>
+    </div>
+    <div class="sb-scene-body">
+      <div class="sb-image-col">
+        <div class="sb-image-preview" id="sbPreview${i}">
+          ${scene.imageDataUrl ? `<img src="${scene.imageDataUrl}" alt="scene${i}">` : '🖼'}
+        </div>
+        <button class="btn btn-primary btn-sm" id="sbGenBtn${i}" onclick="generateSceneImage(${i})" style="width:100%;">🎨 AI生成</button>
+        <button class="btn btn-secondary btn-sm" onclick="openDriveAssetPicker(${i})" style="width:100%;">📂 Drive素材</button>
+        <label class="btn btn-secondary btn-sm" style="cursor:pointer;text-align:center;width:100%;">
+          📁 アップロード
+          <input type="file" accept="image/*" style="display:none" onchange="handleSceneImage(${i}, this)">
+        </label>
+        ${scene.imageDataUrl ? `<button class="btn btn-secondary btn-sm" onclick="clearSceneImage(${i})" style="width:100%;">✕ 削除</button>` : ''}
+      </div>
+      <div class="sb-text-col">
+        <div class="sb-script-lines">${escHtml(scene.lines.join('\n'))}</div>
+        <button class="btn btn-secondary btn-sm" onclick="copySceneLines(${i})" style="margin-top:6px;align-self:flex-start;">📋 台詞をコピー</button>
+      </div>
+    </div>
+  </div>`).join('');
+}
+
+let _drivePickerTargetScene = -1;
+let _drivePickerMode = 'scene'; // 'scene' | 'charref'
+
+function openDriveAssetPickerForRef() {
+  _drivePickerMode = 'charref';
+  _openDrivePickerModal();
+}
+
+async function openDriveAssetPicker(sceneIdx) {
+  _drivePickerMode = 'scene';
+  _drivePickerTargetScene = sceneIdx;
+  _openDrivePickerModal();
+}
+
+async function _openDrivePickerModal() {
+  const token = localStorage.getItem(GD_TOKEN_SK);
+  const grid = document.getElementById('drivePickerGrid');
+  openModal('drivePickerModal');
+
+  if (!token) {
+    grid.innerHTML = `<p style="color:var(--text-muted);font-size:.82rem;grid-column:1/-1;">Drive認証が必要です（設定タブ → Google Drive ログイン）</p>`;
+    return;
+  }
+
+  grid.innerHTML = `<p style="color:var(--text-muted);font-size:.82rem;grid-column:1/-1;">読み込み中...</p>`;
+
+  const folderId = getCharFolderId();
+  const mimeFilter = _drivePickerMode === 'bgm' ? 'audio/' : 'image/';
+  try {
+    const res = await fetch(
+      `https://www.googleapis.com/drive/v3/files?q='${folderId}'+in+parents+and+mimeType+contains+'${mimeFilter}'&fields=files(id,name,mimeType,thumbnailLink,webContentLink)&pageSize=100`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    if (!res.ok) throw new Error('Drive API error: ' + res.status);
+    const json = await res.json();
+    const files = json.files || [];
+    if (files.length === 0) {
+      grid.innerHTML = `<p style="color:var(--text-muted);font-size:.82rem;grid-column:1/-1;">Driveフォルダに画像がありません</p>`;
+      return;
+    }
+    grid.innerHTML = files.map(f => {
+      const thumb = f.thumbnailLink ? f.thumbnailLink.replace('=s220','=s400') : '';
+      return `<div onclick="selectDriveAsset('${f.id}','${escHtml(f.name)}')" style="cursor:pointer;border:2px solid var(--border);border-radius:8px;overflow:hidden;transition:border-color .2s;" onmouseover="this.style.borderColor='var(--char-color)'" onmouseout="this.style.borderColor='var(--border)'">
+        ${thumb ? `<img src="${thumb}" style="width:100%;aspect-ratio:1;object-fit:cover;display:block;">` : `<div style="width:100%;aspect-ratio:1;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:1.5rem;">🖼</div>`}
+        <div style="padding:5px 6px;font-size:.68rem;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escHtml(f.name)}</div>
+      </div>`;
+    }).join('');
+  } catch(e) {
+    grid.innerHTML = `<p style="color:#e55;font-size:.82rem;grid-column:1/-1;">エラー: ${e.message}</p>`;
+  }
+}
+
+async function selectDriveAsset(fileId, fileName) {
+  const token = localStorage.getItem(GD_TOKEN_SK);
+  if (!token) return;
+  showToast('画像を取得中...');
+  try {
+    const res = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    if (!res.ok) throw new Error('取得失敗: ' + res.status);
+    const blob = await res.blob();
+    const reader = new FileReader();
+    reader.onload = ev => {
+      const dataUrl = ev.target.result;
+      if (_drivePickerMode === 'bgm') {
+        // BGMに適用
+        window._bgmDataUrl  = dataUrl;
+        window._bgmFileName = fileName;
+        const el = document.getElementById('bgmSelected');
+        if (el) el.textContent = '🎵 ' + fileName;
+        const sp = document.getElementById('panelScene');
+        if (sp) sp.outerHTML = renderScenePanel();
+        showToast(`✅ BGM設定: ${fileName}`);
+      } else if (_drivePickerMode === 'charref') {
+        // キャラ参照画像に適用
+        if (!storyboardData[sbKey()]) storyboardData[sbKey()] = { scenes: [] };
+        storyboardData[sbKey()].charRefDataUrl = dataUrl;
+        saveStoryboard();
+        const preview = document.getElementById('charRefPreview');
+        if (preview) preview.innerHTML = `<img src="${dataUrl}" style="width:100%;height:100%;object-fit:cover;">`;
+        showToast(`✅ キャラ参照画像を設定しました: ${fileName}`);
+      } else {
+        // シーン画像に適用
+        const sb = storyboardData[sbKey()];
+        if (sb && _drivePickerTargetScene >= 0) {
+          sb.scenes[_drivePickerTargetScene].imageDataUrl = dataUrl;
+          saveStoryboard();
+          const el = document.getElementById('storyboardContainer');
+          if (el) el.innerHTML = renderStoryboard();
+          showToast(`✅ "${fileName}" を適用しました`);
+        }
+      }
+      closeModal('drivePickerModal');
+    };
+    reader.readAsDataURL(blob);
+  } catch(e) {
+    showToast('❌ ' + e.message);
+  }
+}
+
+function handleSceneImage(sceneIdx, input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const sb = storyboardData[sbKey()];
+    if (!sb) return;
+    sb.scenes[sceneIdx].imageDataUrl = e.target.result;
+    saveStoryboard();
+    const el = document.getElementById('storyboardContainer');
+    if (el) el.innerHTML = renderStoryboard();
+  };
+  reader.readAsDataURL(file);
+}
+
+function clearSceneImage(sceneIdx) {
+  const sb = storyboardData[sbKey()];
+  if (!sb) return;
+  sb.scenes[sceneIdx].imageDataUrl = '';
+  saveStoryboard();
+  const el = document.getElementById('storyboardContainer');
+  if (el) el.innerHTML = renderStoryboard();
+}
+
+function updateScenePrompt(sceneIdx, value) {
+  const sb = storyboardData[sbKey()];
+  if (!sb) return;
+  sb.scenes[sceneIdx].prompt = value;
+  saveStoryboard();
+}
+
+async function generateScenePrompt(sceneIdx) {
+  const char = data.characters.find(c => c.id === currentCharId);
+  const sb = storyboardData[sbKey()];
+  if (!sb) return;
+  const scene = sb.scenes[sceneIdx];
+  const apiKey = localStorage.getItem('channelos_claude_api_key');
+  if (!apiKey) { showToast('設定タブでClaude APIキーを入力してください'); return; }
+  showToast('AI生成中...');
+  const prompt = `キャラクター: ${char.name}（${char.species}）テーマ: ${char.theme} トーン: ${char.tone}
+シーン: ${scene.label}（${scene.time}）
+台詞: ${scene.lines.join('、')}
+
+このシーンで${char.name}が取るべき「ポーズ・表情・感情」を英語の画像生成プロンプトで書いてください。
+条件:
+- キャラクターの動きと表情のみを描写（背景・場所は一切書かない）
+- 透過PNG用なので "transparent background, no background, isolated character" を必ず含める
+- anime illustration style を含める
+- 1文で完結（50〜80語程度）
+
+JSON形式のみ: {"ja":"このシーンのポーズ・表情を日本語1文で","en":"English prompt for image generation"}`;
+  try {
+    const text = await callClaude(prompt);
+    const result = JSON.parse(text.match(/\{[\s\S]*\}/)[0]);
+    sb.scenes[sceneIdx].prompt = result.en || result.ja;
+    saveStoryboard();
+    const el = document.getElementById('storyboardContainer');
+    if (el) el.innerHTML = renderStoryboard();
+    showToast('✅ プロンプト生成完了');
+  } catch(e) { showToast('エラー: ' + e.message); }
+}
+
+function setCharRefImage(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    if (!storyboardData[sbKey()]) storyboardData[sbKey()] = { scenes: [] };
+    storyboardData[sbKey()].charRefDataUrl = e.target.result;
+    saveStoryboard();
+    // 参照画像エリアだけ更新
+    const preview = document.getElementById('charRefPreview');
+    if (preview) preview.innerHTML = `<img src="${e.target.result}" style="width:100%;height:100%;object-fit:cover;">`;
+    showToast('✅ キャラ参照画像を設定しました');
+  };
+  reader.readAsDataURL(file);
+}
+
+function clearCharRefImage() {
+  if (storyboardData[sbKey()]) delete storyboardData[sbKey()].charRefDataUrl;
+  saveStoryboard();
+  const el = document.getElementById('panelScene');
+  if (el) el.outerHTML = renderScenePanel();
+}
+
+async function generateSceneImage(sceneIdx) {
+  if (!localStorage.getItem(STABILITY_KEY_SK)) { showToast('設定タブで Stability AI APIキーを入力してください'); return; }
+  const sb = storyboardData[sbKey()];
+  if (!sb) return;
+  const char = (loadData().characters || []).find(c => c.id === currentCharId);
+  const scene = sb.scenes[sceneIdx];
+
+  const prompt = `Anime illustration. Character: ${char?.name||''}(${char?.species||''}). Scene: ${scene.label}. ${scene.lines.join(' ')}. Isolated character, white background, full body, vibrant colors, no text.`;
+
+  const btn = document.getElementById(`sbGenBtn${sceneIdx}`);
+  if (btn) { btn.disabled = true; btn.textContent = '生成中…'; }
+
+  try {
+    const dataUrl = await generateGeminiImage(prompt);
+
+    sb.scenes[sceneIdx].imageDataUrl = dataUrl;
+    saveStoryboard();
+
+    // Drive自動保存（失敗しても無視）
+    const folderId = char?.drive_folder_id || '';
+    saveImageToDrive(dataUrl, `scene_${String(sceneIdx+1).padStart(2,'0')}_${Date.now()}.jpg`, folderId)
+      .then(id => { if (id) showToast('✅ 画像生成・Drive保存完了'); });
+
+    const el = document.getElementById('storyboardContainer');
+    if (el) el.innerHTML = renderStoryboard();
+    if (!char?.drive_folder_id) showToast('✅ 画像生成完了');
+  } catch(e) {
+    showToast('❌ ' + e.message);
+    const el = document.getElementById('storyboardContainer');
+    if (el) el.innerHTML = renderStoryboard();
+  } finally {
+    const b = document.getElementById(`sbGenBtn${sceneIdx}`);
+    if (b) { b.disabled = false; b.textContent = '💎 Gemini生成'; }
+  }
+}
+
+async function convertToPng(blob) {
+  // Canvas 経由で PNG に変換（JPEG など他形式の場合の対応）
+  return new Promise(resolve => {
+    const img = new Image();
+    const url = URL.createObjectURL(blob);
+    img.onload = () => {
+      const c = document.createElement('canvas');
+      c.width = img.width; c.height = img.height;
+      c.getContext('2d').drawImage(img, 0, 0);
+      URL.revokeObjectURL(url);
+      c.toBlob(resolve, 'image/png');
+    };
+    img.src = url;
+  });
+}
+
+// ════════════════════════════════════
+//  Meta Panel
+// ════════════════════════════════════
+function renderMetaPanel(char) {
+  return `
+  <div class="panel ${currentTab==='meta'?'active':''}" id="panelMeta">
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <div class="card-title" style="margin:0;">投稿情報生成</div>
+        <button class="btn btn-secondary btn-sm" onclick="switchTab('script')">← 台本に戻る</button>
+      </div>
+      ${generatedMeta ? `
+      <div style="background:rgba(76,175,80,.08);border:1px solid #4caf50;border-radius:6px;padding:8px 12px;margin-bottom:10px;font-size:.78rem;color:#4caf50;">✅ 投稿情報生成済み（一括生成より）</div>
+      <button class="btn btn-secondary btn-sm" onclick="generateMeta()" ${!generatedScript?'disabled':''}>🔄 投稿情報を再生成</button>
+      ` : `
+      <button class="btn btn-primary" onclick="generateMeta()" ${!generatedScript?'disabled':''}>タイトル・概要欄・タグを生成</button>
+      ${!generatedScript?`<p style="font-size:.78rem;color:var(--text-muted);margin-top:8px;">先に台本を生成してください</p>`:''}
+      `}
+      <div id="metaLoading" class="loading" style="display:none;margin-top:10px;"><div class="spinner"></div><span>投稿情報を最適化中...</span></div>
+    </div>
+    <div id="metaResultArea">${generatedMeta ? renderMetaResult(generatedMeta) : ''}</div>
+  </div>`;
+}
+
+async function generateMeta() {
+  const char = data.characters.find(c => c.id === currentCharId);
+  document.getElementById('metaLoading').style.display = 'flex';
+  aiStart('投稿情報を生成中...');
+  const prompt = `以下の台本を元にYouTube投稿情報と画像生成プロンプトを生成してください。
+キャラクター: ${char.name}（${char.species}）テーマ: ${char.theme} トーン: ${char.tone}
+台本（抜粋）: ${generatedScript.slice(0,800)}
+
+以下のJSONのみ出力（他テキスト不要）:
+{
+  "title": "YouTubeタイトル（40字以内・数字や感情語を含む）",
+  "title_alt": "代替タイトル案",
+  "description": "概要欄（3〜5段落。冒頭1行でフック、チャンネル説明、ハッシュタグ末尾）",
+  "tags": ["タグ1","タグ2","タグ3","タグ4","タグ5"],
+  "hashtags": ["#ハッシュタグ1","#ハッシュタグ2","#ハッシュタグ3"],
+  "best_post_time": "最適投稿日時（例: 土曜18時）",
+  "thumb_horizontal": "横サムネイル用画像生成プロンプト（英語・16:9・高コントラスト・タイトル文字映え・Midjourney形式 --ar 16:9）",
+  "thumb_shorts": "縦サムネイル用画像生成プロンプト（英語・9:16・スマホ全画面・インパクト重視・Midjourney形式 --ar 9:16）",
+  "thumb_text_horizontal": "横サムネイルに重ねるテキスト案（20字以内・インパクト重視）",
+  "thumb_text_shorts": "縦サムネイルに重ねるテキスト案（15字以内・縦読みOK）"
+}`;
+  try {
+    const text = await callClaude(prompt);
+    generatedMeta = JSON.parse(text.match(/\{[\s\S]*\}/)[0]);
+    aiEnd('meta');
+    document.getElementById('metaLoading').style.display = 'none';
+    saveCurrentEpisode();
+    document.getElementById('metaResultArea').innerHTML = renderMetaResult(generatedMeta);
+  } catch(e) {
+    aiEnd(null);
+    document.getElementById('metaLoading').style.display = 'none';
+    showToast('エラー: ' + e.message);
+  }
+}
+
+function renderMetaResult(meta) {
+  const copyBtn = (text, label) => {
+    const key = 'cp_' + Math.random().toString(36).slice(2);
+    window[key] = text;
+    return `<button class="btn btn-secondary btn-sm" onclick="copyText(window['${key}'])">📋 ${label}</button>`;
+  };
+  return `
+  <div class="card">
+    <div class="result-header"><span class="result-label">📝 タイトル・概要欄</span>${copyBtn(meta.title+'\n\n'+meta.description+'\n\n'+(meta.hashtags||[]).join(' '),'全コピー')}</div>
+    <div style="display:flex;flex-direction:column;gap:14px;margin-top:4px;">
+      <div>
+        <label>タイトル（推奨）</label>
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:10px 14px;font-weight:600;display:flex;justify-content:space-between;align-items:center;">
+          <span>${escHtml(meta.title)}</span>${copyBtn(meta.title,'コピー')}
+        </div>
+        <div style="font-size:.75rem;color:var(--text-muted);margin-top:4px;">代替案: ${escHtml(meta.title_alt)}</div>
+      </div>
+      <div>
+        <label>概要欄</label>
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:10px 14px;font-size:.82rem;line-height:1.7;white-space:pre-wrap;">${escHtml(meta.description)}</div>
+        <div style="margin-top:6px;display:flex;gap:6px;">${copyBtn(meta.description,'概要欄コピー')} ${copyBtn((meta.hashtags||[]).join(' '),'ハッシュタグコピー')}</div>
+      </div>
+      <div><label>タグ</label><div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;">${(meta.tags||[]).map(t=>`<span class="badge">${escHtml(t)}</span>`).join('')}</div></div>
+      <div style="font-size:.82rem;color:var(--char-color);">${(meta.hashtags||[]).join(' ')}</div>
+      <div style="font-size:.8rem;color:var(--text-muted);">最適投稿: ${escHtml(meta.best_post_time||'')}</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">🖼 サムネイル画像生成プロンプト</div>
+    <div style="display:flex;flex-direction:column;gap:16px;">
+
+      <div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <label style="margin:0;">📺 横サムネイル（16:9）</label>
+          ${copyBtn(meta.thumb_horizontal||'','プロンプトコピー')}
+        </div>
+        <div style="background:var(--surface2);border:1px solid var(--accent);border-radius:6px;padding:10px 14px;font-size:.82rem;font-family:monospace;line-height:1.6;white-space:pre-wrap;">${escHtml(meta.thumb_horizontal||'')}</div>
+        <div style="margin-top:6px;font-size:.78rem;color:var(--text-muted);">重ねるテキスト案: <strong style="color:var(--text);">${escHtml(meta.thumb_text_horizontal||'')}</strong></div>
+      </div>
+
+      <div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <label style="margin:0;">📱 縦サムネイル・ショート（9:16）</label>
+          ${copyBtn(meta.thumb_shorts||'','プロンプトコピー')}
+        </div>
+        <div style="background:var(--surface2);border:1px solid var(--accent);border-radius:6px;padding:10px 14px;font-size:.82rem;font-family:monospace;line-height:1.6;white-space:pre-wrap;">${escHtml(meta.thumb_shorts||'')}</div>
+        <div style="margin-top:6px;font-size:.78rem;color:var(--text-muted);">重ねるテキスト案: <strong style="color:var(--text);">${escHtml(meta.thumb_text_shorts||'')}</strong></div>
+      </div>
+
+      <div style="font-size:.75rem;color:var(--text-muted);border-top:1px solid var(--border);padding-top:10px;">
+        💡 プロンプトをコピーして Midjourney / ChatGPT / Stable Diffusion に貼り付けてください
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <div class="card-title" style="margin:0;">📊 進捗ステータス</div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;">
+      ${['draft','shooting','editing','done','posted'].map(s => {
+        const labels = {draft:'📝 下書き',shooting:'🎥 撮影中',editing:'✂️ 編集中',done:'✅ 完成',posted:'🚀 投稿済'};
+        const ep = (data.episodes||[]).find(e=>e.id===currentEpisodeId);
+        const active = ep && ep.status === s;
+        return `<button class="btn btn-sm ${active?'btn-primary':'btn-secondary'}" onclick="setEpisodeStatus('${s}')">${labels[s]}</button>`;
+      }).join('')}
+    </div>
+  </div>`;
+}
+
+// ════════════════════════════════════
+//  Radio Panel（長尺・ラジオ投稿）
+// ════════════════════════════════════
+function renderRadioPanel() {
+  const res = window._radioResult || null;
+  return `
+  <div class="panel ${currentTab==='radio'?'active':''}" id="panelRadio">
+    <div class="card" style="border:1px solid var(--char-color,#c9a84c);background:linear-gradient(135deg,rgba(201,168,76,.08),transparent);">
+      <div class="card-title" style="margin-bottom:6px;">🎙 ラジオ / 長尺コンテンツ</div>
+      <p style="font-size:.78rem;color:var(--text-muted);margin:0 0 16px;">文字起こし・メモを貼り付けると、投稿情報＋内容に応じた絵コンテシーン案を自動生成します。</p>
+
+      <div style="margin-bottom:14px;">
+        <label style="display:block;font-size:.78rem;color:var(--text-muted);margin-bottom:6px;font-weight:600;">文字起こし / 収録メモ</label>
+        <textarea id="radioTranscript" placeholder="収録した内容をそのまま貼り付けてください。何分の動画でも対応します。\n\n例:\n00:00 オープニング — 今日のテーマ紹介\n02:30 セクション1 — ○○について\n..." style="width:100%;min-height:180px;padding:12px 14px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:.88rem;line-height:1.7;resize:vertical;"></textarea>
+      </div>
+
+      <div style="margin-bottom:14px;">
+        <label style="display:block;font-size:.78rem;color:var(--text-muted);margin-bottom:6px;font-weight:600;">補足情報（任意）</label>
+        <input type="text" id="radioNote" placeholder="例: ゲスト回、前後編の前編、普段より感情的な回など"
+          style="width:100%;padding:10px 14px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);">
+      </div>
+
+      <div style="margin-bottom:14px;">
+        <label style="display:block;font-size:.78rem;color:var(--text-muted);margin-bottom:6px;font-weight:600;">絵コンテシーン数の目安</label>
+        <div style="display:flex;gap:8px;">
+          <label style="display:flex;align-items:center;gap:6px;font-size:.82rem;cursor:pointer;"><input type="radio" name="radioSceneCount" value="auto" checked> 自動（Claude が判断）</label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:.82rem;cursor:pointer;"><input type="radio" name="radioSceneCount" value="4"> 4シーン</label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:.82rem;cursor:pointer;"><input type="radio" name="radioSceneCount" value="8"> 8シーン</label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:.82rem;cursor:pointer;"><input type="radio" name="radioSceneCount" value="12"> 12シーン</label>
+        </div>
+      </div>
+
+      <button class="btn btn-primary" style="width:100%;padding:13px;font-size:.95rem;font-weight:700;" onclick="generateRadioMeta()">
+        🚀 投稿情報 ＋ 絵コンテシーン案を生成
+      </button>
+      <div id="radioLoading" class="loading" style="display:none;margin-top:14px;"><div class="spinner"></div><span>Claude が内容を分析中...</span></div>
+    </div>
+
+    <div id="radioResultArea">${res ? renderRadioResult(res) : ''}</div>
+  </div>`;
+}
+
+function renderRadioResult(res) {
+  const copyBtn = (text, label) => {
+    const key = 'rcp_' + Math.random().toString(36).slice(2);
+    window[key] = text;
+    return `<button class="btn btn-secondary btn-sm" onclick="copyText(window['${key}'])">📋 ${label}</button>`;
+  };
+  return `
+  <div class="card">
+    <div class="result-header">
+      <span class="card-title" style="margin:0;">📝 投稿情報</span>
+      ${copyBtn(res.title + '\n\n' + res.description + '\n\n' + (res.hashtags||[]).join(' '), '全コピー')}
+    </div>
+    <div style="display:flex;flex-direction:column;gap:14px;margin-top:8px;">
+      <div>
+        <label>タイトル（推奨）</label>
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:10px 14px;font-weight:600;display:flex;justify-content:space-between;align-items:center;">
+          <span>${escHtml(res.title||'')}</span>${copyBtn(res.title||'','コピー')}
+        </div>
+        ${res.title_alt ? `<div style="font-size:.75rem;color:var(--text-muted);margin-top:4px;">代替案: ${escHtml(res.title_alt)}</div>` : ''}
+      </div>
+      <div>
+        <label>概要欄</label>
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:10px 14px;font-size:.82rem;line-height:1.7;white-space:pre-wrap;">${escHtml(res.description||'')}</div>
+        <div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap;">${copyBtn(res.description||'','概要欄コピー')} ${copyBtn((res.hashtags||[]).join(' '),'ハッシュタグコピー')}</div>
+      </div>
+      ${res.chapters ? `
+      <div>
+        <label>チャプター</label>
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:10px 14px;font-size:.82rem;line-height:1.8;white-space:pre-wrap;">${escHtml(res.chapters)}</div>
+        ${copyBtn(res.chapters,'チャプターコピー')}
+      </div>` : ''}
+      <div><label>タグ</label><div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;">${(res.tags||[]).map(t=>`<span class="badge">${escHtml(t)}</span>`).join('')}</div></div>
+    </div>
+  </div>
+
+  ${res.scenes && res.scenes.length ? `
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+      <div class="card-title" style="margin:0;">🎨 絵コンテシーン案（${res.scenes.length}シーン）</div>
+      <button class="btn btn-primary btn-sm" onclick="applyRadioScenes()">絵コンテタブに適用 →</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      ${res.scenes.map((s,i) => `
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px 14px;">
+        <div style="display:flex;gap:10px;align-items:baseline;margin-bottom:4px;">
+          <span style="font-size:.75rem;color:var(--char-color);font-weight:700;">SCENE ${i+1}</span>
+          <span style="font-size:.8rem;color:var(--text-muted);">${escHtml(s.time||'')}</span>
+          <strong style="font-size:.88rem;">${escHtml(s.label||'')}</strong>
+        </div>
+        <div style="font-size:.82rem;color:var(--text-muted);line-height:1.6;">${escHtml(s.description||'')}</div>
+        ${s.prompt ? `<div style="margin-top:6px;font-size:.75rem;font-family:monospace;color:#7dc97d;background:rgba(0,50,0,.3);padding:6px 10px;border-radius:4px;">${escHtml(s.prompt)}</div>` : ''}
+      </div>`).join('')}
+    </div>
+  </div>` : ''}
+
+  <div style="margin-top:4px;display:flex;gap:8px;flex-wrap:wrap;">
+    <button class="btn btn-primary" onclick="switchTab('scene')">🎨 絵コンテタブへ</button>
+    <button class="btn btn-primary" onclick="switchTab('publish')">📦 投稿タブへ</button>
+  </div>`;
+}
+
+async function startRadioFromPlan() {
+  const transcript = document.getElementById('planRadioTranscript')?.value.trim();
+  if (!transcript) { showToast('文字起こしを入力してください'); return; }
+  // ラジオタブの入力欄に転記してからラジオ生成を実行
+  switchTab('radio');
+  setTimeout(() => {
+    const ta = document.getElementById('radioTranscript');
+    const note = document.getElementById('planRadioNote')?.value.trim() || '';
+    if (ta) ta.value = transcript;
+    const noteEl = document.getElementById('radioNote');
+    if (noteEl) noteEl.value = note;
+    // 新規エピソードを作成してから生成
+    newEpisode();
+    setTimeout(() => generateRadioMeta(), 300);
+  }, 200);
+}
+
+async function generateRadioMeta() {
+  const char = (loadData().characters || []).find(c => c.id === currentCharId);
+  if (!char) { showToast('キャラクターを選択してください'); return; }
+  const apiKey = localStorage.getItem(API_KEY_SK);
+  if (!apiKey) { showToast('設定タブでClaude APIキーを入力してください'); return; }
+  const transcript = document.getElementById('radioTranscript')?.value.trim();
+  if (!transcript) { showToast('文字起こしを入力してください'); return; }
+  const note = document.getElementById('radioNote')?.value.trim() || '';
+  const sceneCountEl = document.querySelector('input[name="radioSceneCount"]:checked');
+  const sceneCount = sceneCountEl?.value || 'auto';
+  const sceneInstruction = sceneCount === 'auto'
+    ? '内容の山場・感情の切り替わり・視覚的にインパクトのある場面を判断して適切な数（4〜12）で抽出してください。'
+    : `必ず${sceneCount}シーンを抽出してください。`;
+
+  document.getElementById('radioLoading').style.display = 'flex';
+  document.getElementById('radioResultArea').innerHTML = '';
+  aiStart('ラジオを分析中...');
+
+  const prompt = `あなたはYouTubeチャンネルの編集・投稿最適化の専門家です。
+以下の文字起こし・収録メモを元に、整理済み台本・投稿情報・絵コンテシーン案を生成してください。
+
+キャラクター: ${char.name}（${char.species}）テーマ: ${char.theme} トーン: ${char.tone}
+補足: ${note || 'なし'}
+
+【文字起こし・収録メモ】
+${transcript.slice(0, 4000)}${transcript.length > 4000 ? '\n...(以下省略)' : ''}
+
+【指示】
+- 整理済み台本: 口語のまま読みやすく整理。フィラー（えー、あのー等）除去。段落・改行で読みやすく。
+- 投稿情報: 視聴者が「見たい」と思う形に要約・最適化。
+- 絵コンテ: ${sceneInstruction}
+
+以下のJSONのみで出力（他テキスト不要）:
+{
+  "title": "YouTubeタイトル（40字以内・数字や感情語を含む）",
+  "title_alt": "代替タイトル案",
+  "script_clean": "整理済み台本（読みやすく整理した全文。段落区切りで）",
+  "description": "概要欄（冒頭1行フック→内容の要約3〜4行→チャンネル説明→ハッシュタグ末尾）",
+  "tags": ["タグ1","タグ2","タグ3","タグ4","タグ5"],
+  "hashtags": ["#ハッシュタグ1","#ハッシュタグ2","#ハッシュタグ3"],
+  "chapters": "00:00 オープニング\\n02:30 ○○\\n...",
+  "scenes": [
+    {
+      "time": "00:00〜02:30",
+      "label": "シーン名（短く）",
+      "description": "この場面で映すべき映像・画の説明（日本語）",
+      "prompt": "English image generation prompt. Anime style, ${char.name}(${char.species}), vivid colors."
+    }
+  ]
+}`;
+
+  try {
+    const text = await callClaude(prompt);
+    const result = JSON.parse(text.match(/\{[\s\S]*\}/)[0]);
+    window._radioResult = result;
+
+    // 整理済み台本を反映
+    if (result.script_clean) generatedScript = result.script_clean;
+    // 投稿情報を反映
+    generatedMeta = {
+      title: result.title, title_alt: result.title_alt,
+      description: result.description, tags: result.tags,
+      hashtags: result.hashtags, best_post_time: ''
+    };
+    // エピソードがなければ自動作成
+    if (!currentEpisodeId && currentCharId) {
+      const newEp = {
+        id: 'ep_' + Date.now(), charId: currentCharId,
+        title: result.title || 'ラジオ回',
+        type: 'radio', plan: null, script: '', meta: generatedMeta,
+        radioResult: result,
+        createdAt: new Date().toISOString(), updatedAt: new Date().toISOString()
+      };
+      if (!data.episodes) data.episodes = [];
+      data.episodes.push(newEp);
+      currentEpisodeId = newEp.id;
+      saveData(data);
+      renderSidebar();
+    } else if (currentEpisodeId) {
+      const ep = (data.episodes || []).find(e => e.id === currentEpisodeId);
+      if (ep) { ep.radioResult = result; ep.title = result.title || ep.title; }
+      saveCurrentEpisode();
+    }
+
+    aiEnd('radio');
+    document.getElementById('radioLoading').style.display = 'none';
+    document.getElementById('radioResultArea').innerHTML = renderRadioResult(result);
+    showToast('✅ 分析完了');
+  } catch(e) {
+    aiEnd(null);
+    document.getElementById('radioLoading').style.display = 'none';
+    showToast('❌ エラー: ' + e.message);
+  }
+}
+
+function applyRadioScenes() {
+  const res = window._radioResult;
+  if (!res?.scenes?.length) return;
+  if (!currentCharId) { showToast('キャラクターを選択してください'); return; }
+  if (!storyboardData[sbKey()]) storyboardData[sbKey()] = { scenes: [], charRefDataUrl: null };
+  storyboardData[sbKey()].scenes = res.scenes.map(s => ({
+    label: s.label || '',
+    time: s.time || '',
+    lines: [s.description || ''],
+    prompt: s.prompt || '',
+    imageDataUrl: null
+  }));
+  saveStoryboard();
+  showToast(`✅ ${res.scenes.length}シーンを絵コンテに適用しました`);
+  switchTab('scene');
+}
+
+// ════════════════════════════════════
+//  Scene / Image Prompt Panel
+// ════════════════════════════════════
+function renderScenePanel() {
+  const sb = storyboardData[sbKey()];
+  const hasImages = sb?.scenes?.some(s => s.imageDataUrl);
+  return `
+  <div class="panel ${currentTab==='scene'?'active':''}" id="panelScene">
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <div class="card-title" style="margin:0;">📽 絵コンテ（シーン分割）</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+          <button class="btn btn-secondary btn-sm" onclick="initStoryboard('horizontal')">横動画で生成</button>
+          <button class="btn btn-secondary btn-sm" onclick="initStoryboard('shorts')">ショートで生成</button>
+          <button class="btn btn-primary btn-sm" onclick="downloadMaterialPack()">📦 素材パックDL</button>
+        </div>
+      </div>
+      <p style="font-size:.78rem;color:var(--text-muted);margin-bottom:14px;">Drive素材フォルダの画像をシーンに配置できます。</p>
+
+      <div class="storyboard-grid" id="storyboardContainer">${renderStoryboard()}</div>
+    </div>
+
+    <!-- 動画自動合成 -->
+    <div class="card" style="border:1px solid #4caf5055;background:linear-gradient(135deg,rgba(76,175,80,.06),transparent);">
+      <div class="card-title" style="margin-bottom:12px;">🎬 動画を自動合成</div>
+
+      <div style="display:flex;align-items:center;gap:12px;padding:12px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;margin-bottom:14px;">
+        <span style="font-size:1.4rem;">🎵</span>
+        <div style="flex:1;">
+          <div style="font-size:.8rem;font-weight:700;margin-bottom:2px;">BGM</div>
+          <div id="bgmSelected" style="font-size:.75rem;color:var(--text-muted);">${window._bgmFileName || '未選択'}</div>
+        </div>
+        <div style="display:flex;gap:6px;">
+          <button class="btn btn-primary btn-sm" onclick="openDriveAssetPickerForBgm()">📂 Drive</button>
+          <label class="btn btn-secondary btn-sm" style="cursor:pointer;">
+            📁 ローカル<input type="file" accept="audio/*" style="display:none" onchange="loadLocalBgm(this)">
+          </label>
+          ${window._bgmDataUrl ? `<button class="btn btn-secondary btn-sm" onclick="clearBgm()">✕</button>` : ''}
+        </div>
+      </div>
+
+      <div style="margin-bottom:14px;">
+        <label style="font-size:.78rem;color:var(--text-muted);font-weight:600;display:block;margin-bottom:8px;">シーンごとの表示秒数</label>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+          <label style="font-size:.82rem;display:flex;align-items:center;gap:4px;cursor:pointer;">
+            <input type="radio" name="sceneDurMode" value="auto" ${(window._sceneDurMode||'auto')==='auto'?'checked':''} onchange="window._sceneDurMode='auto'"> 自動（台本量から計算）
+          </label>
+          <label style="font-size:.82rem;display:flex;align-items:center;gap:4px;cursor:pointer;">
+            <input type="radio" name="sceneDurMode" value="fixed" ${window._sceneDurMode==='fixed'?'checked':''} onchange="window._sceneDurMode='fixed'"> 固定:
+          </label>
+          <input type="number" id="fixedDurSec" value="${window._fixedDurSec||5}" min="1" max="60" style="width:60px;padding:4px 8px;" onchange="window._fixedDurSec=parseInt(this.value)||5"> 秒
+        </div>
+      </div>
+
+      <button class="btn btn-primary" style="width:100%;padding:13px;font-size:.95rem;font-weight:700;background:#4caf50;" onclick="generateVideo()" ${!hasImages?'disabled title="絵コンテに画像を追加してください"':''}>
+        🎬 動画を生成してダウンロード
+      </button>
+      <div id="videoGenProgress" style="display:none;margin-top:12px;">
+        <div style="display:flex;justify-content:space-between;font-size:.78rem;color:var(--text-muted);margin-bottom:4px;">
+          <span id="videoGenLabel">処理中...</span>
+          <span id="videoGenPct">0%</span>
+        </div>
+        <div style="background:var(--surface2);border-radius:4px;height:6px;overflow:hidden;">
+          <div id="videoGenBar" style="height:100%;background:#4caf50;width:0%;transition:width .3s;"></div>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+
+// copyText の旧定義（下の utils 定義に統合済み・この行は削除）
+
+function initCanvas() {
+  sceneCanvas = document.getElementById('sceneCanvas');
+  if (!sceneCanvas) return;
+  sceneCtx = sceneCanvas.getContext('2d');
+  resizeCanvas();
+  drawScene();
+}
+
+function resizeCanvas() {
+  if (!sceneCanvas) return;
+  if (sceneFormat === 'horizontal') { sceneCanvas.width = 1920; sceneCanvas.height = 1080; }
+  else { sceneCanvas.width = 1080; sceneCanvas.height = 1920; }
+  sceneCanvas.style.maxWidth  = sceneFormat === 'horizontal' ? '100%' : '200px';
+  sceneCanvas.style.maxHeight = '460px';
+}
+
+function setFormat(fmt) {
+  sceneFormat = fmt;
+  resizeCanvas();
+  drawScene();
+  // Re-render controls
+  const panel = document.getElementById('panelScene');
+  if (panel) {
+    document.querySelectorAll('.format-btn').forEach(b => b.classList.toggle('active', b.textContent.includes(fmt==='horizontal'?'横':'ショート')));
+  }
+}
+
+function drawScene() {
+  if (!sceneCtx) return;
+  const w = sceneCanvas.width, h = sceneCanvas.height;
+  sceneCtx.clearRect(0, 0, w, h);
+
+  // Background
+  if (sceneBg && sceneBg.img) {
+    sceneCtx.drawImage(sceneBg.img, 0, 0, w, h);
+  } else {
+    const g = sceneCtx.createLinearGradient(0, 0, w, h);
+    g.addColorStop(0, '#1a1a2e'); g.addColorStop(1, '#16213e');
+    sceneCtx.fillStyle = g;
+    sceneCtx.fillRect(0, 0, w, h);
+  }
+
+  // Character
+  if (sceneChar && sceneChar.img) {
+    const ch = sceneChar;
+    const scale = ch.scale || 0.5;
+    const iw = sceneChar.img.naturalWidth  * scale * (w / 1920);
+    const ih = sceneChar.img.naturalHeight * scale * (w / 1920);
+    const x = (ch.x !== undefined ? ch.x * w : w * 0.5 - iw / 2);
+    const y = (ch.y !== undefined ? ch.y * h : h - ih);
+    sceneCtx.drawImage(sceneChar.img, x, y, iw, ih);
+  }
+
+  // Texts
+  sceneTexts.forEach(t => {
+    const size = (t.size || 48) * (w / 1920);
+    sceneCtx.font = `${t.bold?'bold ':''} ${size}px 'Noto Serif JP', sans-serif`;
+    sceneCtx.fillStyle = t.color || '#ffffff';
+    sceneCtx.strokeStyle = 'rgba(0,0,0,0.8)';
+    sceneCtx.lineWidth = size * 0.08;
+    const tx = t.x !== undefined ? t.x * w : w / 2;
+    const ty = t.y !== undefined ? t.y * h : h * 0.1 + size;
+    sceneCtx.textAlign = 'center';
+    sceneCtx.strokeText(t.text, tx, ty);
+    sceneCtx.fillText(t.text, tx, ty);
+  });
+}
+
+function addSceneText() {
+  const text  = document.getElementById('sceneTextInput').value.trim();
+  const size  = parseInt(document.getElementById('sceneTextSize').value) || 48;
+  const color = document.getElementById('sceneTextColor').value;
+  if (!text) return;
+  sceneTexts.push({ text, size, color, x: 0.5, y: 0.1 + sceneTexts.length * 0.12 });
+  drawScene();
+  switchTab('scene');
+}
+
+function removeText(i) {
+  sceneTexts.splice(i, 1);
+  drawScene();
+  switchTab('scene');
+}
+
+function exportPNG() {
+  drawScene();
+  const a = document.createElement('a');
+  a.href = sceneCanvas.toDataURL('image/png');
+  a.download = `scene_${Date.now()}.png`;
+  a.click();
+}
+
+function exportWebM() {
+  drawScene();
+  const stream = sceneCanvas.captureStream(30);
+  const rec = new MediaRecorder(stream, { mimeType: 'video/webm;codecs=vp9' });
+  const chunks = [];
+  rec.ondataavailable = e => chunks.push(e.data);
+  rec.onstop = () => {
+    const blob = new Blob(chunks, { type: 'video/webm' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `scene_${Date.now()}.webm`;
+    a.click();
+  };
+  // Record 3s (static frame loop)
+  rec.start();
+  let frames = 0;
+  const id = setInterval(() => { drawScene(); if (++frames >= 90) { clearInterval(id); rec.stop(); } }, 1000/30);
+}
+
+// Asset picker for scene
+let assetPickTarget = null;
+function pickAsset(target) {
+  assetPickTarget = target;
+  switchTab('assets');
+}
+
+function useAssetInScene(idx) {
+  const asset = driveAssets[idx];
+  if (!asset) return;
+  const url = asset.blobUrl;
+  if (!url) { showToast('画像をロード中です。少し待ってから再度お試しください。'); return; }
+  const img = new Image();
+  img.onload = () => {
+    if (assetPickTarget === 'bg') { sceneBg = { url, name: asset.name, img }; }
+    else { sceneChar = { url, name: asset.name, img, scale: 0.5 }; }
+    assetPickTarget = null;
+    switchTab('scene');
+    drawScene();
+  };
+  img.src = url;
+}
+
+// ════════════════════════════════════
+//  Assets Panel (Google Drive)
+// ════════════════════════════════════
+function renderAssetsPanel() {
+  const hasToken  = !!localStorage.getItem(GD_TOKEN_SK);
+  return `
+  <div class="panel ${currentTab==='assets'?'active':''}" id="panelAssets">
+    ${!hasToken ? `
+    <div class="card" style="border-color:var(--char-color);">
+      <div class="card-title">⚠️ Google Drive 未接続</div>
+      <p style="font-size:.82rem;color:var(--text-muted);margin-bottom:12px;">設定タブでGoogle Driveに接続してください</p>
+      <button class="btn btn-primary btn-sm" onclick="switchTab('settings')">設定へ →</button>
+    </div>` : ''}
+    <div class="card">
+      <div class="card-title">画像をアップロード</div>
+      <div class="upload-zone" id="uploadZone" onclick="triggerUpload()" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="handleDrop(event)">
+        <div class="upload-icon">📁</div>
+        <p>クリックまたはドラッグ＆ドロップ<br><span style="font-size:.72rem;color:var(--text-muted);">PNG / JPG / GIF / WebP</span></p>
+      </div>
+      <input type="file" id="fileInput" accept="image/*" multiple style="display:none;" onchange="uploadFiles(this.files)">
+      <div id="uploadProgress" style="display:none;" class="loading" style="margin-top:10px;">
+        <div class="spinner"></div><span id="uploadMsg">アップロード中...</span>
+      </div>
+    </div>
+    <div class="card">
+      <div class="result-header">
+        <span class="card-title" style="margin:0;">素材ライブラリ <span style="color:var(--char-color);font-size:.85em;">${data.characters.find(c=>c.id===currentCharId)?.name||''}専用</span></span>
+        <button class="btn btn-secondary btn-sm" onclick="loadDriveAssets()">🔄 更新</button>
+      </div>
+      <div id="assetGrid" class="asset-grid" style="margin-top:12px;">
+        <div class="loading"><div class="spinner"></div><span>読み込み中...</span></div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function getCharFolderId() {
+  const char = data.characters.find(c => c.id === currentCharId);
+  console.log('[Drive folder] char:', char?.name, 'folder:', char?.drive_folder_id);
+  return (char && char.drive_folder_id) || localStorage.getItem(GD_FOLDER_SK) || '1-QySS62i1cHPNh9lHg1quqPtyZ2zIp_x';
+}
+
+async function loadDriveAssets() {
+  const token    = localStorage.getItem(GD_TOKEN_SK);
+  const folderId = getCharFolderId();
+  const grid = document.getElementById('assetGrid');
+  if (!grid) return;
+  if (!token) { grid.innerHTML = `<p style="font-size:.8rem;color:var(--text-muted);">設定タブでGoogle Drive認証を行ってください</p>`; return; }
+
+  grid.innerHTML = `<div class="loading"><div class="spinner"></div><span>Drive から読み込み中...</span></div>`;
+  try {
+    const res = await fetch(`https://www.googleapis.com/drive/v3/files?q='${folderId}'+in+parents+and+mimeType+contains+'image/'&fields=files(id,name,mimeType,thumbnailLink,webContentLink)&pageSize=100`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    if (res.status === 401) { localStorage.removeItem(GD_TOKEN_SK); grid.innerHTML = `<p style="font-size:.8rem;color:#e55;">認証切れです。再度ログインしてください</p>`; return; }
+    const json = await res.json();
+    driveAssets = (json.files || []).map(f => ({
+      id: f.id, name: f.name, mimeType: f.mimeType,
+      thumbUrl: f.thumbnailLink ? f.thumbnailLink.replace('=s220','=s400') : null,
+      blobUrl: null
+    }));
+    renderAssetGrid();
+    // フル画像はBlobURLで非同期ロード
+    driveAssets.forEach((a, i) => loadDriveThumb(a, i, token));
+  } catch(e) {
+    grid.innerHTML = `<p style="font-size:.8rem;color:#e55;">エラー: ${e.message}</p>`;
+  }
+}
+
+async function loadDriveThumb(asset, idx, token) {
+  try {
+    const res = await fetch(`https://www.googleapis.com/drive/v3/files/${asset.id}?alt=media`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    driveAssets[idx].blobUrl = url;
+    const img = document.getElementById(`asset-img-${idx}`);
+    if (img) img.src = url;
+  } catch(e) { /* サムネ失敗は無視 */ }
+}
+
+function renderAssetGrid() {
+  const grid = document.getElementById('assetGrid');
+  if (!grid) return;
+  if (!driveAssets.length) { grid.innerHTML = `<p style="font-size:.8rem;color:var(--text-muted);">素材がありません。上からアップロードしてください</p>`; return; }
+  grid.innerHTML = driveAssets.map((a, i) => `
+    <div class="asset-card" onclick="useAssetInScene(${i})">
+      <div class="asset-thumb">
+        ${a.thumbUrl
+          ? `<img src="${a.thumbUrl}" style="width:100%;height:100%;object-fit:cover;display:block;" onerror="this.style.display='none'">`
+          : `<img id="asset-img-${i}" src="" style="width:100%;height:100%;object-fit:cover;display:block;" onerror="this.style.display='none'">`}
+      </div>
+      <div class="asset-name">${escHtml(a.name)}</div>
+      <button class="asset-use-btn" onclick="event.stopPropagation();useAssetInScene(${i})">使う</button>
+    </div>`).join('');
+}
+
+function triggerUpload() { document.getElementById('fileInput').click(); }
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('uploadZone').classList.remove('drag');
+  uploadFiles(e.dataTransfer.files);
+}
+
+async function uploadFiles(files) {
+  const token    = localStorage.getItem(GD_TOKEN_SK);
+  const folderId = getCharFolderId();
+  if (!token) { showToast('設定タブでGoogle Drive認証を行ってください'); switchTab('settings'); return; }
+  const prog = document.getElementById('uploadProgress');
+  const msg  = document.getElementById('uploadMsg');
+  prog.style.display = 'flex';
+  let done = 0;
+  for (const file of Array.from(files)) {
+    msg.textContent = `アップロード中: ${file.name} (${done+1}/${files.length})`;
+    try {
+      const meta = JSON.stringify({ name: file.name, parents: [folderId] });
+      const form = new FormData();
+      form.append('metadata', new Blob([meta], { type: 'application/json' }));
+      form.append('file', file);
+      const res = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body: form
+      });
+      if (!res.ok) throw new Error('Upload failed: ' + res.status);
+      done++;
+    } catch(e) { showToast(`${file.name} のアップロードに失敗: ${e.message}`); }
+  }
+  prog.style.display = 'none';
+  msg.textContent = '';
+  loadDriveAssets();
+}
+
+// ════════════════════════════════════
+//  Schedule Panel
+// ════════════════════════════════════
+function renderSchedulePanel() {
+  return `
+  <div class="panel ${currentTab==='schedule'?'active':''}" id="panelSchedule">
+    <div class="card">
+      <div class="card-title">月間スケジュール生成</div>
+      <div class="form-row">
+        <div style="flex:1;"><label>対象月</label><input type="month" id="scheduleMonth" value="${new Date().toISOString().slice(0,7)}"></div>
+        <div style="flex:1;"><label>週あたり投稿数</label>
+          <select id="scheduleFreq"><option value="1">週1本</option><option value="2" selected>週2本</option><option value="3">週3本</option></select></div>
+        <button class="btn btn-primary" style="margin-top:18px;" onclick="generateSchedule()">生成</button>
+      </div>
+      <div id="scheduleLoading" class="loading" style="display:none;margin-top:10px;"><div class="spinner"></div><span>スケジュールを作成中...</span></div>
+    </div>
+    <div id="scheduleResult"></div>
+  </div>`;
+}
+
+async function generateSchedule() {
+  const char  = data.characters.find(c => c.id === currentCharId);
+  const month = document.getElementById('scheduleMonth').value;
+  const freq  = document.getElementById('scheduleFreq').value;
+  document.getElementById('scheduleLoading').style.display = 'flex';
+  const prompt = `${char.name}（${char.theme}）のYouTubeチャンネル用に${month}の月間スケジュールを作成。週${freq}本。横動画とショートを混在させてください。
+JSONのみ出力: [{"date":"YYYY-MM-DD","episode":1,"format":"horizontal|shorts","theme":"","title_idea":""}]`;
+  try {
+    const text = await callClaude(prompt);
+    const schedule = JSON.parse(text.match(/\[[\s\S]*\]/)[0]);
+    document.getElementById('scheduleLoading').style.display = 'none';
+    document.getElementById('scheduleResult').innerHTML = `
+      <div class="card">
+        <div class="card-title">${month} スケジュール（${schedule.length}本）</div>
+        <div class="schedule-grid">
+          ${schedule.map(s => `
+            <div class="schedule-item">
+              <div class="schedule-date">${s.date.slice(5)} EP${s.episode}</div>
+              <div style="font-size:.7rem;color:var(--char-color);margin-bottom:2px;">${s.format==='shorts'?'▮ ショート':'▬ 横動画'}</div>
+              <div style="font-size:.82rem;">${escHtml(s.title_idea)}</div>
+              <div class="schedule-ep">${escHtml(s.theme)}</div>
+            </div>`).join('')}
+        </div>
+      </div>`;
+  } catch(e) {
+    document.getElementById('scheduleLoading').style.display = 'none';
+    showToast('エラー: ' + e.message);
+  }
+}
+
+// ════════════════════════════════════
+//  Settings Panel
+// ════════════════════════════════════
+function renderSettingsPanel() {
+  const gdToken = !!localStorage.getItem(GD_TOKEN_SK);
+  const ytToken = !!getYtToken(currentCharId);
+  const hasKey  = !!localStorage.getItem(API_KEY_SK);
+  return `
+  <div class="panel ${currentTab==='settings'?'active':''}" id="panelSettings">
+
+    <!-- Google ログイン（ドライブ＋キー共有） -->
+    <div class="card" style="border-color:var(--char-color);">
+      <div class="card-title">☁️ Google ログイン</div>
+      <p style="font-size:.78rem;color:var(--text-muted);margin-bottom:12px;">
+        ログインするとDriveが使えるようになり、APIキーが自動で読み込まれます。
+      </p>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+        <button class="btn btn-primary btn-sm" onclick="gdAuth()">Google でログイン</button>
+        <span style="font-size:.78rem;color:${gdToken?'#4a8':'var(--text-muted)'};">${gdToken ? '✅ ログイン済み' : '未ログイン'}</span>
+        ${gdToken ? `<button class="btn btn-secondary btn-sm" onclick="gdLogout()">ログアウト</button>` : ''}
+      </div>
+      ${gdToken && !hasKey ? `<div style="margin-top:8px;"><button class="btn btn-secondary btn-sm" onclick="autoLoadKeysFromDrive(localStorage.getItem('channelos_gd_token'))">🔑 APIキーを読み込む</button></div>` : ''}
+      ${hasKey ? `<p style="font-size:.75rem;color:#4a8;margin-top:8px;">✅ APIキー読込済み</p>` : ''}
+    </div>
+
+    <!-- YouTube認証はキャラヘッダーで個別管理 -->
+    <div class="card">
+      <div class="card-title">📺 YouTube 認証</div>
+      <p style="font-size:.78rem;color:var(--text-muted);">キャラクターを選択すると、ヘッダーに「YouTube認証」ボタンが表示されます。キャラごとに別のGoogleアカウントで認証できます。</p>
+    </div>
+
+    <!-- 管理者用：APIキーをDriveに保存 -->
+    <details style="margin-top:4px;">
+      <summary style="cursor:pointer;font-size:.8rem;color:var(--text-muted);padding:8px 0;">⚙️ 詳細設定（管理者用）</summary>
+      <div class="card" style="margin-top:8px;">
+        <div class="card-title">APIキーを手動入力</div>
+        <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:10px;">
+          <div><label style="font-size:.78rem;">Claude APIキー</label>
+            <input type="password" id="claudeApiKey" placeholder="sk-ant-..." value="${localStorage.getItem(API_KEY_SK)||''}" autocomplete="off" style="margin-top:4px;">
+          </div>
+          <div><label style="font-size:.78rem;">Stability AI APIキー（画像生成）</label>
+            <input type="password" id="stabilityApiKey" placeholder="sk-..." value="${localStorage.getItem(STABILITY_KEY_SK)||''}" autocomplete="off" style="margin-top:4px;">
+          </div>
+          <div><label style="font-size:.78rem;">Gemini APIキー（テキスト生成補助）</label>
+            <input type="password" id="geminiApiKey" placeholder="AIza..." value="${localStorage.getItem(GEMINI_KEY_SK)||''}" autocomplete="off" style="margin-top:4px;">
+          </div>
+          <div><label style="font-size:.78rem;">OpenAI APIキー（DALL-E用）</label>
+            <input type="password" id="openaiApiKey" placeholder="sk-..." value="${localStorage.getItem('channelos_openai_api_key')||''}" autocomplete="off" style="margin-top:4px;">
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="btn btn-secondary btn-sm" onclick="saveApiKey();saveOpenAIKey();saveGeminiKey();">キーを保存</button>
+          <button class="btn btn-secondary btn-sm" onclick="saveKeysToDrive()">📤 Driveに保存（チーム共有）</button>
+        </div>
+      </div>
+      <div class="card" style="margin-top:8px;">
+        <div class="card-title">データ管理</div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-secondary btn-sm" onclick="exportData()">エクスポート</button>
+          <button class="btn btn-secondary btn-sm" onclick="importData()">インポート</button>
+        </div>
+      </div>
+    </details>
+
+  </div>`;
+}
+
+function saveApiKey() {
+  localStorage.setItem(API_KEY_SK, document.getElementById('claudeApiKey').value.trim());
+  showToast('APIキーを保存しました');
+}
+function saveOpenAIKey() {
+  localStorage.setItem('channelos_openai_api_key', document.getElementById('openaiApiKey').value.trim());
+  showToast('OpenAI APIキーを保存しました');
+}
+function saveGeminiKey() {
+  const el = document.getElementById('geminiApiKey');
+  if (el) localStorage.setItem(GEMINI_KEY_SK, el.value.trim());
+  const sel = document.getElementById('stabilityApiKey');
+  if (sel) localStorage.setItem(STABILITY_KEY_SK, sel.value.trim());
+  showToast('APIキーを保存しました');
+}
+function saveGDSettings() {
+  localStorage.setItem(GD_CLIENT_SK, document.getElementById('gdClientId').value.trim());
+  showToast('設定を保存しました');
+}
+function saveGistSettings() {
+  localStorage.setItem(GIST_ID_SK, document.getElementById('gistId').value.trim());
+  localStorage.setItem(GIST_PAT_SK, document.getElementById('gistPat').value.trim());
+  showToast('Gist設定を保存しました');
+}
+async function saveSAJson() {
+  const raw = document.getElementById('saJsonInput').value.trim();
+  if (!raw) { showToast('JSONを貼り付けてください'); return; }
+  let sa;
+  try { sa = JSON.parse(raw); } catch(e) { showToast('JSON形式が正しくありません'); return; }
+  if (!sa.client_email || !sa.private_key) { showToast('client_email と private_key が必要です'); return; }
+  localStorage.setItem(SA_JSON_SK, raw);
+  localStorage.removeItem(SA_EXPIRY_SK);
+  showToast('認証テスト中...');
+  try {
+    await fetchSAToken(sa);
+    showToast('✅ SA認証成功！認証切れなし設定が完了しました');
+    const sp = document.getElementById('panelSettings');
+    if (sp) sp.outerHTML = renderSettingsPanel();
+  } catch(e) { showToast('認証失敗: ' + e.message); }
+}
+function clearSAJson() {
+  localStorage.removeItem(SA_JSON_SK); localStorage.removeItem(SA_TOKEN_SK); localStorage.removeItem(SA_EXPIRY_SK);
+  showToast('SAを削除しました');
+  const sp = document.getElementById('panelSettings');
+  if (sp) sp.outerHTML = renderSettingsPanel();
+}
+
+function gdAuth() {
+  const clientId = (document.getElementById('gdClientId')?.value?.trim()) || localStorage.getItem(GD_CLIENT_SK) || '420800714761-ui9g88fgbrocu4a1nim1m3mv908s0gos.apps.googleusercontent.com';
+  if (!clientId) { showToast('クライアントIDを入力してください'); return; }
+  localStorage.setItem(GD_CLIENT_SK, clientId);
+  const redirect = encodeURIComponent('https://rainybrainch.github.io/channel-os/');
+  const scope    = encodeURIComponent('https://www.googleapis.com/auth/drive.readonly https://www.googleapis.com/auth/drive.file');
+  const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${redirect}&response_type=token&scope=${scope}&prompt=consent`;
+  window.location.href = url;
+}
+
+function gdLogout() { localStorage.removeItem(GD_TOKEN_SK); switchTab('settings'); }
+
+function ytAuth(charId) {
+  const id = charId || currentCharId;
+  if (!id) { showToast('キャラクターを選択してください'); return; }
+  const clientId = localStorage.getItem(GD_CLIENT_SK) || '420800714761-ui9g88fgbrocu4a1nim1m3mv908s0gos.apps.googleusercontent.com';
+  const redirect = encodeURIComponent('https://rainybrainch.github.io/channel-os/');
+  const scope    = encodeURIComponent('https://www.googleapis.com/auth/youtube');
+  const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${redirect}&response_type=token&scope=${scope}&prompt=consent&state=youtube_${id}`;
+  window.location.href = url;
+}
+function ytLogout(charId) {
+  const id = charId || currentCharId;
+  if (id) localStorage.removeItem(`${YT_TOKEN_SK}_${id}`);
+  renderMain();
+}
+function getYtToken(charId) {
+  const id = charId || currentCharId;
+  return id ? localStorage.getItem(`${YT_TOKEN_SK}_${id}`) : null;
+}
+
+// ════════════════════════════════════
+//  Publish Panel
+// ════════════════════════════════════
+function renderPublishPanel() {
+  const ep = currentEpisodeId ? (loadData().episodes || []).find(e => e.id === currentEpisodeId) : null;
+  const meta = ep?.generatedMeta || {};
+  const hasPlan   = !!(ep?.theme || ep?.plan);
+  const hasScript = !!(ep?.script);
+  const hasMeta   = !!(meta.title);
+  const ytToken   = !!getYtToken(currentCharId);
+  const thumbUrl  = ep?.thumbnailDataUrl || '';
+
+  const checkItem = (ok, label) =>
+    `<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);">
+      <span style="font-size:1.1rem">${ok ? '✅' : '⬜'}</span>
+      <span style="font-size:.85rem;color:${ok?'var(--text)':'var(--text-muted)'}">${label}</span>
+    </div>`;
+
+  return `
+  <div class="panel ${currentTab==='publish'?'active':''}" id="panelPublish">
+    <!-- チェックリスト -->
+    <div class="card">
+      <div class="card-title">📋 投稿前チェックリスト</div>
+      ${checkItem(hasPlan,   '企画・テーマ設定済み')}
+      ${checkItem(hasScript, '台本生成済み')}
+      ${checkItem(hasMeta,   '投稿情報（タイトル・説明文・タグ）生成済み')}
+      ${checkItem(ytToken,   'YouTube 認証済み')}
+      ${!ytToken ? `<div style="margin-top:8px;"><button class="btn btn-primary btn-sm" onclick="ytAuth()">YouTube 認証</button></div>` : ''}
+    </div>
+
+    <!-- サムネイル生成 -->
+    <div class="card">
+      <div class="card-title">🖼 サムネイル生成</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
+        <button class="btn btn-primary btn-sm" onclick="buildThumbnailForPublish('horizontal')">💎 横型 1280×720 生成（Gemini）</button>
+        <button class="btn btn-primary btn-sm" onclick="buildThumbnailForPublish('shorts')">💎 縦型 720×1280 生成（Gemini）</button>
+      </div>
+      ${thumbUrl ? `
+        <img src="${thumbUrl}" style="max-width:100%;border-radius:8px;margin-bottom:8px;" id="publishThumbPreview">
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-secondary btn-sm" onclick="downloadThumbnail()">💾 ダウンロード</button>
+        </div>` : `<p style="font-size:.78rem;color:var(--text-muted);">まだサムネイルがありません。上のボタンで生成してください。</p>`}
+    </div>
+
+    <!-- 投稿情報コピー -->
+    <div class="card">
+      <div class="card-title">📝 投稿情報</div>
+      ${meta.title ? `
+        <div style="margin-bottom:10px;">
+          <label style="font-size:.78rem;color:var(--text-muted);">タイトル</label>
+          <div style="display:flex;gap:6px;align-items:center;margin-top:4px;">
+            <input type="text" value="${(meta.title||'').replace(/"/g,'&quot;')}" readonly style="flex:1;font-size:.85rem;">
+            <button class="btn btn-secondary btn-sm" onclick="navigator.clipboard.writeText('${(meta.title||'').replace(/'/g,"\\'")}');showToast('コピーしました')">コピー</button>
+          </div>
+        </div>
+        <div style="margin-bottom:10px;">
+          <label style="font-size:.78rem;color:var(--text-muted);">説明文</label>
+          <textarea readonly rows="4" style="font-size:.78rem;margin-top:4px;">${meta.description||''}</textarea>
+          <button class="btn btn-secondary btn-sm" style="margin-top:4px;" onclick="copyText(${JSON.stringify(meta.description||'')})">コピー</button>
+        </div>
+        <div style="margin-bottom:10px;">
+          <label style="font-size:.78rem;color:var(--text-muted);">タグ（カンマ区切り）</label>
+          <div style="display:flex;gap:6px;align-items:center;margin-top:4px;">
+            <input type="text" value="${((meta.tags||[]).join(', ')).replace(/"/g,'&quot;')}" readonly style="flex:1;font-size:.82rem;">
+            <button class="btn btn-secondary btn-sm" onclick="copyText('${((meta.tags||[]).join(', ')).replace(/'/g,"\\'")}')">コピー</button>
+          </div>
+        </div>
+      ` : `<p style="font-size:.78rem;color:var(--text-muted);">「🎯 投稿情報」タブで投稿情報を生成してください。</p>`}
+    </div>
+
+    <!-- YouTube Studio 直接適用 -->
+    <div class="card">
+      <div class="card-title">📺 YouTube に直接適用</div>
+      <p style="font-size:.78rem;color:var(--text-muted);line-height:1.6;margin-bottom:10px;">
+        動画をアップロード後、動画 ID を入力して「適用」すると<br>
+        タイトル・説明・タグ・サムネイルが自動で設定されます。
+      </p>
+      <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px;">
+        <input type="text" id="ytVideoId" placeholder="動画ID（例: dQw4w9WgXcQ）" style="flex:1;">
+        <button class="btn btn-primary btn-sm" onclick="applyMetaToYouTube()">適用</button>
+      </div>
+      <a href="https://studio.youtube.com" target="_blank" class="btn btn-secondary btn-sm">YouTube Studio を開く</a>
+    </div>
+  </div>`;
+}
+
+function copyText(text) {
+  navigator.clipboard.writeText(text).then(() => showToast('コピーしました'));
+}
+
+async function buildThumbnailForPublish(orientation) {
+  const ep = currentEpisodeId ? (loadData().episodes || []).find(e => e.id === currentEpisodeId) : null;
+  if (!ep) { showToast('エピソードを選択してください'); return; }
+  const meta = ep.generatedMeta || {};
+  if (!localStorage.getItem(STABILITY_KEY_SK)) { showToast('設定タブでStability AI APIキーを入力してください'); return; }
+
+  const isShorts = orientation === 'shorts';
+  const W = isShorts ? 720 : 1280;
+  const H = isShorts ? 1280 : 720;
+  const promptText = isShorts
+    ? (meta.thumb_shorts || `YouTube Shorts thumbnail, vertical 9:16, vibrant, eye-catching: ${meta.title||ep.theme||'動画'}`)
+    : (meta.thumb_horizontal || `YouTube thumbnail, horizontal 16:9, vibrant, eye-catching: ${meta.title||ep.theme||'動画'}`);
+  const overlayText = isShorts
+    ? (meta.thumb_text_shorts || meta.title || '')
+    : (meta.thumb_text_horizontal || meta.title || '');
+
+  showToast('🎨 Stability AI で画像生成中...');
+  try {
+    const imgDataUrl = await generateStabilityImage(promptText, isShorts ? '9:16' : '16:9');
+
+    // Canvas合成
+    const canvas = document.createElement('canvas');
+    canvas.width = W; canvas.height = H;
+    const ctx = canvas.getContext('2d');
+    const img = new Image();
+    await new Promise((res, rej) => { img.onload = res; img.onerror = rej; img.src = imgDataUrl; });
+    ctx.drawImage(img, 0, 0, W, H);
+
+    // テキストオーバーレイ
+    if (overlayText) {
+      const fontSize = isShorts ? 72 : 60;
+      ctx.font = `bold ${fontSize}px 'Noto Sans JP', sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.shadowColor = '#000';
+      ctx.shadowBlur = 12;
+      ctx.fillStyle = '#ffffff';
+      const lines = wrapText(ctx, overlayText, W - 80);
+      const lineH = fontSize * 1.3;
+      const totalH = lines.length * lineH;
+      let y = isShorts ? H * 0.75 : H * 0.8;
+      lines.forEach(line => { ctx.fillText(line, W / 2, y); y += lineH; });
+    }
+
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
+    // Save to episode
+    const d = loadData();
+    const epIdx = d.episodes.findIndex(e => e.id === currentEpisodeId);
+    if (epIdx >= 0) { d.episodes[epIdx].thumbnailDataUrl = dataUrl; saveData(d); }
+
+    // Drive自動保存
+    const char = (d.characters || []).find(c => c.id === currentCharId);
+    const folderId = char?.drive_folder_id || '';
+    saveImageToDrive(dataUrl, `thumb_${isShorts?'shorts':'horizontal'}_${Date.now()}.jpg`, folderId)
+      .then(id => { if (id) showToast('✅ サムネイル生成・Drive保存完了'); });
+
+    switchTab('publish');
+    if (!folderId) showToast('✅ サムネイル生成完了');
+  } catch (e) {
+    showToast('❌ Gemini サムネイル生成失敗: ' + e.message);
+  }
+}
+
+function wrapText(ctx, text, maxWidth) {
+  const words = text.split('');
+  const lines = [];
+  let line = '';
+  for (const ch of words) {
+    const test = line + ch;
+    if (ctx.measureText(test).width > maxWidth && line) {
+      lines.push(line);
+      line = ch;
+    } else {
+      line = test;
+    }
+  }
+  if (line) lines.push(line);
+  return lines;
+}
+
+function downloadThumbnail() {
+  const ep = currentEpisodeId ? (loadData().episodes || []).find(e => e.id === currentEpisodeId) : null;
+  if (!ep?.thumbnailDataUrl) { showToast('サムネイルがありません'); return; }
+  const a = document.createElement('a');
+  a.href = ep.thumbnailDataUrl;
+  a.download = `thumbnail_${ep.id}.jpg`;
+  a.click();
+}
+
+async function applyMetaToYouTube() {
+  const ytToken = getYtToken(currentCharId);
+  if (!ytToken) { showToast('YouTube認証が必要です'); ytAuth(currentCharId); return; }
+  const videoId = document.getElementById('ytVideoId')?.value?.trim();
+  if (!videoId) { showToast('動画IDを入力してください'); return; }
+  const ep = currentEpisodeId ? (loadData().episodes || []).find(e => e.id === currentEpisodeId) : null;
+  if (!ep) { showToast('エピソードを選択してください'); return; }
+  const meta = ep.generatedMeta || {};
+  if (!meta.title) { showToast('投稿情報を生成してください'); return; }
+
+  showToast('📤 YouTube に適用中...');
+  try {
+    // 1. videos.update
+    const updateResp = await fetch(`https://www.googleapis.com/youtube/v3/videos?part=snippet`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${ytToken}` },
+      body: JSON.stringify({
+        id: videoId,
+        snippet: {
+          title: meta.title,
+          description: meta.description || '',
+          tags: meta.tags || [],
+          categoryId: '22'
+        }
+      })
+    });
+    if (!updateResp.ok) {
+      const err = await updateResp.json();
+      throw new Error(err.error?.message || `videos.update failed (${updateResp.status})`);
+    }
+
+    // 2. thumbnails.set
+    if (ep.thumbnailDataUrl) {
+      const blob = await (await fetch(ep.thumbnailDataUrl)).blob();
+      const thumbResp = await fetch(`https://www.googleapis.com/upload/youtube/v3/thumbnails/set?videoId=${videoId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'image/jpeg', 'Authorization': `Bearer ${ytToken}` },
+        body: blob
+      });
+      if (!thumbResp.ok) {
+        const err = await thumbResp.json();
+        showToast('⚠️ サムネ適用失敗: ' + (err.error?.message || thumbResp.status));
+      } else {
+        showToast('✅ タイトル・説明・サムネイルを適用しました');
+        return;
+      }
+    }
+    showToast('✅ タイトル・説明・タグを適用しました（サムネイル未設定）');
+  } catch (e) {
+    showToast('❌ 適用失敗: ' + e.message);
+  }
+}
+
+// OAuth token from URL hash (redirect back from Google)
+(function() {
+  const hash = location.hash;
+  if (hash.includes('access_token=')) {
+    const params = new URLSearchParams(hash.slice(1));
+    const token  = params.get('access_token');
+    const state  = params.get('state');
+    if (token) {
+      if (state && state.startsWith('youtube_')) {
+        const charId = state.replace('youtube_', '');
+        localStorage.setItem(`${YT_TOKEN_SK}_${charId}`, token);
+        history.replaceState(null,'',location.pathname);
+        const char = (loadData().characters||[]).find(c => c.id === charId);
+        showToast(`📺 ${char?.name||'キャラ'} のYouTube認証完了`);
+      } else {
+        localStorage.setItem(GD_TOKEN_SK, token);
+        history.replaceState(null,'',location.pathname);
+        showToast('☁️ Google Drive認証完了');
+        autoLoadKeysFromDrive(token);
+      }
+    }
+  }
+})();
+
+// ════════════════════════════════════
+//  Character CRUD
+// ════════════════════════════════════
+function openAddCharModal() {
+  editingCharId = null;
+  document.getElementById('modalTitle').textContent = '🎭 新しいキャラクターを追加';
+  document.getElementById('modalSaveBtn').onclick = saveNewChar;
+  ['newCharName','newCharSpecies','newCharTheme','newCharTone','newCharChannelId','newCharPersonality','newCharFolderId'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('newCharVoicevox').value = '3';
+  document.getElementById('newCharGptUrl').value = '';
+  document.getElementById('newCharGemUrl').value = '';
+  document.getElementById('newCharColor').value = '#c9a84c';
+  document.getElementById('newCharAvatarDataUrl').value = '';
+  const prev = document.getElementById('charIconPreview');
+  if (prev) { prev.src = ''; prev.style.display = 'none'; }
+  const ph = document.getElementById('charIconPlaceholder');
+  if (ph) ph.style.display = 'flex';
+  const st = document.getElementById('charIconStatus');
+  if (st) st.textContent = '';
+  openModal('addCharModal');
+}
+
+function openEditChar(id) {
+  editingCharId = id;
+  const char = data.characters.find(c => c.id === id);
+  document.getElementById('modalTitle').textContent = '🎭 キャラクターを編集';
+  document.getElementById('modalSaveBtn').onclick = updateChar;
+  document.getElementById('newCharName').value        = char.name;
+  document.getElementById('newCharSpecies').value     = char.species;
+  document.getElementById('newCharTheme').value       = char.theme;
+  document.getElementById('newCharTone').value        = char.tone;
+  document.getElementById('newCharColor').value       = char.color;
+  document.getElementById('newCharChannelId').value   = char.channel_id || '';
+  document.getElementById('newCharPersonality').value = char.ai_personality || '';
+  document.getElementById('newCharFolderId').value    = char.drive_folder_id || '';
+  document.getElementById('newCharVoicevox').value    = char.voicevox_speaker ?? 3;
+  document.getElementById('newCharGptUrl').value      = char.gpt_url || '';
+  document.getElementById('newCharGemUrl').value      = char.gem_url || '';
+  openModal('addCharModal');
+}
+
+async function generateCharIconInModal() {
+  if (!localStorage.getItem(STABILITY_KEY_SK)) { showToast('設定タブでStability AI APIキーを入力してください'); return; }
+  const name    = document.getElementById('newCharName').value.trim() || 'キャラクター';
+  const species = document.getElementById('newCharSpecies').value.trim() || '';
+  const theme   = document.getElementById('newCharTheme').value.trim() || '';
+  const tone    = document.getElementById('newCharTone').value.trim() || '';
+  const prompt  = `Cute anime avatar icon. Character: ${name}${species?`, ${species}`:''}${theme?`, theme: ${theme}`:''}${tone?`, personality: ${tone}`:''}. Round avatar portrait, white background, vibrant colors, no text, no border.`;
+
+  const statusEl = document.getElementById('charIconStatus');
+  if (statusEl) statusEl.textContent = '生成中…';
+
+  try {
+    const dataUrl = await generateGeminiImage(prompt);
+
+    document.getElementById('newCharAvatarDataUrl').value = dataUrl;
+    const preview = document.getElementById('charIconPreview');
+    if (preview) { preview.src = dataUrl; preview.style.display = 'block'; }
+    const placeholder = document.getElementById('charIconPlaceholder');
+    if (placeholder) placeholder.style.display = 'none';
+    if (statusEl) statusEl.textContent = '✅ 生成完了';
+  } catch(e) {
+    if (statusEl) statusEl.textContent = '❌ ' + e.message;
+  }
+}
+
+function saveNewChar() {
+  const name = document.getElementById('newCharName').value.trim();
+  if (!name) { showToast('キャラクター名を入力してください'); return; }
+  const icons = ['🐯','🐻','🐼','🦊','🐺','🦅','🐬','🦄','🐲','🎭'];
+  data.characters.push({
+    id: 'char_' + Date.now(), name,
+    species:       document.getElementById('newCharSpecies').value.trim(),
+    theme:         document.getElementById('newCharTheme').value.trim(),
+    tone:          document.getElementById('newCharTone').value.trim(),
+    color:         document.getElementById('newCharColor').value,
+    channel_id:    document.getElementById('newCharChannelId').value.trim(),
+    ai_personality:document.getElementById('newCharPersonality').value.trim(),
+    icon: icons[Math.floor(Math.random()*icons.length)],
+    avatar_url: document.getElementById('newCharAvatarDataUrl').value || '',
+    drive_folder_id: document.getElementById('newCharFolderId').value.trim(),
+    voicevox_speaker: parseInt(document.getElementById('newCharVoicevox').value) || 3,
+    gpt_url: document.getElementById('newCharGptUrl').value.trim(),
+    gem_url: document.getElementById('newCharGemUrl').value.trim()
+  });
+  saveData(data);
+  closeModal('addCharModal');
+  renderSidebar();
+  // 設定パネルが開いていたら再描画してフォルダID欄を反映
+  const sp = document.getElementById('panelSettings');
+  if (sp) sp.outerHTML = renderSettingsPanel();
+  selectChar(data.characters[data.characters.length-1].id);
+}
+
+function updateChar() {
+  const char = data.characters.find(c => c.id === editingCharId);
+  char.name           = document.getElementById('newCharName').value.trim();
+  char.species        = document.getElementById('newCharSpecies').value.trim();
+  char.theme          = document.getElementById('newCharTheme').value.trim();
+  char.tone           = document.getElementById('newCharTone').value.trim();
+  char.color          = document.getElementById('newCharColor').value;
+  char.channel_id     = document.getElementById('newCharChannelId').value.trim();
+  char.ai_personality   = document.getElementById('newCharPersonality').value.trim();
+  char.drive_folder_id  = document.getElementById('newCharFolderId').value.trim();
+  char.voicevox_speaker = parseInt(document.getElementById('newCharVoicevox').value) || 3;
+  char.gpt_url          = document.getElementById('newCharGptUrl').value.trim();
+  char.gem_url          = document.getElementById('newCharGemUrl').value.trim();
+  const newAvatar = document.getElementById('newCharAvatarDataUrl').value;
+  if (newAvatar) char.avatar_url = newAvatar;
+  saveData(data);
+  closeModal('addCharModal');
+  renderSidebar();
+  renderMain();
+}
+
+// ════════════════════════════════════
+//  Claude API
+// ════════════════════════════════════
+async function callClaude(prompt) {
+  const apiKey = localStorage.getItem(API_KEY_SK);
+  if (!apiKey) { switchTab('settings'); throw new Error('APIキーを設定してください'); }
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true'
+    },
+    body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 4096, messages: [{ role: 'user', content: prompt }] })
+  });
+  if (!res.ok) { const e = await res.json().catch(()=>({})); throw new Error(e.error?.message || 'API error '+res.status); }
+  return (await res.json()).content[0].text;
+}
+
+// ════════════════════════════════════
+//  Gemini Image Generation
+// ════════════════════════════════════
+async function generateGeminiImage(prompt) {
+  const key = localStorage.getItem(GEMINI_KEY_SK);
+  if (!key) throw new Error('Gemini APIキーを設定してください（設定タブ）');
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-preview-image-generation:generateContent?key=${key}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { responseModalities: ['TEXT', 'IMAGE'] }
+      })
+    }
+  );
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err?.error?.message || `Gemini image error: ${res.status}`);
+  }
+  const json = await res.json();
+  const parts = json.candidates?.[0]?.content?.parts || [];
+  const imgPart = parts.find(p => p.inlineData?.mimeType?.startsWith('image/'));
+  if (!imgPart) throw new Error('画像データが返りませんでした');
+  const { mimeType, data } = imgPart.inlineData;
+  return `data:${mimeType};base64,${data}`;
+}
+
+async function generateStabilityImage(prompt, aspectRatio = '1:1') {
+  const key = localStorage.getItem(STABILITY_KEY_SK);
+  if (!key) throw new Error('Stability AI APIキーを設定してください（設定タブ）');
+  const form = new FormData();
+  form.append('prompt', prompt);
+  form.append('output_format', 'jpeg');
+  form.append('aspect_ratio', aspectRatio);
+  const res = await fetch('https://api.stability.ai/v2beta/stable-image/generate/core', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${key}`, Accept: 'image/*' },
+    body: form
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err?.errors?.[0] || err?.message || `Stability AI error: ${res.status}`);
+  }
+  const blob = await res.blob();
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+}
+
+// ════════════════════════════════════
+//  Video Generation (FFmpeg.wasm)
+// ════════════════════════════════════
+window._bgmDataUrl   = null;
+window._bgmFileName  = '';
+window._sceneDurMode = 'auto';
+window._fixedDurSec  = 5;
+
+function openDriveAssetPickerForBgm() {
+  _drivePickerMode = 'bgm';
+  _openDrivePickerModal();
+}
+
+function loadLocalBgm(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    window._bgmDataUrl  = ev.target.result;
+    window._bgmFileName = file.name;
+    const el = document.getElementById('bgmSelected');
+    if (el) el.textContent = '🎵 ' + file.name;
+    const scenePanel = document.getElementById('panelScene');
+    if (scenePanel) scenePanel.outerHTML = renderScenePanel();
+  };
+  reader.readAsDataURL(file);
+}
+
+function clearBgm() {
+  window._bgmDataUrl  = null;
+  window._bgmFileName = '';
+  const el = document.getElementById('bgmSelected');
+  if (el) el.textContent = '未選択';
+  const scenePanel = document.getElementById('panelScene');
+  if (scenePanel) scenePanel.outerHTML = renderScenePanel();
+}
+
+function calcSceneDuration(scene) {
+  const chars = (scene.lines || []).join('').length;
+  return Math.max(3, Math.ceil(chars / 5));
+}
+
+function updateVideoProgress(label, pct) {
+  const lbl = document.getElementById('videoGenLabel');
+  const bar = document.getElementById('videoGenBar');
+  const pctEl = document.getElementById('videoGenPct');
+  if (lbl) lbl.textContent = label;
+  if (bar) bar.style.width = pct + '%';
+  if (pctEl) pctEl.textContent = pct + '%';
+}
+
+async function generateVideo() {
+  const sb = storyboardData[sbKey()];
+  if (!sb?.scenes?.length) { showToast('絵コンテがありません'); return; }
+  const scenes = sb.scenes.filter(s => s.imageDataUrl);
+  if (scenes.length === 0) { showToast('画像が1枚もありません'); return; }
+
+  const progEl = document.getElementById('videoGenProgress');
+  if (progEl) progEl.style.display = 'block';
+  updateVideoProgress('FFmpeg を読み込み中...（初回のみ30秒ほどかかります）', 3);
+
+  const isShorts = sb.format === 'shorts';
+  const W = isShorts ? 720 : 1280;
+  const H = isShorts ? 1280 : 720;
+
+  try {
+    const { createFFmpeg, fetchFile } = FFmpeg;
+    const ff = createFFmpeg({
+      log: false,
+      corePath: 'https://unpkg.com/@ffmpeg/core@0.11.0/dist/ffmpeg-core.js',
+      progress: ({ ratio }) => updateVideoProgress('動画を合成中...', 20 + Math.round((ratio || 0) * 60))
+    });
+    await ff.load();
+    updateVideoProgress('画像を読み込み中...', 15);
+
+    // シーンごとに画像書き込み + セグメント動画作成
+    const segFiles = [];
+    let totalDur = 0;
+    for (let i = 0; i < scenes.length; i++) {
+      const s = scenes[i];
+      const dur = window._sceneDurMode === 'fixed'
+        ? (window._fixedDurSec || 5)
+        : calcSceneDuration(s);
+      totalDur += dur;
+      const imgName = `img_${i}.jpg`;
+      ff.FS('writeFile', imgName, await fetchFile(s.imageDataUrl));
+      const segName = `seg_${i}.mp4`;
+      await ff.run(
+        '-loop', '1', '-i', imgName,
+        '-t', String(dur),
+        '-vf', `scale=${W}:${H}:force_original_aspect_ratio=decrease,pad=${W}:${H}:(ow-iw)/2:(oh-ih)/2,format=yuv420p`,
+        '-c:v', 'libx264', '-preset', 'ultrafast', '-r', '24', '-an',
+        segName
+      );
+      segFiles.push(segName);
+      updateVideoProgress(`シーン ${i + 1}/${scenes.length} 処理中...`, 15 + Math.round((i + 1) / scenes.length * 35));
+    }
+
+    // 結合
+    updateVideoProgress('シーンを結合中...', 55);
+    ff.FS('writeFile', 'filelist.txt', segFiles.map(f => `file '${f}'`).join('\n'));
+    await ff.run('-f', 'concat', '-safe', '0', '-i', 'filelist.txt', '-c', 'copy', 'concat.mp4');
+
+    // BGM追加
+    let finalFile = 'concat.mp4';
+    if (window._bgmDataUrl) {
+      updateVideoProgress('BGMを追加中...', 75);
+      ff.FS('writeFile', 'bgm_src', await fetchFile(window._bgmDataUrl));
+      const fadeStart = Math.max(0, totalDur - 2);
+      await ff.run(
+        '-i', 'concat.mp4',
+        '-stream_loop', '-1', '-i', 'bgm_src',
+        '-c:v', 'copy', '-c:a', 'aac', '-b:a', '192k',
+        '-map', '0:v:0', '-map', '1:a:0',
+        '-t', String(totalDur),
+        '-af', `afade=t=out:st=${fadeStart}:d=2`,
+        'final.mp4'
+      );
+      finalFile = 'final.mp4';
+    }
+
+    updateVideoProgress('書き出し中...', 90);
+    const outData = ff.FS('readFile', finalFile);
+    const blob = new Blob([outData.buffer], { type: 'video/mp4' });
+    const url  = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    const ep = (data.episodes || []).find(e => e.id === currentEpisodeId);
+    a.download = `${(ep?.title || 'video').replace(/[^\w぀-鿿]/g, '_')}_${Date.now()}.mp4`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+
+    updateVideoProgress('✅ 完了！', 100);
+    showToast('✅ 動画を生成しました');
+  } catch(e) {
+    updateVideoProgress('❌ エラー: ' + e.message, 0);
+    showToast('❌ 動画生成エラー: ' + e.message);
+    console.error(e);
+  }
+}
+
+// ════════════════════════════════════
+//  Utils
+// ════════════════════════════════════
+function escHtml(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function openModal(id)  { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+function copyText(text) {
+  if (!text) { showToast('コピーするテキストがありません'); return; }
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(() => showToast('📋 コピーしました')).catch(() => fallbackCopy(text));
+  } else {
+    fallbackCopy(text);
+  }
+}
+function fallbackCopy(text) {
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.cssText = 'position:fixed;left:-9999px;top:-9999px;opacity:0;';
+  document.body.appendChild(ta);
+  ta.focus(); ta.select();
+  try { document.execCommand('copy'); showToast('📋 コピーしました'); }
+  catch { showToast('コピー失敗（手動でテキストを選択してください）'); }
+  document.body.removeChild(ta);
+}
+function copyPromptResult() {
+  const el = document.getElementById('promptResultText');
+  if (el) copyText(el.textContent);
+}
+function openGptForScene(sceneIdx) {
+  const char = data.characters.find(c => c.id === currentCharId);
+  if (!char?.gpt_url) { showToast('キャラクター設定で GPT URL を設定してください'); return; }
+  const sb = storyboardData[sbKey()];
+  const scene = sb?.scenes[sceneIdx];
+  if (!scene) return;
+  // 台詞をクリップボードにコピーしてから GPT を開く
+  const text = scene.lines.join('\n');
+  copyText(text);
+  showToast('📋 台詞をコピーしました → GPTに貼り付けてください');
+  setTimeout(() => window.open(char.gpt_url, '_blank'), 600);
+}
+
+function openGemForScene(sceneIdx) {
+  const char = data.characters.find(c => c.id === currentCharId);
+  if (!char?.gem_url) { showToast('キャラクター設定で Gemini Gem URL を設定してください'); return; }
+  const sb = storyboardData[sbKey()];
+  const scene = sb?.scenes[sceneIdx];
+  if (!scene) return;
+  copyText(scene.lines.join('\n'));
+  showToast('📋 台詞をコピーしました → Gem に貼り付けてください');
+  setTimeout(() => window.open(char.gem_url, '_blank'), 600);
+}
+
+function copySceneLines(sceneIdx) {
+  const sb = storyboardData[sbKey()];
+  if (!sb || !sb.scenes[sceneIdx]) return;
+  copyText(sb.scenes[sceneIdx].lines.join('\n'));
+}
+
+// ════════════════════════════════════
+//  素材パックDL (JSZip)
+// ════════════════════════════════════
+async function downloadMaterialPack() {
+  const sb = storyboardData[sbKey()];
+  if (!sb || !sb.scenes || !sb.scenes.length) { showToast('先に絵コンテを生成してください'); return; }
+  const char = data.characters.find(c => c.id === currentCharId);
+  if (typeof JSZip === 'undefined') { showToast('JSZipが読み込まれていません。ページをリロードしてください'); return; }
+
+  showToast('📦 ZIPを作成中...');
+  const zip = new JSZip();
+  const charName = char?.name || 'character';
+  const format = sb.format || 'shorts';
+  const dateStr = new Date().toISOString().slice(0,10).replace(/-/g,'');
+  const folderName = `${charName}_${dateStr}`;
+  const folder = zip.folder(folderName);
+
+  // 1. 台本テキスト (script.txt)
+  const scriptLines = sb.scenes.map((s, i) =>
+    `=== シーン${i+1}: ${s.label} (${s.time}) ===\n${s.lines.join('\n')}`
+  ).join('\n\n');
+  folder.file('script.txt', scriptLines);
+
+  // 2. シーン画像 (scene_01.png, scene_02.png ...)
+  let imageCount = 0;
+  for (let i = 0; i < sb.scenes.length; i++) {
+    const scene = sb.scenes[i];
+    if (scene.imageDataUrl && scene.imageDataUrl.startsWith('data:')) {
+      const base64 = scene.imageDataUrl.split(',')[1];
+      const ext = scene.imageDataUrl.includes('image/png') ? 'png' : 'jpg';
+      folder.file(`scene_${String(i+1).padStart(2,'0')}.${ext}`, base64, { base64: true });
+      imageCount++;
+    }
+  }
+
+  // 3. キャラ参照画像 (char_ref.png)
+  if (sb.charRefDataUrl && sb.charRefDataUrl.startsWith('data:')) {
+    const base64 = sb.charRefDataUrl.split(',')[1];
+    folder.file('char_ref.png', base64, { base64: true });
+  }
+
+  // 4. compile_video.py (FFmpegスクリプト)
+  const pyScript = generateFFmpegScript(format, sb.scenes.length, charName);
+  folder.file('compile_video.py', pyScript);
+
+  // 5. README.txt
+  const readme = `RBAI Channel OS - 素材パック
+キャラクター: ${charName}
+フォーマット: ${format === 'shorts' ? 'ショート（縦9:16 / 50秒）' : '横動画（16:9 / 180秒）'}
+生成日: ${new Date().toLocaleDateString('ja-JP')}
+シーン数: ${sb.scenes.length}
+画像数: ${imageCount}
+
+【使い方】
+1. VOICEVOXで音声を生成（ChannelOSの「音声」タブ → WAVをDL）
+2. audio.wav をこのフォルダに配置
+3. Python で compile_video.py を実行:
+   pip install ffmpeg-python pillow
+   python compile_video.py
+4. output.mp4 が生成されます
+
+【YouTube投稿】
+- ChannelOSの「メタ」タブでタイトル・概要欄・タグを生成
+- 最適投稿時間も確認してください
+`;
+  folder.file('README.txt', readme);
+
+  const blob = await zip.generateAsync({ type: 'blob' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `${folderName}_materials.zip`;
+  a.click();
+  showToast(`✅ ZIPをDLしました（シーン${sb.scenes.length}個 / 画像${imageCount}枚）`);
+}
+
+function generateFFmpegScript(format, sceneCount, charName) {
+  const isShorts = format === 'shorts';
+  const totalDuration = isShorts ? 50 : 180;
+  const width = isShorts ? 1080 : 1920;
+  const height = isShorts ? 1920 : 1080;
+
+  // シーンの秒数配分
+  let sceneDurations;
+  if (isShorts) {
+    // ショート: フック2s / 結論8s / 理由例×n / CTA最後5s
+    const middle = sceneCount - 2;
+    const midDur = Math.floor((50 - 2 - 8 - 5) / Math.max(middle, 1));
+    sceneDurations = [2, 8, ...Array(middle).fill(midDur), 5];
+  } else {
+    // 横動画: フック15s / 課題提起30s / 解決策÷n / 行動喚起30s
+    const middle = sceneCount - 3;
+    const midDur = Math.floor((180 - 15 - 30 - 30) / Math.max(middle, 1));
+    sceneDurations = [15, 30, ...Array(middle).fill(midDur), 30];
+  }
+  // 合計秒数をtotalDurationに合わせて最後を調整
+  const sumDur = sceneDurations.reduce((a, b) => a + b, 0);
+  if (sceneDurations.length > 0) sceneDurations[sceneDurations.length - 1] += totalDuration - sumDur;
+
+  return `#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# RBAI Channel OS - 素材コンパイルスクリプト
+# キャラクター: ${charName}
+# フォーマット: ${isShorts ? 'ショート（9:16 / 50秒）' : '横動画（16:9 / 180秒）'}
+#
+# 必要: pip install ffmpeg-python pillow
+# FFmpegも必要: https://ffmpeg.org/download.html
+#
+# 使い方: python compile_video.py
+#   → output.mp4 が生成されます
+
+import os
+import subprocess
+import glob
+from pathlib import Path
+
+SCRIPT_DIR = Path(__file__).parent
+AUDIO_FILE = SCRIPT_DIR / "audio.wav"
+OUTPUT_FILE = SCRIPT_DIR / "output.mp4"
+WIDTH = ${width}
+HEIGHT = ${height}
+FPS = 30
+CHAR_NAME = "${charName}"
+
+# シーンファイルとその表示秒数（手動で調整可）
+SCENE_DURATIONS = ${JSON.stringify(sceneDurations)}
+
+def find_scenes():
+    scenes = sorted(glob.glob(str(SCRIPT_DIR / "scene_*.png")) +
+                    glob.glob(str(SCRIPT_DIR / "scene_*.jpg")))
+    return scenes
+
+def compile_video():
+    scenes = find_scenes()
+    if not scenes:
+        print("ERROR: scene_XX.png/jpg が見つかりません")
+        return
+
+    print(f"シーン数: {len(scenes)}")
+    for i, s in enumerate(scenes):
+        print(f"  {i+1}: {Path(s).name}")
+
+    durations = SCENE_DURATIONS[:len(scenes)]
+    while len(durations) < len(scenes):
+        durations.append(3)
+
+    # 各シーンを指定秒数の動画に変換（背景黒 + キャラ画像センタリング）
+    temp_clips = []
+    for i, (scene_path, dur) in enumerate(zip(scenes, durations)):
+        temp_out = str(SCRIPT_DIR / f"_tmp_{i:02d}.mp4")
+        cmd = [
+            "ffmpeg", "-y",
+            "-loop", "1", "-t", str(dur), "-i", scene_path,
+            "-vf", f"scale={WIDTH}:{HEIGHT}:force_original_aspect_ratio=decrease,"
+                   f"pad={WIDTH}:{HEIGHT}:(ow-iw)/2:(oh-ih)/2:black",
+            "-c:v", "libx264", "-pix_fmt", "yuv420p",
+            "-r", str(FPS),
+            temp_out
+        ]
+        print(f"[{i+1}/{len(scenes)}] {Path(scene_path).name} → {dur}秒")
+        subprocess.run(cmd, check=True, capture_output=True)
+        temp_clips.append(temp_out)
+
+    # シーンを結合
+    concat_list = str(SCRIPT_DIR / "_concat.txt")
+    with open(concat_list, "w") as f:
+        for clip in temp_clips:
+            f.write(f"file '{clip}'\\n")
+
+    merged = str(SCRIPT_DIR / "_merged.mp4")
+    cmd = ["ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", concat_list,
+           "-c", "copy", merged]
+    subprocess.run(cmd, check=True, capture_output=True)
+
+    # 音声合成
+    if AUDIO_FILE.exists():
+        cmd = [
+            "ffmpeg", "-y",
+            "-i", merged, "-i", str(AUDIO_FILE),
+            "-map", "0:v", "-map", "1:a",
+            "-c:v", "copy", "-c:a", "aac",
+            "-shortest",
+            str(OUTPUT_FILE)
+        ]
+        print("音声を合成中...")
+        subprocess.run(cmd, check=True, capture_output=True)
+    else:
+        print("WARNING: audio.wav が見つかりません。映像のみ出力します")
+        import shutil
+        shutil.copy(merged, str(OUTPUT_FILE))
+
+    # 一時ファイルを削除
+    for f in temp_clips + [concat_list, merged]:
+        try: os.remove(f)
+        except: pass
+
+    print(f"\\n✅ 完成: {OUTPUT_FILE}")
+    print(f"   解像度: {WIDTH}x{HEIGHT}")
+    print(f"   合計時間: {sum(durations)}秒")
+
+if __name__ == "__main__":
+    compile_video()
+`;
+}
+
+function parseScript(raw) {
+  try {
+    const json = JSON.parse(raw.match(/\{[\s\S]*\}/)[0]);
+    return { info: json.info || '', lines: json.lines || '' };
+  } catch(e) {
+    // JSON失敗時は全文をlinesとして表示
+    return { info: '', lines: raw };
+  }
+}
+
+function copyScriptLines() {
+  const lines = parseScript(generatedScript).lines;
+  navigator.clipboard.writeText(lines).then(() => showToast('セリフをコピーしました')).catch(() => showToast('コピー失敗'));
+}
+function copyMeta() {
+  if (!generatedMeta) return;
+  copyText(`【タイトル】\n${generatedMeta.title}\n\n【概要欄】\n${generatedMeta.description}\n\n${(generatedMeta.hashtags||[]).join(' ')}\n\n【タグ】\n${(generatedMeta.tags||[]).join(', ')}\n\n【最適投稿時間】\n${generatedMeta.best_post_time}`);
+}
+
+function setEpisodeStatus(status) {
+  const ep = (data.episodes||[]).find(e => e.id === currentEpisodeId);
+  if (!ep) return;
+  ep.status = status;
+  ep.updatedAt = new Date().toISOString();
+  saveData(data);
+  autoSaveToDrive();
+  renderSidebar();
+  // ステータスボタンを再描画
+  const mp = document.getElementById('panelMeta');
+  if (mp) mp.outerHTML = renderMetaPanel(data.characters.find(c=>c.id===currentCharId));
+  switchTab('meta');
+  showToast('ステータスを更新しました');
+}
+function exportData() {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}));
+  a.download = 'channelos-backup.json'; a.click();
+}
+function importData() {
+  const input = document.createElement('input');
+  input.type = 'file'; input.accept = '.json';
+  input.onchange = e => {
+    const reader = new FileReader();
+    reader.onload = ev => { try { data = JSON.parse(ev.target.result); saveData(data); renderSidebar(); showToast('インポート完了'); } catch { showToast('読み込み失敗'); } };
+    reader.readAsText(e.target.files[0]);
+  };
+  input.click();
+}
+function handleOAuthCallback(e) { /* handled via location.hash above */ }
+
+// ── 起動 ──
+loadStoryboard();
 renderSidebar();
-if (data.episodes.length > 0) selectEp(data.episodes[0].id);
+loadFromDrive();
 </script>
 </body>
 </html>
