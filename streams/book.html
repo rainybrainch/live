@@ -959,7 +959,7 @@ body.obs-mode .dock,body.obs-mode .open-tab,body.obs-mode .brand,body.obs-mode .
       </div>
     </section>
     <section class="section">
-      <div class="section-title"><span class="step">3</span>配信ネタ帳 <button onclick="copyAllNeta()" style="font-size:10px;padding:3px 8px;min-height:24px;margin-left:6px;opacity:.7;" type="button">📋 全コピー</button></div>
+      <div class="section-title"><span class="step">3</span>配信ネタ帳 <button onclick="randomNeta()" style="font-size:10px;padding:3px 8px;min-height:24px;margin-left:4px;opacity:.7;" type="button" title="ランダムに字幕表示">🎲</button> <button onclick="copyAllNeta()" style="font-size:10px;padding:3px 8px;min-height:24px;margin-left:6px;opacity:.7;" type="button">📋 全コピー</button></div>
       <div class="neta-list">
 
         <div class="neta-item" onclick="netaClick('「{T}」を読んで変わったこと')">🎯 「{T}」を読んで変わったこと</div>
@@ -1609,6 +1609,9 @@ window.addEventListener("DOMContentLoaded",function(){
       }
 
     }
+
+    if(state.timer.running&&prevRem>60&&state.timer.remainingSec<=60&&state.timer.remainingSec>0) toast("⚠ 残り1分！");
+    if(state.timer.running&&prevRem>30&&state.timer.remainingSec<=30&&state.timer.remainingSec>0) toast("🔴 残り30秒！");
 
     $("timerTime").textContent = fmt(state.timer.remainingSec);
 
@@ -2438,6 +2441,17 @@ ${lines.join('
     const caption = title ? t.replace(/\{T\}/g, title) : t;
     if(window.setCaption) window.setCaption(caption, false);
   };
+  
+  window.randomNeta = function(){
+    const items = Array.from(document.querySelectorAll('.neta-item'));
+    if(!items.length) return;
+    const el = items[Math.floor(Math.random()*items.length)];
+    el.click();
+    el.classList.remove('flashed');
+    requestAnimationFrame(()=>requestAnimationFrame(()=>el.classList.add('flashed')));
+    el.addEventListener('animationend',()=>el.classList.remove('flashed'),{once:true});
+  };
+
   window.copyAllNeta = function(){
     const items = Array.from(document.querySelectorAll('.neta-item')).map(el=>el.textContent.trim());
     if(!items.length){toast('ネタ帳が空です');return;}
