@@ -1,783 +1,727 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>RAINYBRAIN Movie Review</title>
-<style>
-:root {
-  --accent: #ff6b7a;
-  --line: rgba(255,255,255,.13);
-  --text: #f7f8fb;
-  --muted: rgba(247,248,251,.58);
-  --font-ui: "Yu Gothic","Hiragino Kaku Gothic ProN","Noto Sans JP",system-ui,sans-serif;
-  --font-title: "Yu Mincho","Hiragino Mincho ProN","BIZ UDPMincho",serif;
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RAINYBRAIN Movie Review</title>
+<style>
+:root {
+  --accent: #ff6b7a;
+  --line: rgba(255,255,255,.13);
+  --text: #f7f8fb;
+  --muted: rgba(247,248,251,.58);
+  --font-ui: "Yu Gothic","Hiragino Kaku Gothic ProN","Noto Sans JP",system-ui,sans-serif;
+  --font-title: "Yu Mincho","Hiragino Mincho ProN","BIZ UDPMincho",serif;
   color-scheme: dark;
-}
-* { box-sizing: border-box; }
-html, body { margin:0; width:100%; height:100%; overflow:hidden; background:#08040a; color:var(--text); font-family:var(--font-ui); }
-button,input,select,textarea { font:inherit; }
-button {
-  min-height:36px; border:1px solid var(--line); border-radius:8px;
-  background:rgba(255,255,255,.08); color:var(--text); padding:7px 10px; cursor:pointer;
-}
-button:hover { background:rgba(255,255,255,.14); }
-button.primary { border-color:rgba(255,107,122,.55); background:rgba(255,107,122,.18); }
-button.good   { border-color:rgba(100,210,255,.5);  background:rgba(100,210,255,.16); }
-button.warn   { border-color:rgba(255,147,189,.5);  background:rgba(255,147,189,.14); }
-input,select,textarea {
-  width:100%; border:1px solid var(--line); border-radius:8px;
-  background:rgba(0,0,0,.28); color:var(--text); padding:9px 10px; outline:none;
-}
-textarea { min-height:70px; resize:vertical; line-height:1.55; }
+  --accent-rgb: 255,107,122;
+}
+* { box-sizing: border-box; }
+html, body { margin:0; width:100%; height:100%; overflow:hidden; background:#08040a; color:var(--text); font-family:var(--font-ui); }
+button,input,select,textarea { font:inherit; }
+button {
+  min-height:36px; border:1px solid var(--line); border-radius:8px;
+  background:rgba(255,255,255,.08); color:var(--text); padding:7px 10px; cursor:pointer;
+}
+button:hover { background:rgba(255,255,255,.14); }
+button.primary { border-color:rgba(255,107,122,.55); background:rgba(255,107,122,.18); }
+button.good   { border-color:rgba(100,210,255,.5);  background:rgba(100,210,255,.16); }
+button.warn   { border-color:rgba(255,147,189,.5);  background:rgba(255,147,189,.14); }
+input,select,textarea {
+  width:100%; border:1px solid var(--line); border-radius:8px;
+  background:rgba(0,0,0,.28); color:var(--text); padding:9px 10px; outline:none;
+}
+textarea { min-height:70px; resize:vertical; line-height:1.55; }
+
+.stage {
+  position:fixed; inset:0;
+  background:
+    radial-gradient(circle at 22% 12%, rgba(255,107,122,.18), transparent 30rem),
+    radial-gradient(circle at 78% 14%, rgba(180,60,80,.12), transparent 26rem),
+    linear-gradient(160deg, #120608, #0d080e 55%, #08040a);
+}
+.stage::before, .stage::after {
+  content:''; position:absolute; pointer-events:none; border-radius:50%;
+  filter:blur(90px); z-index:0;
+}
+.stage::before {
+  width:44vw; height:42vh; left:4%; top:5%;
+  background:radial-gradient(circle, rgba(255,107,122,.16), transparent 70%);
+  animation:orb1 28s ease-in-out infinite alternate;
+}
+.stage::after {
+  width:38vw; height:38vh; right:1%; bottom:16%;
+  background:radial-gradient(circle, rgba(120,30,60,.14), transparent 70%);
+  animation:orb2 36s ease-in-out infinite alternate;
+}
+@keyframes orb1 { from{transform:translate(0,0) scale(1);} to{transform:translate(9vw,11vh) scale(1.22);} }
+@keyframes orb2 { from{transform:translate(0,0) scale(1);} to{transform:translate(-7vw,-9vh) scale(0.82);} }
+
+.brand {
+  position:absolute; top:20px; left:24px;
+  display:flex; align-items:center; gap:10px;
+  padding:9px 12px; border:1px solid var(--line); border-radius:8px;
+  background:rgba(8,4,10,.65); backdrop-filter:blur(10px); z-index:10;
+}
+.mark {
+  width:30px; height:30px; display:grid; place-items:center;
+  border-radius:7px; background:linear-gradient(135deg, var(--accent), #c03040);
+  color:#08040a; font-weight:900; font-size:12px;
+}
+.brand strong { display:block; font-size:13px; line-height:1; }
+.brand span   { display:block; color:var(--muted); font-size:10px; font-weight:800; margin-top:2px; }
+
+.timer-display {
+  position:absolute; top:20px; left:50%; transform:translateX(-50%);
+  display:flex; align-items:center; gap:10px;
+  padding:9px 16px; border:1px solid rgba(255,255,255,.14); border-radius:999px;
+  background:rgba(8,4,10,.65); backdrop-filter:blur(10px); z-index:10;
+}
+.timer-time { font-size:clamp(18px,1.6vw,28px); font-weight:900; font-variant-numeric:tabular-nums; letter-spacing:.06em; }
+.timer-display.running { border-color:rgba(255,107,122,.45); box-shadow:0 0 22px rgba(255,107,122,.16), inset 0 0 12px rgba(255,107,122,.06); }
+.timer-display.running .timer-time { color:var(--accent); }
+.timer-label { font-size:10px; font-weight:900; letter-spacing:.1em; color:var(--muted); text-transform:uppercase; }
+.timer-btn { width:28px; height:28px; min-height:28px; padding:0; display:grid; place-items:center; border-radius:8px; font-size:13px; border-color:rgba(255,107,122,.36); }
+.timer-btn.running { background:linear-gradient(180deg,#ffd0d6,var(--accent)); color:#08040a; }
+
+.avatar { position:absolute; right:2vw; bottom:118px; width:30vw; height:calc(100vh - 155px); display:grid; place-items:end center; }
+.avatar.empty::before { content:"V CHARACTER"; width:100%; height:100%; display:grid; place-items:center; border:2px dashed rgba(255,255,255,.16); border-radius:12px; color:rgba(255,255,255,.32); font-weight:900; letter-spacing:.08em; }
+.avatar img, .avatar video { max-width:100%; max-height:100%; object-fit:contain; filter:drop-shadow(0 24px 40px rgba(0,0,0,.48)); }
+
+.movie-poster { position:absolute; left:34vw; bottom:180px; width:clamp(100px,10vw,160px); display:none; }
+.movie-poster img { width:100%; border-radius:6px; box-shadow:4px 8px 28px rgba(0,0,0,.62); }
+.movie-poster.show { display:block; }
+
+.comment-tracks { position:absolute; left:0; right:0; bottom:0; height:108px; overflow:hidden; pointer-events:none; z-index:8; background:linear-gradient(0deg,rgba(0,0,0,.40),transparent); box-shadow:0 -28px 56px rgba(0,0,0,.44); }
+.c-track { height:36px; position:relative; overflow:hidden; border-bottom:1px solid rgba(255,255,255,.045); }
+.comment-h {
+  position:absolute; top:0; left:0; height:100%;
+  display:inline-flex; align-items:center; gap:7px;
+  padding:0 18px 0 10px; border-left:3px solid var(--user-color);
+  background:rgba(0,0,0,.56); backdrop-filter:blur(8px);
+  border-radius:0 999px 999px 0; font-size:clamp(13px,1.35vw,19px); font-weight:700;
+  text-shadow:0 1px 2px rgba(0,0,0,.7); transform:translateX(100vw);
+  animation:fly-left var(--speed,14s) linear forwards, comment-enter 1s ease-out forwards;
+  white-space:nowrap;
+}
+.comment-h .user { color:var(--user-color); font-weight:900; font-size:.8em; opacity:.9; }
+.comment-h .user::before { content:'●'; margin-right:4px; font-size:.55em; vertical-align:middle; opacity:.7; }
+.comment-h .text { color:var(--text); }
+@keyframes fly-left { from{transform:translateX(100vw);} to{transform:translateX(calc(-100% - 20px));} }
+@keyframes comment-enter { 0%{opacity:0;box-shadow:0 0 28px var(--user-color),inset 0 0 10px rgba(255,255,255,.06);} 10%{opacity:1;box-shadow:0 0 16px var(--user-color);} 45%{box-shadow:0 0 6px color-mix(in srgb,var(--user-color) 50%,transparent);} 100%{box-shadow:0 0 2px color-mix(in srgb,var(--user-color) 18%,transparent);} }
+
+.title-card {
+  position:absolute; left:32px; bottom:178px; width:min(500px,42vw);
+  padding:14px 18px; border-left:5px solid var(--accent);
+  border-top:1px solid rgba(255,255,255,.12); border-right:1px solid rgba(255,255,255,.08);
+  border-bottom:1px solid rgba(255,255,255,.08); border-radius:8px;
+  background:linear-gradient(90deg,rgba(8,4,10,.88),rgba(8,4,10,.42)); backdrop-filter:blur(10px);
+}
+.kicker { color:var(--accent); font-size:11px; font-weight:900; letter-spacing:.1em; margin-bottom:6px; text-transform:uppercase; }
+.card-title { font-family:var(--font-title); font-size:clamp(22px,2.6vw,42px); line-height:1.1; font-weight:900; overflow-wrap:anywhere; }
+.card-meta { margin-top:5px; color:rgba(247,248,251,.7); font-size:clamp(12px,1.1vw,15px); font-family:var(--font-title); }
+.card-link {
+  margin-top:10px; display:inline-flex; align-items:center; gap:6px;
+  padding:7px 14px; border-radius:999px; background:rgba(255,107,122,.18); border:1px solid rgba(255,107,122,.5);
+  color:var(--accent); font-size:11px; font-weight:900; letter-spacing:.08em;
+  text-decoration:none; transition:background .15s, box-shadow .15s;
+}
+.card-link:hover { background:rgba(255,107,122,.28); box-shadow:0 0 14px rgba(255,107,122,.22); }
+
+.caption {
+  position:absolute; left:50%; bottom:112px; transform:translateX(-50%);
+  width:min(860px,calc(100vw - 56px)); min-height:52px; display:grid; place-items:center;
+  padding:11px 20px; border:1px solid rgba(255,255,255,.14); border-top:2px solid rgba(255,107,122,.28);
+  border-radius:8px; background:rgba(4,2,4,.75); backdrop-filter:blur(10px);
+  text-align:center; font-family:var(--font-title); font-size:clamp(18px,1.9vw,28px); line-height:1.35; font-weight:900;
+  text-shadow:0 2px 3px rgba(0,0,0,.6); z-index:6; transition:border-top-color .3s;
+}
+@keyframes cap-flash { 0%{border-top-color:var(--accent);box-shadow:0 -2px 20px rgba(255,107,122,.32);} 100%{border-top-color:rgba(255,107,122,.28);box-shadow:none;} }
+.caption.flash-in { animation:cap-flash 0.8s ease-out forwards; }
+
+.dock {
+  position:fixed; right:14px; top:14px;
+  width:min(420px,calc(100vw - 28px)); max-height:calc(100vh - 28px); overflow:auto;
+  border:1px solid rgba(255,255,255,.13); border-radius:10px;
+  background:linear-gradient(180deg,rgba(255,255,255,.055),rgba(255,255,255,.018)), rgba(10,4,12,.92);
+  backdrop-filter:blur(16px); z-index:20; box-shadow:0 28px 80px rgba(0,0,0,.44);
+}
+body.panel-hidden .dock { display:none; }
+.dock-head { display:flex; align-items:center; gap:9px; padding:12px 14px; border-bottom:1px solid var(--line); background:linear-gradient(90deg,rgba(255,107,122,.14),transparent 60%),rgba(255,255,255,.04); }
+.dock-title { flex:1; font-size:14px; font-weight:900; }
+.dock-title span { display:block; color:var(--muted); font-size:10px; margin-top:2px; }
+.dock-body { padding:12px; display:grid; gap:12px; }
+.section { border:1px solid rgba(255,255,255,.1); border-radius:8px; background:linear-gradient(180deg,rgba(255,255,255,.052),rgba(255,255,255,.024)); padding:12px; display:grid; gap:10px; }
+.section-title { display:flex; align-items:center; gap:8px; font-size:13px; font-weight:900; }
+.step { width:22px; height:22px; display:grid; place-items:center; border-radius:999px; background:var(--accent); color:#08040a; font-size:12px; font-weight:900; }
+.grid2 { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.actions { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.actions .wide { grid-column:1/-1; }
+.actions button { min-height:44px; font-weight:900; }
+.field { display:grid; gap:5px; }
+.field label { color:var(--muted); font-size:11px; font-weight:900; }
+.field input,.field select,.field textarea { min-height:40px; }
+.log { color:var(--muted); font-size:11px; line-height:1.45; border:1px solid var(--line); border-radius:8px; padding:8px; background:rgba(0,0,0,.2); max-height:80px; overflow:auto; }
+.status-text { color:var(--muted); font-size:11px; font-weight:800; }
+details { border:1px solid rgba(255,255,255,.1); border-radius:8px; background:rgba(0,0,0,.14); }
+summary { cursor:pointer; padding:10px; color:var(--muted); font-size:12px; font-weight:900; }
+details .inner { padding:0 10px 10px; display:grid; gap:10px; }
+.transcript-plan-row { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.plan-btn { position:relative; display:flex; flex-direction:column; align-items:center; gap:3px; padding:9px 8px; border-radius:9px; font-size:12px; font-weight:900; border:1px solid var(--line); background:rgba(255,255,255,.05); color:var(--muted); cursor:pointer; transition:all .15s; }
+.plan-btn.active { border-color:rgba(255,107,122,.5); background:rgba(255,107,122,.14); color:var(--text); }
+.plan-btn.pro    { border-color:rgba(200,144,216,.3); color:rgba(200,144,216,.6); cursor:default; }
+.plan-tag  { font-size:9px; font-weight:700; letter-spacing:.08em; opacity:.7; }
+.plan-soon { position:absolute; top:-7px; right:-4px; background:rgba(200,144,216,.22); border:1px solid rgba(200,144,216,.4); color:#c890d8; font-size:9px; font-weight:900; padding:2px 6px; border-radius:999px; }
+.pro-placeholder { display:grid; gap:10px; padding:14px; border:1px dashed rgba(200,144,216,.25); border-radius:10px; background:rgba(200,144,216,.04); text-align:center; }
+.pro-placeholder-title { font-size:13px; font-weight:900; color:rgba(200,144,216,.8); }
+.pro-placeholder-desc  { font-size:11px; color:var(--muted); line-height:1.6; }
+
+.open-tab { position:fixed; right:14px; bottom:122px; z-index:40; display:none; align-items:center; gap:8px; min-height:44px; padding:0 14px; border:1px solid rgba(255,255,255,.22); border-radius:8px; background:rgba(8,4,10,.86); color:var(--text); box-shadow:0 16px 40px rgba(0,0,0,.44); backdrop-filter:blur(14px); font-weight:900; font-size:13px; }
+body.panel-hidden .open-tab { display:inline-flex; }
+.open-tab-dot { width:8px; height:8px; border-radius:999px; background:var(--accent); box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 18%,transparent); }
+
+.toast { position:absolute; bottom:230px; left:50%; transform:translateX(-50%); padding:9px 18px; border-radius:8px; background:rgba(6,2,8,.92); border:1px solid rgba(255,255,255,.2); color:var(--text); font-size:12px; font-weight:900; letter-spacing:.04em; z-index:50; pointer-events:none; white-space:nowrap; opacity:0; transition:opacity .22s; }
+.toast.show { opacity:1; }
+.mic-live { display:none; color:var(--accent); font-size:10px; font-weight:900; letter-spacing:.1em; }
+.mic-live.active { display:block; animation:blink 1.2s infinite; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+@keyframes flashanim { 0%,100%{opacity:1} 50%{opacity:.15} }
+.timer-display.flash { animation:flashanim .35s 8; }
+.shortcut-hint { position:absolute; bottom:90px; right:24px; color:rgba(255,255,255,.28); font-size:9px; font-weight:800; letter-spacing:.08em; line-height:1.8; text-align:right; pointer-events:none; z-index:5; }
+body.obs-mode .stage{background:transparent!important;}
+body.obs-mode .stage::before,body.obs-mode .stage::after{display:none;}
+body.obs-mode .dock,body.obs-mode .open-tab{display:none!important;}
+.obs-btn{padding:3px 9px;border-radius:5px;border:1px solid rgba(255,255,255,.2);background:0;font-size:9px;font-weight:900;color:rgba(255,255,255,.4);cursor:pointer;letter-spacing:.06em;transition:all .15s;flex-shrink:0;}
+.obs-btn.active{border-color:rgba(255,107,122,.5);background:rgba(255,107,122,.12);color:var(--accent);}
+/* ── DOCK ENHANCEMENTS ── */
+.dock-meta{font-size:10px;color:var(--muted);font-weight:700;margin-top:2px;min-height:14px;letter-spacing:.02em;}
+.dock-meta .on{color:#57c87c;}
+.cc-btn{padding:5px 10px;border-radius:7px;border:1px solid rgba(100,210,255,.3);background:rgba(100,210,255,.08);color:#64d2ff;font-size:11px;font-weight:900;cursor:pointer;min-height:36px;transition:all .15s;flex-shrink:0;}
+.cc-btn.off{border-color:var(--line);background:rgba(255,255,255,.04);color:var(--muted);}
+.speed-row{display:flex;gap:4px;padding:0 12px 10px;}
+.spd-btn{flex:1;padding:6px 4px;border-radius:7px;border:1px solid var(--line);background:rgba(255,255,255,.04);font-size:10px;font-weight:900;cursor:pointer;transition:all .15s;color:var(--muted);}
+.spd-btn.active[data-speed="slow"]{border-color:rgba(100,210,255,.4);background:rgba(100,210,255,.08);color:#64d2ff;}
+.spd-btn.active[data-speed="normal"]{border-color:rgba(87,200,124,.4);background:rgba(87,200,124,.08);color:#57c87c;}
+.spd-btn.active[data-speed="fast"]{border-color:rgba(255,107,122,.4);background:rgba(255,107,122,.08);color:#ff6b7a;}
 
-.stage {
-  position:fixed; inset:0;
-  background:
-    radial-gradient(circle at 22% 12%, rgba(255,107,122,.18), transparent 30rem),
-    radial-gradient(circle at 78% 14%, rgba(180,60,80,.12), transparent 26rem),
-    linear-gradient(160deg, #120608, #0d080e 55%, #08040a);
-}
-.stage::before, .stage::after {
-  content:''; position:absolute; pointer-events:none; border-radius:50%;
-  filter:blur(90px); z-index:0;
-}
-.stage::before {
-  width:44vw; height:42vh; left:4%; top:5%;
-  background:radial-gradient(circle, rgba(255,107,122,.16), transparent 70%);
-  animation:orb1 28s ease-in-out infinite alternate;
-}
-.stage::after {
-  width:38vw; height:38vh; right:1%; bottom:16%;
-  background:radial-gradient(circle, rgba(120,30,60,.14), transparent 70%);
-  animation:orb2 36s ease-in-out infinite alternate;
-}
-@keyframes orb1 { from{transform:translate(0,0) scale(1);} to{transform:translate(9vw,11vh) scale(1.22);} }
-@keyframes orb2 { from{transform:translate(0,0) scale(1);} to{transform:translate(-7vw,-9vh) scale(0.82);} }
+/* ── KISO FLOW ── */
+.kiso-flow { display:grid; gap:6px; }
+.kiso-step { display:flex; gap:10px; padding:9px 10px; border-radius:8px; border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.02); transition:background .15s; }
+.kiso-step.active { border-color:rgba(var(--accent-rgb),.3); background:rgba(var(--accent-rgb),.06); }
+.kiso-step.done { opacity:.5; }
+.kiso-num { width:24px; height:24px; border-radius:6px; background:var(--accent); color:#000; font-weight:900; font-size:11px; display:grid; place-items:center; flex-shrink:0; margin-top:1px; }
+.kiso-step.done .kiso-num { background:rgba(255,255,255,.2); color:rgba(255,255,255,.5); }
+.kiso-body { flex:1; min-width:0; }
+.kiso-label { font-size:11px; font-weight:900; color:var(--text); line-height:1.3; }
+.kiso-guide { font-size:10px; color:var(--muted); margin-top:2px; line-height:1.45; }
+.kiso-nav { display:flex; gap:6px; }
+.kiso-nav button { flex:1; min-height:36px; font-size:11px; font-weight:900; }
+.kiso-progress { height:3px; background:rgba(255,255,255,.08); border-radius:999px; overflow:hidden; }
+.kiso-bar { height:100%; background:var(--accent); border-radius:999px; transition:width .3s; }
+</style>
+</head>
+<body>
+
+<main class="stage" id="stage">
+  <div id="toast" class="toast"></div>
+  <div class="brand">
+    <div class="mark">RB</div>
+    <div><strong>RAINYBRAIN</strong><span id="brandMode">MOVIE REVIEW</span></div>
+    <div class="mic-live" id="micLive">● LIVE</div>
+    <button class="obs-btn" id="btnObs" onclick="toggleObsMode()">📺 OBS</button>
+  </div>
+  <div class="timer-display" id="timerDisplay">
+    <div>
+      <div class="timer-time" id="timerTime">--:--</div>
+      <div class="timer-label" id="timerLabel">REC TIMER</div>
+    </div>
+    <button class="timer-btn" id="stageTimerToggle" type="button">▶</button>
+    <button class="timer-btn" id="stageTimerReset"  type="button">↺</button>
+  </div>
+  <div class="avatar empty" id="avatar"></div>
+  <div class="movie-poster" id="moviePoster"><img id="posterImg" src="" alt="poster"></div>
+  <div class="comment-tracks" id="commentTracks">
+    <div class="c-track" id="track0"></div>
+    <div class="c-track" id="track1"></div>
+    <div class="c-track" id="track2"></div>
+  </div>
+  <section class="title-card">
+    <div class="kicker" id="kicker">MOVIE REVIEW</div>
+    <div class="card-title" id="cardTitle">今日の映画</div>
+    <div class="card-meta" id="cardMeta"></div>
+    <a class="card-link" id="cardLink" href="#" target="_blank" style="display:none">🎬 詳細・配信を見る</a>
+  </section>
+  <div class="caption" id="caption">「マイク開始」で文字起こしが始まります</div>
+  <div class="shortcut-hint">Space=タイマー　M=マイク　C=コメント　F=全画面　H=パネル</div>
+</main>
+
+<aside id="dock" class="dock">
+  <div class="dock-head">
+    <div style="flex:1;min-width:0;">
+      <div class="dock-title">Movie Review<span>RAINYBRAIN 映画紹介配信</span></div>
+      <div class="dock-meta" id="dockMeta">💬 0件　🎙 停止中</div>
+    </div>
+    <button class="cc-btn" id="ccBtn" onclick="toggleComments()" type="button">💬 ON</button>
+    <button id="hideDock"  type="button">閉じる</button>
+    <button id="micBtn" class="good" type="button">マイク開始</button>
+  </div>
+  <div class="speed-row">
+    <button class="spd-btn" data-speed="slow"   onclick="setSpeed('slow')"   type="button">🐢 低</button>
+    <button class="spd-btn active" data-speed="normal" onclick="setSpeed('normal')" type="button">▷ 普通</button>
+    <button class="spd-btn" data-speed="fast"   onclick="setSpeed('fast')"   type="button">🔥 高</button>
+  </div>
+  <div class="dock-body">
+    <section class="section">
+      <div class="section-title"><span class="step">1</span>映画の情報</div>
+      <div class="field"><label for="movieTitle">タイトル</label><input id="movieTitle" placeholder="例: 君の名は。"></div>
+      <div class="grid2">
+        <div class="field"><label for="director">監督</label><input id="director" placeholder="例: 新海誠"></div>
+        <div class="field"><label for="releaseYear">公開年</label><input id="releaseYear" placeholder="例: 2016" type="number" min="1900" max="2099"></div>
+      </div>
+      <div class="field"><label for="serviceUrl">配信サービス URL（任意）</label><input id="serviceUrl" placeholder="https://..."></div>
+      <div class="field"><label for="posterUrl">ポスター画像 URL（任意）</label><input id="posterUrl" placeholder="https://..."></div>
+      <div class="actions">
+        <button id="applyBtn" class="primary wide" type="button">ステージに反映</button>
+        <button id="copyObsBtn" type="button">OBS URL</button>
+        <button id="fullscreenBtn" type="button">全画面</button>
+      </div>
+    </section>
 
-.brand {
-  position:absolute; top:20px; left:24px;
-  display:flex; align-items:center; gap:10px;
-  padding:9px 12px; border:1px solid var(--line); border-radius:8px;
-  background:rgba(8,4,10,.65); backdrop-filter:blur(10px); z-index:10;
-}
-.mark {
-  width:30px; height:30px; display:grid; place-items:center;
-  border-radius:7px; background:linear-gradient(135deg, var(--accent), #c03040);
-  color:#08040a; font-weight:900; font-size:12px;
-}
-.brand strong { display:block; font-size:13px; line-height:1; }
-.brand span   { display:block; color:var(--muted); font-size:10px; font-weight:800; margin-top:2px; }
-
-.timer-display {
-  position:absolute; top:20px; left:50%; transform:translateX(-50%);
-  display:flex; align-items:center; gap:10px;
-  padding:9px 16px; border:1px solid rgba(255,255,255,.14); border-radius:999px;
-  background:rgba(8,4,10,.65); backdrop-filter:blur(10px); z-index:10;
-}
-.timer-time { font-size:clamp(18px,1.6vw,28px); font-weight:900; font-variant-numeric:tabular-nums; letter-spacing:.06em; }
-.timer-display.running { border-color:rgba(255,107,122,.45); box-shadow:0 0 22px rgba(255,107,122,.16), inset 0 0 12px rgba(255,107,122,.06); }
-.timer-display.running .timer-time { color:var(--accent); }
-.timer-label { font-size:10px; font-weight:900; letter-spacing:.1em; color:var(--muted); text-transform:uppercase; }
-.timer-btn { width:28px; height:28px; min-height:28px; padding:0; display:grid; place-items:center; border-radius:8px; font-size:13px; border-color:rgba(255,107,122,.36); }
-.timer-btn.running { background:linear-gradient(180deg,#ffd0d6,var(--accent)); color:#08040a; }
-
-.avatar { position:absolute; right:2vw; bottom:118px; width:30vw; height:calc(100vh - 155px); display:grid; place-items:end center; }
-.avatar.empty::before { content:"V CHARACTER"; width:100%; height:100%; display:grid; place-items:center; border:2px dashed rgba(255,255,255,.16); border-radius:12px; color:rgba(255,255,255,.32); font-weight:900; letter-spacing:.08em; }
-.avatar img, .avatar video { max-width:100%; max-height:100%; object-fit:contain; filter:drop-shadow(0 24px 40px rgba(0,0,0,.48)); }
-
-.movie-poster { position:absolute; left:34vw; bottom:180px; width:clamp(100px,10vw,160px); display:none; }
-.movie-poster img { width:100%; border-radius:6px; box-shadow:4px 8px 28px rgba(0,0,0,.62); }
-.movie-poster.show { display:block; }
-
-.comment-tracks { position:absolute; left:0; right:0; bottom:0; height:108px; overflow:hidden; pointer-events:none; z-index:8; background:linear-gradient(0deg,rgba(0,0,0,.40),transparent); box-shadow:0 -28px 56px rgba(0,0,0,.44); }
-.c-track { height:36px; position:relative; overflow:hidden; border-bottom:1px solid rgba(255,255,255,.045); }
-.comment-h {
-  position:absolute; top:0; left:0; height:100%;
-  display:inline-flex; align-items:center; gap:7px;
-  padding:0 18px 0 10px; border-left:3px solid var(--user-color);
-  background:rgba(0,0,0,.56); backdrop-filter:blur(8px);
-  border-radius:0 999px 999px 0; font-size:clamp(13px,1.35vw,19px); font-weight:700;
-  text-shadow:0 1px 2px rgba(0,0,0,.7); transform:translateX(100vw);
-  animation:fly-left var(--speed,14s) linear forwards, comment-enter 1s ease-out forwards;
-  white-space:nowrap;
-}
-.comment-h .user { color:var(--user-color); font-weight:900; font-size:.8em; opacity:.9; }
-.comment-h .user::before { content:'●'; margin-right:4px; font-size:.55em; vertical-align:middle; opacity:.7; }
-.comment-h .text { color:var(--text); }
-@keyframes fly-left { from{transform:translateX(100vw);} to{transform:translateX(calc(-100% - 20px));} }
-@keyframes comment-enter { 0%{opacity:0;box-shadow:0 0 28px var(--user-color),inset 0 0 10px rgba(255,255,255,.06);} 10%{opacity:1;box-shadow:0 0 16px var(--user-color);} 45%{box-shadow:0 0 6px color-mix(in srgb,var(--user-color) 50%,transparent);} 100%{box-shadow:0 0 2px color-mix(in srgb,var(--user-color) 18%,transparent);} }
-
-.title-card {
-  position:absolute; left:32px; bottom:178px; width:min(500px,42vw);
-  padding:14px 18px; border-left:5px solid var(--accent);
-  border-top:1px solid rgba(255,255,255,.12); border-right:1px solid rgba(255,255,255,.08);
-  border-bottom:1px solid rgba(255,255,255,.08); border-radius:8px;
-  background:linear-gradient(90deg,rgba(8,4,10,.88),rgba(8,4,10,.42)); backdrop-filter:blur(10px);
-}
-.kicker { color:var(--accent); font-size:11px; font-weight:900; letter-spacing:.1em; margin-bottom:6px; text-transform:uppercase; }
-.card-title { font-family:var(--font-title); font-size:clamp(22px,2.6vw,42px); line-height:1.1; font-weight:900; overflow-wrap:anywhere; }
-.card-meta { margin-top:5px; color:rgba(247,248,251,.7); font-size:clamp(12px,1.1vw,15px); font-family:var(--font-title); }
-.card-link {
-  margin-top:10px; display:inline-flex; align-items:center; gap:6px;
-  padding:7px 14px; border-radius:999px; background:rgba(255,107,122,.18); border:1px solid rgba(255,107,122,.5);
-  color:var(--accent); font-size:11px; font-weight:900; letter-spacing:.08em;
-  text-decoration:none; transition:background .15s, box-shadow .15s;
-}
-.card-link:hover { background:rgba(255,107,122,.28); box-shadow:0 0 14px rgba(255,107,122,.22); }
-
-.caption {
-  position:absolute; left:50%; bottom:112px; transform:translateX(-50%);
-  width:min(860px,calc(100vw - 56px)); min-height:52px; display:grid; place-items:center;
-  padding:11px 20px; border:1px solid rgba(255,255,255,.14); border-top:2px solid rgba(255,107,122,.28);
-  border-radius:8px; background:rgba(4,2,4,.75); backdrop-filter:blur(10px);
-  text-align:center; font-family:var(--font-title); font-size:clamp(18px,1.9vw,28px); line-height:1.35; font-weight:900;
-  text-shadow:0 2px 3px rgba(0,0,0,.6); z-index:6; transition:border-top-color .3s;
-}
-@keyframes cap-flash { 0%{border-top-color:var(--accent);box-shadow:0 -2px 20px rgba(255,107,122,.32);} 100%{border-top-color:rgba(255,107,122,.28);box-shadow:none;} }
-.caption.flash-in { animation:cap-flash 0.8s ease-out forwards; }
-
-.dock {
-  position:fixed; right:14px; top:14px;
-  width:min(420px,calc(100vw - 28px)); max-height:calc(100vh - 28px); overflow:auto;
-  border:1px solid rgba(255,255,255,.13); border-radius:10px;
-  background:linear-gradient(180deg,rgba(255,255,255,.055),rgba(255,255,255,.018)), rgba(10,4,12,.92);
-  backdrop-filter:blur(16px); z-index:20; box-shadow:0 28px 80px rgba(0,0,0,.44);
-}
-body.panel-hidden .dock { display:none; }
-.dock-head { display:flex; align-items:center; gap:9px; padding:12px 14px; border-bottom:1px solid var(--line); background:linear-gradient(90deg,rgba(255,107,122,.14),transparent 60%),rgba(255,255,255,.04); }
-.dock-title { flex:1; font-size:14px; font-weight:900; }
-.dock-title span { display:block; color:var(--muted); font-size:10px; margin-top:2px; }
-.dock-body { padding:12px; display:grid; gap:12px; }
-.section { border:1px solid rgba(255,255,255,.1); border-radius:8px; background:linear-gradient(180deg,rgba(255,255,255,.052),rgba(255,255,255,.024)); padding:12px; display:grid; gap:10px; }
-.section-title { display:flex; align-items:center; gap:8px; font-size:13px; font-weight:900; }
-.step { width:22px; height:22px; display:grid; place-items:center; border-radius:999px; background:var(--accent); color:#08040a; font-size:12px; font-weight:900; }
-.grid2 { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
-.actions { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
-.actions .wide { grid-column:1/-1; }
-.actions button { min-height:44px; font-weight:900; }
-.field { display:grid; gap:5px; }
-.field label { color:var(--muted); font-size:11px; font-weight:900; }
-.field input,.field select,.field textarea { min-height:40px; }
-.log { color:var(--muted); font-size:11px; line-height:1.45; border:1px solid var(--line); border-radius:8px; padding:8px; background:rgba(0,0,0,.2); max-height:80px; overflow:auto; }
-.status-text { color:var(--muted); font-size:11px; font-weight:800; }
-details { border:1px solid rgba(255,255,255,.1); border-radius:8px; background:rgba(0,0,0,.14); }
-summary { cursor:pointer; padding:10px; color:var(--muted); font-size:12px; font-weight:900; }
-details .inner { padding:0 10px 10px; display:grid; gap:10px; }
-.transcript-plan-row { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
-.plan-btn { position:relative; display:flex; flex-direction:column; align-items:center; gap:3px; padding:9px 8px; border-radius:9px; font-size:12px; font-weight:900; border:1px solid var(--line); background:rgba(255,255,255,.05); color:var(--muted); cursor:pointer; transition:all .15s; }
-.plan-btn.active { border-color:rgba(255,107,122,.5); background:rgba(255,107,122,.14); color:var(--text); }
-.plan-btn.pro    { border-color:rgba(200,144,216,.3); color:rgba(200,144,216,.6); cursor:default; }
-.plan-tag  { font-size:9px; font-weight:700; letter-spacing:.08em; opacity:.7; }
-.plan-soon { position:absolute; top:-7px; right:-4px; background:rgba(200,144,216,.22); border:1px solid rgba(200,144,216,.4); color:#c890d8; font-size:9px; font-weight:900; padding:2px 6px; border-radius:999px; }
-.pro-placeholder { display:grid; gap:10px; padding:14px; border:1px dashed rgba(200,144,216,.25); border-radius:10px; background:rgba(200,144,216,.04); text-align:center; }
-.pro-placeholder-title { font-size:13px; font-weight:900; color:rgba(200,144,216,.8); }
-.pro-placeholder-desc  { font-size:11px; color:var(--muted); line-height:1.6; }
-
-.open-tab { position:fixed; right:14px; bottom:122px; z-index:40; display:none; align-items:center; gap:8px; min-height:44px; padding:0 14px; border:1px solid rgba(255,255,255,.22); border-radius:8px; background:rgba(8,4,10,.86); color:var(--text); box-shadow:0 16px 40px rgba(0,0,0,.44); backdrop-filter:blur(14px); font-weight:900; font-size:13px; }
-body.panel-hidden .open-tab { display:inline-flex; }
-.open-tab-dot { width:8px; height:8px; border-radius:999px; background:var(--accent); box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 18%,transparent); }
-
-.toast { position:absolute; bottom:230px; left:50%; transform:translateX(-50%); padding:9px 18px; border-radius:8px; background:rgba(6,2,8,.92); border:1px solid rgba(255,255,255,.2); color:var(--text); font-size:12px; font-weight:900; letter-spacing:.04em; z-index:50; pointer-events:none; white-space:nowrap; opacity:0; transition:opacity .22s; }
-.toast.show { opacity:1; }
-.mic-live { display:none; color:var(--accent); font-size:10px; font-weight:900; letter-spacing:.1em; }
-.mic-live.active { display:block; animation:blink 1.2s infinite; }
-@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
-@keyframes flashanim { 0%,100%{opacity:1} 50%{opacity:.15} }
-.timer-display.flash { animation:flashanim .35s 8; }
-.shortcut-hint { position:absolute; bottom:90px; right:24px; color:rgba(255,255,255,.28); font-size:9px; font-weight:800; letter-spacing:.08em; line-height:1.8; text-align:right; pointer-events:none; z-index:5; }
-body.obs-mode .stage{background:transparent!important;}
-body.obs-mode .stage::before,body.obs-mode .stage::after{display:none;}
-body.obs-mode .dock,body.obs-mode .open-tab{display:none!important;}
-.obs-btn{padding:3px 9px;border-radius:5px;border:1px solid rgba(255,255,255,.2);background:0;font-size:9px;font-weight:900;color:rgba(255,255,255,.4);cursor:pointer;letter-spacing:.06em;transition:all .15s;flex-shrink:0;}
-.obs-btn.active{border-color:rgba(255,107,122,.5);background:rgba(255,107,122,.12);color:var(--accent);}
-/* ── DOCK ENHANCEMENTS ── */
-.dock-meta{font-size:10px;color:var(--muted);font-weight:700;margin-top:2px;min-height:14px;letter-spacing:.02em;}
-.dock-meta .on{color:#57c87c;}
-.cc-btn{padding:5px 10px;border-radius:7px;border:1px solid rgba(100,210,255,.3);background:rgba(100,210,255,.08);color:#64d2ff;font-size:11px;font-weight:900;cursor:pointer;min-height:36px;transition:all .15s;flex-shrink:0;}
-.cc-btn.off{border-color:var(--line);background:rgba(255,255,255,.04);color:var(--muted);}
-.speed-row{display:flex;gap:4px;padding:0 12px 10px;}
-.spd-btn{flex:1;padding:6px 4px;border-radius:7px;border:1px solid var(--line);background:rgba(255,255,255,.04);font-size:10px;font-weight:900;cursor:pointer;transition:all .15s;color:var(--muted);}
-.spd-btn.active[data-speed="slow"]{border-color:rgba(100,210,255,.4);background:rgba(100,210,255,.08);color:#64d2ff;}
-.spd-btn.active[data-speed="normal"]{border-color:rgba(87,200,124,.4);background:rgba(87,200,124,.08);color:#57c87c;}
-.spd-btn.active[data-speed="fast"]{border-color:rgba(255,107,122,.4);background:rgba(255,107,122,.08);color:#ff6b7a;}
-/* -- UI2: collapsible sections + polish -- */
-.section { cursor:pointer; }
-.section-title { cursor:pointer; user-select:none; }
-.section-toggle { margin-left:auto; font-size:11px; color:var(--muted); transition:transform .22s; opacity:.6; pointer-events:none; }
-.section.collapsed .section-toggle { transform:rotate(-90deg); }
-.section.collapsed > *:not(.section-title) { display:none; }
-.section:hover { background:rgba(255,255,255,.045)!important; }
-.section:nth-child(1){border-left:3px solid var(--accent);}
-.section:nth-child(2){border-left:3px solid rgba(100,210,255,.6);}
-.section:nth-child(3){border-left:3px solid rgba(87,200,124,.6);}
-.section:nth-child(4){border-left:3px solid rgba(200,144,216,.6);}
-.field label { font-size:9px!important; font-weight:900!important; letter-spacing:.1em!important; text-transform:uppercase; }
-.dock-body input:focus,.dock-body textarea:focus,.dock-body select:focus { border-color:rgba(255,255,255,.3)!important; box-shadow:0 0 0 2px rgba(255,255,255,.06); }
-.title-card { transition:box-shadow .35s ease; }
-.title-card.flash { box-shadow:0 0 0 2px var(--accent), 0 8px 32px rgba(0,0,0,.28)!important; animation:card-glow .7s ease-out forwards; }
-@keyframes card-glow { 0%{box-shadow:0 0 0 3px var(--accent),0 0 40px color-mix(in srgb,var(--accent) 28%,transparent);} 100%{box-shadow:0 8px 32px rgba(0,0,0,.28);} }
-.freq-btn{padding:4px 8px;border-radius:6px;border:1px solid var(--line);background:rgba(255,255,255,.04);font-size:10px;font-weight:900;color:var(--muted);cursor:pointer;transition:all .15s;flex-shrink:0;}
-.freq-btn.active{border-color:rgba(87,200,124,.5);background:rgba(87,200,124,.12);color:#57c87c;}
-.freq-btn[data-freq="4"].active{border-color:rgba(255,80,80,.5);background:rgba(255,80,80,.1);color:#ff8080;}
-</style>
-</head>
-<body>
-
-<main class="stage" id="stage">
-  <div id="toast" class="toast"></div>
-  <div class="brand">
-    <div class="mark">RB</div>
-    <div><strong>RAINYBRAIN</strong><span id="brandMode">MOVIE REVIEW</span></div>
-    <div class="mic-live" id="micLive">● LIVE</div>
-    <button class="obs-btn" id="btnObs" onclick="toggleObsMode()">📺 OBS</button>
-  </div>
-  <div class="timer-display" id="timerDisplay">
-    <div>
-      <div class="timer-time" id="timerTime">--:--</div>
-      <div class="timer-label" id="timerLabel">REC TIMER</div>
-    </div>
-    <button class="timer-btn" id="stageTimerToggle" type="button">▶</button>
-    <button class="timer-btn" id="stageTimerReset"  type="button">↺</button>
-  </div>
-  <div class="avatar empty" id="avatar"></div>
-  <div class="movie-poster" id="moviePoster"><img id="posterImg" src="" alt="poster"></div>
-  <div class="comment-tracks" id="commentTracks">
-    <div class="c-track" id="track0"></div>
-    <div class="c-track" id="track1"></div>
-    <div class="c-track" id="track2"></div>
-  </div>
-  <section class="title-card">
-    <div class="kicker" id="kicker">MOVIE REVIEW</div>
-    <div class="card-title" id="cardTitle">今日の映画</div>
-    <div class="card-meta" id="cardMeta"></div>
-    <a class="card-link" id="cardLink" href="#" target="_blank" style="display:none">🎬 詳細・配信を見る</a>
-  </section>
-  <div class="caption" id="caption">「マイク開始」で文字起こしが始まります</div>
-  <div class="shortcut-hint">Space=タイマー　M=マイク　C=コメント　F=全画面　H=パネル</div>
-</main>
-
-<aside id="dock" class="dock">
-  <div class="dock-head">
-    <div style="flex:1;min-width:0;">
-      <div class="dock-title">Movie Review<span>RAINYBRAIN 映画紹介配信</span></div>
-      <div class="dock-meta" id="dockMeta">💬 0件　🎙 停止中</div>
-    </div>
-    <button class="cc-btn" id="ccBtn" onclick="toggleComments()" type="button">💬 ON</button>
-    <button id="hideDock"  type="button">閉じる</button>
-    <button id="micBtn" class="good" type="button">マイク開始</button>
-  </div>
-  <div class="comment-action-row" style="display:flex;gap:5px;padding:0 12px 8px;">
-    <button onclick="spawnComment()" style="flex:1;min-height:28px;font-size:10px;font-weight:900;border:1px solid rgba(255,255,255,.15);border-radius:6px;background:rgba(255,255,255,.04);color:var(--muted);cursor:pointer;transition:all .12s;" title="C">×1</button>
-    <button onclick="for(let i=0;i<3;i++)setTimeout(()=>spawnComment(),i*450)" style="flex:1;min-height:28px;font-size:10px;font-weight:900;border:1px solid rgba(255,183,77,.25);border-radius:6px;background:rgba(255,183,77,.07);color:#ffb74d;cursor:pointer;transition:all .12s;" title="B">×3</button>
-    <button onclick="for(let i=0;i<5;i++)setTimeout(()=>spawnComment(),i*350)" style="flex:1;min-height:28px;font-size:10px;font-weight:900;border:1px solid rgba(255,100,100,.2);border-radius:6px;background:rgba(255,100,100,.05);color:#ff8080;cursor:pointer;transition:all .12s;" title="×5">×5</button>
-  </div>
-  <div class="speed-row">
-    <button class="spd-btn" data-speed="slow"   onclick="setSpeed('slow')"   type="button">🐢 低</button>
-    <button class="spd-btn active" data-speed="normal" onclick="setSpeed('normal')" type="button">▷ 普通</button>
-    <button class="spd-btn" data-speed="fast"   onclick="setSpeed('fast')"   type="button">🔥 高</button>
-  </div>
-  <div class="dock-body">
     <section class="section">
-      <div class="section-title"><span class="step">1</span>映画の情報<span class="section-toggle">▾</span></div>
-      <div class="field"><label for="movieTitle">タイトル</label><input id="movieTitle" placeholder="例: 君の名は。"></div>
-      <div class="grid2">
-        <div class="field"><label for="director">監督</label><input id="director" placeholder="例: 新海誠"></div>
-        <div class="field"><label for="releaseYear">公開年</label><input id="releaseYear" placeholder="例: 2016" type="number" min="1900" max="2099"></div>
+      <div class="section-title"><span class="step">2</span>起承転結フロー</div>
+      <div class="kiso-progress"><div class="kiso-bar" id="kisoBar" style="width:0%"></div></div>
+      <div class="kiso-flow" id="kisoFlow">
+      <div class="kiso-step active" id="kisoStep0">
+        <div class="kiso-num">起</div>
+        <div class="kiso-body">
+          <div class="kiso-label">「この映画、一言で言うと◯◯な体験でした」</div>
+          <div class="kiso-guide">感情から入る。事実の説明は後でOK</div>
+        </div>
       </div>
-      <div class="field"><label for="serviceUrl">配信サービス URL（任意）</label><input id="serviceUrl" placeholder="https://..."></div>
-      <div class="field"><label for="posterUrl">ポスター画像 URL（任意）</label><input id="posterUrl" placeholder="https://..."></div>
-      <div class="actions">
-        <button id="applyBtn" class="primary wide" type="button">ステージに反映</button>
-        <button id="copyObsBtn" type="button">OBS URL</button>
-        <button id="fullscreenBtn" type="button">全画面</button>
+      <div class="kiso-step " id="kisoStep1">
+        <div class="kiso-num">承</div>
+        <div class="kiso-body">
+          <div class="kiso-label">タイトル・監督・キャスト・あらすじ</div>
+          <div class="kiso-guide">ネタバレなし3文。ジャンルと雰囲気を伝える</div>
+        </div>
+      </div>
+      <div class="kiso-step " id="kisoStep2">
+        <div class="kiso-num">転</div>
+        <div class="kiso-body">
+          <div class="kiso-label">予想を裏切られた体験・印象的なシーン</div>
+          <div class="kiso-guide">「ここで泣いた/笑った/考えた」と感情ベースで語る</div>
+        </div>
+      </div>
+      <div class="kiso-step " id="kisoStep3">
+        <div class="kiso-num">結</div>
+        <div class="kiso-body">
+          <div class="kiso-label">おすすめ対象＋星評価</div>
+          <div class="kiso-guide">「◯◯な気分の夜に見てほしい」など状況提案で締める</div>
+        </div>
+      </div>
+      </div>
+      <div class="kiso-nav">
+        <button onclick="kisoBack()" type="button">← 戻る</button>
+        <button onclick="kisoNext()" type="button" id="kisoNextBtn" style="border-color:rgba(var(--accent-rgb),.45);background:rgba(var(--accent-rgb),.14);color:var(--accent);">次のステップ →</button>
+        <button onclick="kisoReset()" type="button">リセット</button>
       </div>
     </section>
-    <section class="section">
-      <div class="section-title"><span class="step">2</span>収録タイマー<span class="section-toggle">▾</span></div>
-      <div class="grid2">
-        <div class="field"><label for="timerMinutes">分</label><input id="timerMinutes" type="number" min="1" max="240" value="60"></div>
-        <div class="field"><label for="timerPreset">プリセット</label>
-          <select id="timerPreset"><option value="60">60分</option><option value="30">30分</option><option value="90">90分</option><option value="120">120分</option></select>
-        </div>
-      </div>
-      <div class="actions">
-        <button id="timerSetBtn"   type="button">反映</button>
-        <button id="timerStartBtn" class="good" type="button">開始</button>
-        <button id="timerResetBtn" type="button">リセット</button>
-      </div>
-    </section>
-    <section class="section">
-      <div class="section-title"><span class="step">3</span>文字起こし<span class="section-toggle">▾</span></div>
-      <div class="transcript-plan-row">
-        <button class="plan-btn active" id="planFreeBtn" type="button">無料<span class="plan-tag">Web Speech</span></button>
-        <button class="plan-btn pro"    id="planProBtn"  type="button">Pro<span class="plan-tag">Whisper API</span><span class="plan-soon">準備中</span></button>
-      </div>
-      <div id="planFreeArea">
-        <div class="actions">
-          <button id="clearTranscriptBtn" type="button">字幕クリア</button>
-          <button id="commentBtn" class="warn" type="button">コメント1件</button>
-        </div>
-        <div class="field"><label for="manualTranscript">話題を手入力（Enter で反映）</label><input id="manualTranscript" placeholder="例: この映画のここが好き"></div>
-        <div id="transcriptLog" class="log">まだ文字起こしはありません。</div>
-      </div>
-      <div id="planProArea" style="display:none">
-        <div class="pro-placeholder">
-          <div style="font-size:1.8rem">🎙</div>
-          <div class="pro-placeholder-title">Whisper API 連携</div>
-          <div class="pro-placeholder-desc">高精度な音声認識。Pro プランで利用可能になります。</div>
-        </div>
-      </div>
-    </section>
-    <details>
-      <summary>コメント人格設定</summary>
-      <div class="inner">
-        <div class="field"><label for="personaSheetUrl">人格 CSV / Google Sheets URL</label><input id="personaSheetUrl" value="https://docs.google.com/spreadsheets/d/1YNQUnDv18WsMm7H84Ytg3lIgvWmetLZ3bqyMm3RCgkI/export?format=csv"></div>
-        <div class="grid2">
-          <div class="field"><label for="commentSpeed">コメント速度</label>
-            <select id="commentSpeed"><option value="normal">ふつう</option><option value="slow">ゆっくり</option><option value="fast">多め</option></select>
-          </div>
-          <div class="field"><label for="avatarInput">Vキャラ素材 URL</label><input id="avatarInput" placeholder="assets/v-character.webm"></div>
-        </div>
-        <div class="actions">
-          <button id="syncPersonaBtn" class="primary" type="button">人格同期</button>
-          <a href="https://rainybrainch.github.io/comment-studio/ai-comment-personas.html" target="_blank"
-             style="display:flex;align-items:center;justify-content:center;min-height:44px;padding:7px 10px;border:1px solid rgba(224,160,255,.45);border-radius:8px;background:rgba(224,160,255,.12);color:#e0a0ff;font-weight:900;font-size:12px;text-decoration:none;letter-spacing:.04em;">🎭 Channel OS</a>
-        </div>
-        <div class="status-text" id="personaStatus">未同期</div>
-        <div style="border-top:1px solid rgba(255,255,255,.07);padding-top:9px;margin-top:9px;display:grid;gap:5px;">
-          <div style="font-size:9px;font-weight:900;letter-spacing:.1em;color:var(--muted);text-transform:uppercase;">✨ YouTube から人格生成</div>
-          <input id="ytGenUrl" placeholder="https://youtube.com/..." style="width:100%;min-height:34px;font-size:11px;border:1px solid var(--line);border-radius:7px;background:rgba(0,0,0,.3);color:var(--text);padding:5px 9px;outline:none;">
-          <input id="ytGenDesc" placeholder="視聴者層・特徴（任意）" style="width:100%;min-height:30px;font-size:11px;border:1px solid var(--line);border-radius:7px;background:rgba(0,0,0,.3);color:var(--text);padding:5px 9px;outline:none;">
-          <div style="display:flex;gap:5px;">
-            <select id="ytGenCount" style="min-height:32px;font-size:11px;border:1px solid var(--line);border-radius:7px;background:rgba(0,0,0,.3);color:var(--text);padding:3px 6px;"><option value="4">4人</option><option value="6" selected>6人</option><option value="8">8人</option></select>
-            <button onclick="genPersonasFromYT('ytGenUrl','ytGenDesc','ytGenCount','ytGenStatus')" style="flex:1;min-height:32px;font-size:11px;font-weight:900;border:1px solid rgba(100,210,255,.3);background:rgba(100,210,255,.08);color:#64d2ff;border-radius:7px;cursor:pointer;">✨ 生成</button>
-          </div>
-          <div id="ytGenStatus" style="font-size:10px;color:var(--muted);min-height:14px;"></div>
-        </div>
-        <div style="border-top:1px solid rgba(255,255,255,.08);padding-top:10px;display:flex;flex-direction:column;gap:6px;">
-          <div style="font-size:9px;font-weight:900;letter-spacing:.1em;color:var(--muted);text-transform:uppercase;">AI コメント生成 <span style="font-size:9px;background:rgba(100,210,255,.1);color:#64d2ff;border:1px solid rgba(100,210,255,.25);padding:1px 6px;border-radius:999px;text-transform:none;letter-spacing:0;">Gemini 2.0 Flash</span></div>
-          <select id="commentEngine" style="min-height:36px;font-size:11px;"><option value="template">テンプレート（無料）</option><option value="gemini">Gemini AI</option></select>
-          <div id="geminiArea" style="display:none;flex-direction:column;gap:5px;">
-            <div style="display:flex;gap:5px;"><input id="geminiKey" type="password" placeholder="AIzaSy... または AQ.Ab8..." style="flex:1;min-height:36px;font-size:11px;"><button onclick="saveGeminiKey()" style="white-space:nowrap;min-height:36px;padding:0 10px;font-size:11px;font-weight:900;border:1px solid rgba(100,210,255,.3);background:rgba(100,210,255,.08);color:#64d2ff;border-radius:8px;cursor:pointer;flex-shrink:0;">保存</button></div>
-            <div id="geminiStatus" style="font-size:10px;color:var(--muted);"></div>
-          </div>
-        </div>
-      </div>
-    </details>
-  </div>
-</aside>
-
-<button class="open-tab" id="openDock" type="button">
-  <span class="open-tab-dot"></span>設定
-</button>
-
-<script>
-const STREAM_GENRES=["映画","映像","レビュー","シネマ","エンタメ","感動"];
-(() => {
-"use strict";
-const SHARED_PERSONA_KEY = "rainybrain_personas_v1";
-const SHARED_COMMENT_KEY = "rainybrain_comment_log_v1";
-const SETTINGS_KEY       = "rainybrain_movie_stream_v1";
-const GEMINI_KEY_STORE   = "streaming_gemini_key_v1";
-const PARAMS = new URLSearchParams(location.search);
-const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-const $ = id => document.getElementById(id);
-
-const state = {
-  movieTitle:"", director:"", releaseYear:"", serviceUrl:"", posterUrl:"",
-  commentEngine:"template",
-  avatarInput:"", personaSheetUrl:"https://docs.google.com/spreadsheets/d/1YNQUnDv18WsMm7H84Ytg3lIgvWmetLZ3bqyMm3RCgkI/export?format=csv",
-  commentSpeed:"normal",
-  timer:{ durationSec:3600, remainingSec:3600, running:false, endAt:0 }
-};
-Object.assign(state, loadSettings());
-if(PARAMS.get("title")) state.movieTitle = PARAMS.get("title");
-state.timer = normalizeTimer(state.timer);
-
-let personas=loadPersonas(), transcript=[], commentTimer=null, recognition=null;
-let restartTimer=null, listening=false, audioCtx=null, micStream=null;
-let lastKey="", transcriptBuf="", flushTimer=null, trackRR=0;
-let commentsEnabled=true, commentCountN=0;
-
-init();
-
-function init() { hydrate(); bind(); applyStage(); startClock(); scheduleComment(); initCollapsible(); }
-
-function toggleComments(){
-  commentsEnabled=!commentsEnabled;
-  const btn=$("ccBtn");
-  if(btn){btn.textContent=commentsEnabled?"💬 ON":"💬 OFF";btn.classList.toggle("off",!commentsEnabled);}
-  toast(commentsEnabled?"💬 コメント ON":"💬 コメント OFF");
-  if(commentsEnabled)scheduleComment();else clearTimeout(commentTimer);
-}
-
-function initCollapsible(){
-  document.querySelectorAll(".dock-body .section").forEach((sec,i)=>{
-    const title=sec.querySelector(".section-title");
-    if(!title)return;
-    if(i>0)sec.classList.add("collapsed");
-    title.addEventListener("click",()=>{
-      sec.classList.toggle("collapsed");
-    });
-  });
-}
-function setSpeed(spd){
-  state.commentSpeed=spd;
-  document.querySelectorAll(".spd-btn").forEach(b=>b.classList.toggle("active",b.dataset.speed===spd));
-  if($("commentSpeed"))$("commentSpeed").value=spd;
-  saveSettings();const _tc=document.querySelector('.title-card');if(_tc){_tc.classList.remove('flash');void _tc.offsetWidth;_tc.classList.add('flash');}if(commentsEnabled)scheduleComment();
-  toast(spd==="slow"?"🐢 低速":spd==="fast"?"🔥 高速":"▷ 普通速");
-}
-function updateDockMeta(){
-  const el=$("dockMeta");
-  if(el)el.innerHTML=`💬 ${commentCountN}件　🎙 ${listening?'<span class="on">● 収録中</span>':"停止中"}`;
-}
-
-function hydrate() {
-  ["movieTitle","director","releaseYear","serviceUrl","posterUrl","avatarInput","personaSheetUrl","commentSpeed"].forEach(id=>{
-    if($(id)) $(id).value = state[id]||"";
-  });
-  $("timerMinutes").value = Math.max(1, Math.round(state.timer.durationSec/60));
-  $("timerPreset").value  = String(Math.max(1, Math.round(state.timer.durationSec/60)));
-  const gk = localStorage.getItem(GEMINI_KEY_STORE)||"";
-  if($("geminiKey")) $("geminiKey").value = gk;
-  if(state.commentEngine==="gemini"||gk){ if($("commentEngine"))$("commentEngine").value="gemini"; if($("geminiArea"))$("geminiArea").style.display="flex"; state.commentEngine="gemini"; }
-  document.querySelectorAll(".spd-btn").forEach(b=>b.classList.toggle("active",b.dataset.speed===(state.commentSpeed||"normal")));
-}
-
-function bind() {
-  ["movieTitle","director","releaseYear","serviceUrl","posterUrl","avatarInput","personaSheetUrl","commentSpeed"].forEach(id=>{
-    if($(id)) $(id).addEventListener("input",()=>{ state[id]=$(id).value; saveSettings();const _tc=document.querySelector('.title-card');if(_tc){_tc.classList.remove('flash');void _tc.offsetWidth;_tc.classList.add('flash');} applyStage(); });
-  });
-  $("applyBtn")?.addEventListener("click",applyStage);
-  $("copyObsBtn")?.addEventListener("click",copyObsUrl);
-  $("fullscreenBtn")?.addEventListener("click",toggleFullscreen);
-  $("timerPreset")?.addEventListener("change",()=>{ $("timerMinutes").value=$("timerPreset").value; setTimerFromInput(); });
-  $("timerSetBtn")?.addEventListener("click",setTimerFromInput);
-  $("timerStartBtn")?.addEventListener("click",toggleTimer);
-  $("timerResetBtn")?.addEventListener("click",resetTimer);
-  $("stageTimerToggle")?.addEventListener("click",toggleTimer);
-  $("stageTimerReset")?.addEventListener("click",resetTimer);
-  $("micBtn")?.addEventListener("click",toggleMic);
-  $("clearTranscriptBtn")?.addEventListener("click",()=>{ transcript=[]; $("transcriptLog").textContent="まだ文字起こしはありません。"; $("caption").textContent="「マイク開始」で文字起こしが始まります"; });
-  $("commentBtn")?.addEventListener("click",spawnComment);
-  $("manualTranscript")?.addEventListener("keydown",e=>{ if(e.key!=="Enter")return; const v=$("manualTranscript").value.trim(); if(!v)return; $("manualTranscript").value=""; pushTranscript(v); spawnComment(); });
-  $("syncPersonaBtn")?.addEventListener("click",syncPersonas);
-  $("commentEngine")?.addEventListener("change",()=>{ state.commentEngine=$("commentEngine").value; if($("geminiArea"))$("geminiArea").style.display=state.commentEngine==="gemini"?"flex":"none"; saveSettings();const _tc=document.querySelector('.title-card');if(_tc){_tc.classList.remove('flash');void _tc.offsetWidth;_tc.classList.add('flash');} });
-  $("hideDock")?.addEventListener("click",()=>document.body.classList.add("panel-hidden"));
-  $("openDock")?.addEventListener("click",()=>document.body.classList.remove("panel-hidden"));
-  $("planFreeBtn")?.addEventListener("click",()=>{ $("planFreeBtn").classList.add("active"); $("planProBtn").classList.remove("active"); $("planFreeArea").style.display=""; $("planProArea").style.display="none"; });
-  $("planProBtn")?.addEventListener("click",()=>{ $("planProBtn").classList.add("active"); $("planFreeBtn").classList.remove("active"); $("planFreeArea").style.display="none"; $("planProArea").style.display=""; });
-  document.addEventListener("fullscreenchange",()=>{ $("fullscreenBtn").textContent=document.fullscreenElement?"全画面解除":"全画面"; });
-  document.addEventListener("keydown",e=>{
-    if(e.target.matches("input,textarea,select"))return;
-    if(e.code==="Space"){e.preventDefault();toggleTimer();toast(state.timer.running?"⏸ タイマー停止":"▶ タイマー開始");}
-    if(e.key==="m"||e.key==="M") toggleMic();
-    if(e.key==="c"||e.key==="C"){spawnComment();toast("💬 コメント生成");}
-    if(e.key==="f"||e.key==="F") toggleFullscreen();
-    if(e.key==="h"||e.key==="H"){document.body.classList.toggle("panel-hidden");toast(document.body.classList.contains("panel-hidden")?"パネル非表示":"パネル表示");}
-  });
-}
-
-function applyStage() {
-  $("cardTitle").textContent = state.movieTitle||"今日の映画";
-  const meta=[state.director?`監督: ${state.director}`:"",state.releaseYear?`${state.releaseYear}年`:""].filter(Boolean).join("　");
-  $("cardMeta").textContent = meta;
-  const lnk=$("cardLink");
-  if(state.serviceUrl){lnk.href=state.serviceUrl;lnk.style.display="";}
-  else lnk.style.display="none";
-  const poster=$("moviePoster");
-  if(state.posterUrl){$("posterImg").src=state.posterUrl;poster.classList.add("show");}
-  else poster.classList.remove("show");
-  updateAvatar();
-}
-
-function updateAvatar(){
-  const src=state.avatarInput.trim(), av=$("avatar");
-  av.innerHTML=""; av.classList.toggle("empty",!src);
-  if(!src)return;
-  const el=document.createElement(/\.(webm|mp4|mov)(\?.*)?$/i.test(src)?"video":"img");
-  el.src=src;
-  if(el.tagName==="VIDEO"){el.autoplay=true;el.loop=true;el.muted=true;el.playsInline=true;}
-  av.append(el);
-}
-
-function normalizeTimer(t){
-  const dur=Math.max(60,parseInt(t?.durationSec||3600,10)||3600);
-  const endAt=parseInt(t?.endAt||0,10)||0;
-  const run=Boolean(t?.running&&endAt>Date.now());
-  const rem=run?Math.max(0,Math.ceil((endAt-Date.now())/1000)):Math.max(0,Math.min(dur,parseInt(t?.remainingSec||dur,10)||dur));
-  return{durationSec:dur,remainingSec:rem,running:run,endAt:run?endAt:0};
-}
-function setTimerFromInput(){
-  const m=Math.max(1,Math.min(240,parseInt($("timerMinutes").value||"60")||60));
-  state.timer={durationSec:m*60,remainingSec:m*60,running:false,endAt:0};
-  saveSettings();const _tc=document.querySelector('.title-card');if(_tc){_tc.classList.remove('flash');void _tc.offsetWidth;_tc.classList.add('flash');}updateClock();
-}
-function toggleTimer(){
-  state.timer=normalizeTimer(state.timer);
-  if(state.timer.running){state.timer.running=false;state.timer.endAt=0;}
-  else{if(state.timer.remainingSec<=0)state.timer.remainingSec=state.timer.durationSec;state.timer.running=true;state.timer.endAt=Date.now()+state.timer.remainingSec*1000;}
-  saveSettings();const _tc=document.querySelector('.title-card');if(_tc){_tc.classList.remove('flash');void _tc.offsetWidth;_tc.classList.add('flash');}updateClock();
-}
-function resetTimer(){
-  state.timer=normalizeTimer(state.timer);state.timer.running=false;state.timer.endAt=0;state.timer.remainingSec=state.timer.durationSec;
-  saveSettings();const _tc=document.querySelector('.title-card');if(_tc){_tc.classList.remove('flash');void _tc.offsetWidth;_tc.classList.add('flash');}updateClock();
-}
-function updateClock(){
-  const prevRem=state.timer.remainingSec;state.timer=normalizeTimer(state.timer);
-  if(state.timer.running&&state.timer.remainingSec<=0){state.timer.running=false;state.timer.endAt=0;if(prevRem>0){toast("⏱ タイマー終了！");$("timerDisplay")?.classList.add("flash");setTimeout(()=>$("timerDisplay")?.classList.remove("flash"),2800);}}
-  $("timerTime").textContent=fmt(state.timer.remainingSec);
-  $("timerLabel").textContent=state.timer.running?"REC RUNNING":"REC TIMER";
-  $("timerDisplay").classList.toggle("running",state.timer.running);
-  $("timerStartBtn").textContent=state.timer.running?"停止":"開始";
-  $("stageTimerToggle").textContent=state.timer.running?"Ⅱ":"▶";
-  $("stageTimerToggle").classList.toggle("running",state.timer.running);
-}
-function fmt(sec){const n=Math.max(0,parseInt(sec||0)||0),h=Math.floor(n/3600),m=Math.floor((n%3600)/60),s=n%60;return h>0?`${h}:${pad(m)}:${pad(s)}`:`${pad(m)}:${pad(s)}`;}
-function pad(n){return String(n).padStart(2,"0");}
-function startClock(){updateClock();setInterval(updateClock,1000);}
-function toggleFullscreen(){document.fullscreenElement?document.exitFullscreen?.():$("stage").requestFullscreen?.();}
-
-function pushTranscript(text){
-  const clean=text.replace(/\s+/g," ").trim();if(!clean)return;
-  const key=clean.replace(/[\s、。,.!！?？]/g,"");if(!key||key===lastKey)return;
-  lastKey=key;transcript.unshift({text:clean,at:Date.now()});transcript=transcript.slice(0,40);
-  const cap=$("caption");cap.textContent=clean;cap.classList.remove("flash-in");void cap.offsetWidth;cap.classList.add("flash-in");
-  $("transcriptLog").textContent=transcript.slice(0,10).map(x=>x.text).join("\n");
-  if(clean.length>=12)setTimeout(spawnComment,900);
-}
-function queueTranscript(text){
-  transcriptBuf=[transcriptBuf,text].filter(Boolean).join(" ").replace(/\s+/g," ").trim();
-  clearTimeout(flushTimer);flushTimer=setTimeout(()=>{const t=transcriptBuf;transcriptBuf="";if(t)pushTranscript(t);},820);
-}
-function recentText(){return transcript.slice(0,6).map(x=>x.text).reverse().join("\n").slice(-1000);}
-
-function toggleMic(){
-  if(!SpeechRecognition){$("caption").textContent="⚠ Chrome / Edge が必要です";toast("Chrome/Edge の音声認識が必要です");return;}
-  if(listening){clearTimeout(restartTimer);listening=false;try{recognition.stop();}catch{}stopMeter();$("micBtn").textContent="マイク開始";$("micBtn").className="good";$("micLive")?.classList.remove("active");toast("マイク停止");updateDockMeta();return;}
-  recognition=new SpeechRecognition();recognition.lang="ja-JP";recognition.continuous=true;recognition.interimResults=true;
-  recognition.onresult=e=>{let fin="",int="";for(let i=e.resultIndex;i<e.results.length;i++){const t=e.results[i][0]?.transcript||"";if(e.results[i].isFinal)fin+=t;else int+=t;}if(int)$("caption").textContent=int;if(fin.trim())queueTranscript(fin);};
-  recognition.onerror=()=>{if(listening){clearTimeout(restartTimer);restartTimer=setTimeout(()=>{if(listening)try{recognition.start();}catch{}},1200);}};
-  recognition.onend=()=>{if(listening){clearTimeout(restartTimer);restartTimer=setTimeout(()=>{if(listening)try{recognition.start();}catch{}},700);}};
-  recognition.start();listening=true;$("micBtn").textContent="マイク停止";$("micBtn").className="warn";$("micLive")?.classList.add("active");toast("マイク開始 — 話してください");startMeter();updateDockMeta();
-}
-async function startMeter(){try{micStream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true}});audioCtx=new AudioContext();const an=audioCtx.createAnalyser();audioCtx.createMediaStreamSource(micStream).connect(an);}catch{}}
-function stopMeter(){if(audioCtx){audioCtx.close().catch(()=>{});audioCtx=null;}if(micStream){micStream.getTracks().forEach(t=>t.stop());micStream=null;}}
-
-function spawnComment(){
-  const k=localStorage.getItem(GEMINI_KEY_STORE)||"";
-  if(state.commentEngine==="gemini"&&k){spawnGeminiComment();return;}
-  const p=pickPersona();const text=buildComment(p);addComment(text,p.name,p.color);saveCommentLog({user:p.name,text});
-}
-async function spawnGeminiComment(){
-  const apiKey=localStorage.getItem(GEMINI_KEY_STORE)||"";
-  const p=pickPersona();
-  const topic=recentText()||[state.movieTitle,state.director].filter(Boolean).join(" ")||"映画配信中";
-  const prompt=`あなたはYouTubeライブ配信の視聴者です。ロール：${p.roleType||"共感勢"}、名前：${p.name}。\n配信トピック：「${topic.slice(0,200)}」\n自然な日本語コメントを1つ、40文字以内で。コメントのみ返してください。`;
-  try{
-    const resp=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{maxOutputTokens:60,temperature:0.95}})});
-    if(!resp.ok)throw new Error();
-    const data=await resp.json();
-    const comment=(data.candidates?.[0]?.content?.parts?.[0]?.text||"").trim().replace(/\n.*/,"").slice(0,40);
-    if(!comment)throw new Error();
-    addComment(comment,p.name,p.color);saveCommentLog({user:p.name,text:comment});
-  }catch{const text=buildComment(p);addComment(text,p.name,p.color);saveCommentLog({user:p.name,text});}
-}
-function saveGeminiKey(){
-  const k=$("geminiKey")?.value.trim(); if(!k)return;
-  localStorage.setItem(GEMINI_KEY_STORE,k);
-  state.commentEngine="gemini"; if($("commentEngine"))$("commentEngine").value="gemini";
-  if($("geminiArea"))$("geminiArea").style.display="flex";
-  if($("geminiStatus")){$("geminiStatus").textContent="✓ 保存済み";$("geminiStatus").style.color="#64d2ff";}
-  saveSettings();const _tc=document.querySelector('.title-card');if(_tc){_tc.classList.remove('flash');void _tc.offsetWidth;_tc.classList.add('flash');} toast("Gemini APIキーを保存しました");
-}
-function toggleObsMode(){
-  document.body.classList.toggle("obs-mode");
-  const btn=$("btnObs"); if(btn)btn.classList.toggle("active");
-}
-function addComment(text,name,color){ commentCountN++;updateDockMeta();
-  const track=document.getElementById(`track${trackRR%3}`);trackRR++;if(!track)return;
-  const speed=Math.max(10,10+text.length*0.3+Math.random()*5);
-  const node=document.createElement("div");node.className="comment-h";
-  node.style.setProperty("--user-color",color||"var(--accent)");node.style.setProperty("--speed",speed+"s");
-  const u=document.createElement("span");u.className="user";u.textContent="@"+name;
-  const t=document.createElement("span");t.className="text";t.textContent=text;
-  node.append(u,t);track.append(node);node.addEventListener("animationend",()=>node.remove());
-}
-function pickPersona(){
-  const list=personas.length?personas:defaultPersonas();const text=recentText();
-  return list.map(p=>({p,s:relevance(p,text)+Math.random()*.4})).sort((a,b)=>b.s-a.s).slice(0,Math.min(list.length,6))[Math.floor(Math.random()*Math.min(list.length,6))].p;
-}
-function relevance(p,text){
-  const hay=[p.name,p.roleType,p.reactionPattern,p.catchphrase,...(p.words||[]),...(p.interests||[])].join(" ");
-  let s=0;text.split(/[\s、。,]+/).filter(w=>w.length>=2).forEach(w=>{if(hay.includes(w))s+=2;});
-  if(/映画|監督|シーン|演技|脚本|ストーリー|感動|泣いた/.test(text)&&/映画|シネマ|エンタメ/.test(hay))s+=4;
-  if(/音楽|サントラ|BGM/.test(text)&&/音楽|サントラ/.test(hay))s+=3;
-  return s;
-}
-// ══ Advanced Comment Engine v2 ══
-const _RB_RECENT={};
-function _rbTrack(name,text){const r=_RB_RECENT[name]||(_RB_RECENT[name]=[]);r.unshift(text);if(r.length>10)r.pop();}
-function _rbPick(pool,name){const r=_RB_RECENT[name]||[];const f=pool.filter(t=>!r.includes(t));const s=f.length>0?f:pool;return s[Math.floor(Math.random()*s.length)];}
-function _buildTemplates(role,kw,p){
-  const w=(p.words||[]).concat(p.interests||[]);
-  const pw=w.length?w[Math.floor(Math.random()*w.length)]:kw;
-  const T={
-    "共感勢":[kw+"なるほど","今の話めっちゃわかる",kw+"ってそういうことか","今日初めて知った","深い","このシリーズ好き",kw+"もっと聞きたい","言語化ありがとう","ほんとそう思う",pw+"と繋がった","自分も同じ経験ある","何度も見返したい",kw+"が刺さった","うわそういうことか","聞いてよかった"],
-    "知識勢":[kw+"の見方が面白い","もっと掘り下げてほしい",kw+"と"+pw+"の関係が気になる","考察したくなる","この視点は新しい","専門書でも別の説がある","実はここ奥が深い",kw+"の歴史も気になる","文献漁りたくなった","研究者の意見も聞きたい","データと逆になることある","定義から確認したい","ここ諸説ある",pw+"目線だと違う","理論と実践の乖離がある"],
-    "質問勢":[kw+"はどこが入口？","もう少し詳しく","生活とどう繋がる？","初心者でもわかる？",kw+"と"+pw+"の違いは？","具体例があると助かる","どこで勉強した？","参考になる本ある？","次回のテーマは？","もう一度説明して","なんで"+kw+"が大事なの？","実生活での使い方が知りたい","初心者向けにまとめて",pw+"との関連も教えて","聞いていい？"],
-    "懐疑勢":[kw+"本当に合ってる？","別の見方もある","前提から確認したい","慎重に見た方がいい","反論もある","それだけじゃない","エビデンスは？",kw+"って定義が違う","100%そうとは言えない","ケースによる","留保が必要では","データ次第じゃない？","専門家も意見分かれる","前提が違うと結論変わる","鵜呑みにしない方がいい"],
-    "応援勢":["いい流れ！",kw+"のとこ好き","続けてください","この調子で","配信待ってた","いつも楽しみ","頑張れ","最高","ずっと応援してる","次回も来る",pw+"の話もいつか","毎回楽しみ","今日も良かった","モチベ上がる","ありがとう"],
-    "初心者勢":["なるほど！",kw+"初めて聞いた","わかりやすい","ありがとうございます","勉強になった","難しいけど面白い","もっと知りたい","メモしてます","初心者でもわかった",pw+"との違いがわかった","次回も見ます","初めて来たけどわかりやすい","好きになった","友達にも教えたい","全然知らなかった"],
-    "ネタ勢":["草","天才か",kw+"クセ強い","これは名言","待って笑う","草不可避","天才の発想","ほんと？笑","やばすぎ","なんでそうなった","それで笑う","好きすぎる","伝説の配信","歴史に残る","最高すぎ"],
-    "妄想勢":[kw+"から広がる世界が好き","次回の展開が気になる","別の角度で考えると","もしも"+kw+"がなかったら","10年後どうなってるんだろ",pw+"との掛け合わせが面白い","深掘りしたら無限に広がる","誰かと議論したくなった","自分なりの答え出てきた","違う分野にも繋がる","壮大だな","想像膨らむ","あとで調べる","もっと考えたい","ここから派生する話がある"],
-    "開発者勢":["実装してみたくなった","アーキテクチャが気になる","データ構造的に面白い","自動化できそう",kw+"をシステムで表すと","API設計に応用できる","アルゴリズム的な視点が好き","ここ最適化できそう","ツール作りたい","ロジックが綺麗","エンジニアとして共感","コードで書くと面白い","スケールするかな","設計が大事","技術的負債になりそう"],
-    "投資家勢":["リターン計算してた",kw+"のリスクは？","ポートフォリオ見直すか","タイミングが難しい","長期目線で見てる","短期と長期で違う","分散の重要性がわかる","NISAで試してる","損切りのタイミングって",pw+"との相関がある","経済指標と連動してる","配当狙いで","積み立て派なので","チャート見てた","ベンチマーク比較したい"]
-  };
-  return T[role]||T["共感勢"];
-}
-function buildComment(p){
-  const recentTxt=typeof recentText==="function"?recentText():"";
-  const kw=recentTxt.split(/[\s、。,，\n]+/).filter(w=>w.length>=2)[0]||(p.words||[])[0]||(typeof state!=="undefined"?(state.keyword||""):"")|| "今の話";
-  const role=p.roleType||"共感勢";
-  const name=p.name||"?";
-  if(p.catchphrase&&(p.catchphrase.length>3)&&Math.random()<.38)return p.catchphrase.slice(0,40);
-  const templates=_buildTemplates(role,kw,p);
-  const text=_rbPick(templates,name);
-  _rbTrack(name,text);
-  return text.slice(0,40);
-}
-function pickPersona(){
-  const list=personas.length?personas:defaultPersonas();
-  if(!list.length)return defaultPersonas()[0];
-  const text=typeof recentText==="function"?recentText():"";
-  const scored=list.map(p=>({p,s:_relevanceScore(p,text)+Math.random()*.4})).sort((a,b)=>b.s-a.s);
-  const topN=Math.min(scored.length,Math.max(3,Math.ceil(scored.length/2)));
-  return scored[Math.floor(Math.random()*topN)].p;
-}
-function _relevanceScore(p,text){
-  if(!text)return 0;
-  const hay=[p.name,p.roleType,p.reactionPattern,p.catchphrase,...(p.words||[]),...(p.interests||[]),p.tone||""].join(" ").toLowerCase();
-  let s=0;
-  text.toLowerCase().split(/s|、|。|,/).filter(w=>w.length>=2).forEach(w=>{if(hay.includes(w))s+=2;});
-  const sg=typeof STREAM_GENRES!=="undefined"?STREAM_GENRES:[];
-  const pg=(p.genres||[]).concat(p.tags||[]);
-  s+=pg.filter(g=>sg.includes(g)).length*5;
-  const boosts=typeof _domainBoosts!=="undefined"?_domainBoosts:[[/経済|金利|インフレ|為替/,/経済|知識|分析|投資/,5],[/ゲーム|攻略|ボス/,/ゲーム|エンタメ|応援/,4],[/映画|監督|シーン/,/映画|シネマ/,4],[/本|小説|作者/,/読書|文学|知識/,4],[/漫画|キャラ|作画/,/漫画|アニメ/,4],[/投資|株|NISA/,/投資|知識|分析/,5],[/草|笑/,/ネタ|共感/,3]];
-  boosts.forEach(([a,b,sc])=>{if(a.test(text.toLowerCase())&&b.test(hay))s+=sc;});
-  return s;
-}
-// ══ End Advanced Comment Engine v2 ══
-  if(p.catchphrase&&Math.random()<.36)return p.catchphrase.slice(0,40);
-  const text=recentText(),kw=text.split(/[\s、。,]+/).filter(w=>w.length>=2)[0]||(p.words||[])[0]||"今のシーン";
-  const role=p.roleType||"共感勢";
-  const map={
-    "応援勢":   ["この映画ほんとに好き","何度見ても泣ける","紹介してくれてありがとう","最後まで語ってほしい"],
-    "質問勢":   [`${kw}のシーンもっと聞かせて`,"監督の意図気になってた","続編あるんですか","伏線のとこ知りたい"],
-    "共感勢":   [`${kw}わかる`,"自分も同じとこ好き","言語化してくれた","あのシーン最高だよな","鑑賞後しばらく立てなかった"],
-    "懐疑勢":   [`${kw}は賛否あるよね`,"評価高いのはわかるけど","原作派の意見も聞きたい","2作目はどうかな"],
-    "知識勢":   [`${kw}の演出背景が深い`,"映画史的に重要な作品","脚本が天才的","撮影技法に注目してほしい"],
-    "ネタ勢":   ["草","天才の所業","この名シーンすぎる","それは泣くわ"],
-    "妄想勢":   [`${kw}から考えると世界観が広がる`,"この監督の次回作も絶対見る","舞台裏が気になりすぎる","制作秘話知りたい"],
-    "初心者勢": [`${kw}初めて聞いた`,"難しそうだけど見てみたくなった","どのサービスで見れますか","まず何から見ればいい"],
-    "開発者勢": ["映像技術すごい","VFXの使い方が巧み","この構図計算されてる","音響設計が好き"],
-    "投資家勢": ["흥행収入気になる","IMAXで見るべきだった","円盤の特典狙ってる","グッズ買った"]
-  };
-  const pool=map[role]||map["共感勢"];
-  return pool[Math.floor(Math.random()*pool.length)].slice(0,40);
-}
-function defaultPersonas(){return[
-  {name:"RAINYファン",       roleType:"共感勢",   catchphrase:"この配信ずっと待ってた",    color:"#4fc3f7", words:["配信","応援"],     genres:["配信","エンタメ","学習"],        tags:["応援系","配信好き"]},
-  {name:"徹夜ラジオさん",    roleType:"共感勢",   catchphrase:"深夜に聴きたい声",          color:"#a8d8ea", words:["深夜","ラジオ"],   genres:["音楽","配信","歌"],              tags:["深夜リスナー","音楽好き"]},
-  {name:"攻略wiki民",        roleType:"知識勢",   catchphrase:"それ実は裏技がある",        color:"#57d68d", words:["攻略","知識"],     genres:["ゲーム","実況","攻略"],          tags:["知識系","ゲーム好き"]},
-  {name:"不満足なソクラテス", roleType:"懐疑勢",   catchphrase:"その問いは面白い",          color:"#c890d8", words:["哲学","疑問"],     genres:["学習","哲学","公開学習"],        tags:["懐疑的","議論好き"]},
-  {name:"JALランキング",      roleType:"知識勢",   catchphrase:"これは上位入り不可避",      color:"#f2c14e", words:["ランキング","分析"],genres:["経済","投資","分析"],            tags:["分析好き","データ重視"]},
-  {name:"初見さん",           roleType:"初心者勢", catchphrase:"初めて来たけどわかりやすい",color:"#a8d08d", words:["初めて","入門"],   genres:["配信","エンタメ","学習"],        tags:["初心者","気軽"]},
-  {name:"竜神王",             roleType:"応援勢",   catchphrase:"これぞ学びの王道よ",        color:"#ffd700", words:["応援","最高"],     genres:["ゲーム","学習","配信"],          tags:["応援系","情熱的"]},
-  {name:"自動化研究員",       roleType:"開発者勢", catchphrase:"そこ自動化できるのか",      color:"#7eb8ff", words:["AI","自動化"],     genres:["技術","ゲーム","学習"],          tags:["エンジニア","技術好き"]},
-  {name:"投資家見習い",       roleType:"投資家勢", catchphrase:"リターン計算してた",        color:"#57c87c", words:["投資","NISA"],     genres:["投資","経済","学習"],            tags:["投資家","経済好き"]},
-  {name:"ネタ実況民",         roleType:"ネタ勢",   catchphrase:"草不可避",                  color:"#ff9f7f", words:["草","笑い"],       genres:["ゲーム","エンタメ","配信"],      tags:["ネタ好き","陽気"]},
-  {name:"感動屋さん",         roleType:"共感勢",   catchphrase:"泣いてる",                  color:"#ff7eb3", words:["感動","エモい"],   genres:["音楽","映画","本","文学","歌"],  tags:["エモ系","感情豊か"]},
-  {name:"妄想研究家",         roleType:"妄想勢",   catchphrase:"10年後どうなってるんだろ",  color:"#d8a8f0", words:["未来","想像"],     genres:["学習","映画","ゲーム","文学"],   tags:["妄想家","想像力豊か"]},
-  {name:"超質問マン",         roleType:"質問勢",   catchphrase:"もう少し詳しく教えて",      color:"#64d2ff", words:["質問","なぜ"],     genres:["学習","経済","配信","公開学習"],  tags:["好奇心旺盛","質問好き"]},
-  {name:"昼寝配信民",         roleType:"応援勢",   catchphrase:"ゆっくり見てます",          color:"#a8c8d8", words:["まったり","癒し"],  genres:["音楽","配信","歌","エンタメ"],   tags:["まったり","リラックス"]},
-  {name:"プロ視聴者",         roleType:"知識勢",   catchphrase:"このシリーズ全部見てる",    color:"#e8c14e", words:["配信","シリーズ"],  genres:["配信","学習","エンタメ"],       tags:["熱心","ファン"]}
-];}
-async function syncPersonas(){
-  try{
-    const csvUrl=toSheetCsvUrl(state.personaSheetUrl);let csv=null;
-    try{const r=await fetch(csvUrl,{cache:"no-store"});if(r.ok)csv=await r.text();}catch{}
-    if(!csv)throw new Error("no csv");
-    personas=parsePersonas(csv);localStorage.setItem(SHARED_PERSONA_KEY,JSON.stringify(personas));
-    setStatus(`人格 ${personas.length}件 同期済み`);
-  }catch{personas=loadPersonas();if(!personas.length)personas=defaultPersonas();setStatus(`人格 ${personas.length}件（キャッシュ）`);}
-}
-function parsePersonas(csv){return parseCSV(csv).map((r,i)=>{const name=r[0];if(!name||name==="名前")return null;return{id:"s"+i,name,personalityType:r[1]||"",roleType:r[2]||"",reactionPattern:r[3]||"",catchphrase:r[4]||"",words:tags(r[6]),interests:tags(r[8]),color:["#ff6b7a","#64d2ff","#ff93bd","#9be870","#c890d8"][i%5]};}).filter(Boolean);}
-function parseCSV(text){const rows=[];let row=[],cell="",quote=false;const src=String(text||""),d=src.includes("\t")?"\t":",";for(let i=0;i<src.length;i++){const ch=src[i],nx=src[i+1];if(ch==='"'){if(quote&&nx==='"'){cell+='"';i++;}else quote=!quote;}else if(ch===d&&!quote){row.push(cell.trim());cell="";}else if((ch==="\n"||ch==="\r")&&!quote){if(ch==="\r"&&nx==="\n")i++;row.push(cell.trim());if(row.some(Boolean))rows.push(row);row=[];cell="";}else cell+=ch;}row.push(cell.trim());if(row.some(Boolean))rows.push(row);return rows;}
-function tags(v){return String(v||"").split(/[;,、・\s]+/).map(x=>x.trim()).filter(Boolean).slice(0,12);}
-function saveCommentLog(entry){try{const log=JSON.parse(localStorage.getItem(SHARED_COMMENT_KEY)||"[]");log.push({...entry,screen:"movie",at:new Date().toISOString()});localStorage.setItem(SHARED_COMMENT_KEY,JSON.stringify(log.slice(-200)));}catch{}}
-function saveSettings(){localStorage.setItem(SETTINGS_KEY,JSON.stringify({movieTitle:state.movieTitle,director:state.director,releaseYear:state.releaseYear,serviceUrl:state.serviceUrl,posterUrl:state.posterUrl,avatarInput:state.avatarInput,personaSheetUrl:state.personaSheetUrl,commentSpeed:state.commentSpeed,commentEngine:state.commentEngine,timer:state.timer}));}
-function loadSettings(){try{return JSON.parse(localStorage.getItem(SETTINGS_KEY)||"{}");}catch{return{};}}
-function copyObsUrl(){const url=new URL(location.href);if(state.movieTitle)url.searchParams.set("title",state.movieTitle);const str=url.toString();if(navigator.clipboard){navigator.clipboard.writeText(str).then(()=>toast("OBS URL をコピーしました ✓")).catch(()=>{prompt("URL をコピーしてください:",str);});}else{prompt("URL をコピーしてください:",str);}}
-function toSheetCsvUrl(url){const t=String(url||"").trim(),m=t.match(/\/spreadsheets\/d\/([^/]+)/);if(!m)return t;const gid=(t.match(/[?&]gid=(\d+)/)||[])[1];return`https://docs.google.com/spreadsheets/d/${m[1]}/export?format=csv${gid?`&gid=${gid}`:""}` ;}
-let toastTimer=null;
-function toast(msg){const el=$("toast");if(!el)return;clearTimeout(toastTimer);el.textContent=msg;el.classList.add("show");toastTimer=setTimeout(()=>el.classList.remove("show"),2800);}
-function setStatus(t){if($("personaStatus"))$("personaStatus").textContent=t;toast(t);}
-})();
-// ── YouTube から人格生成 ──
-async function genPersonasFromYT(urlId, descId, countId, statusId){
-  const url=(document.getElementById(urlId)?.value||"").trim();
-  const desc=(document.getElementById(descId)?.value||"").trim();
-  const n=parseInt(document.getElementById(countId)?.value||"6")||6;
-  const st=document.getElementById(statusId);
-  if(!url){if(st)st.textContent="URLを入力してください";return;}
-  const apiKey=localStorage.getItem(typeof GEMINI_KEY_STORE!=="undefined"?GEMINI_KEY_STORE:"streaming_gemini_key_v1")||"";
-  if(!apiKey){if(st)st.textContent="Gemini APIキーが必要です（Dock内で設定）";return;}
-  if(st)st.textContent="⏳ Geminiで生成中…";
-  const prompt=`You create YouTube live chat personas for a Japanese streaming simulator.
-
-YouTube: ${url}
-${desc?"配信の特徴: "+desc:""}
-
-このチャンネル/動画の視聴者を${n}人のペルソナとして生成。JSONの配列のみ出力（他テキスト不要）。
-
-形式: {"name":"視聴者名(2-8文字)","roleType":"ロール","catchphrase":"口癖(8-25文字)","color":"#hex","words":["ワード1","ワード2","ワード3"],"interests":["興味1","興味2"],"tone":"話し方"}
-
-roleType: 共感勢|知識勢|質問勢|懐疑勢|応援勢|初心者勢|ネタ勢|妄想勢|開発者勢|投資家勢
-名前・口癖は日本語。色は人格ごとに異なる鮮やかな色。`;
-  try{
-    const res=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
-      {method:"POST",headers:{"Content-Type":"application/json"},
-       body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{temperature:0.92,maxOutputTokens:2000}})});
-    if(!res.ok)throw new Error("API "+res.status);
-    const data=await res.json();
-    const text=(data.candidates?.[0]?.content?.parts?.[0]?.text||"");
-    const match=text.match(/\[[\s\S]*?\]/);
-    if(!match)throw new Error("JSON not found");
-    const generated=JSON.parse(match[0]).filter(p=>p&&p.name);
-    const key=typeof SHARED_PERSONA_KEY!=="undefined"?SHARED_PERSONA_KEY:(typeof GAME_PERSONA_KEY!=="undefined"?GAME_PERSONA_KEY:"rainybrain_personas_v1");
-    const existing=JSON.parse(localStorage.getItem(key)||"[]");
-    const merged=[...generated,...existing.filter(e=>!generated.find(g=>g.name===e.name))];
-    localStorage.setItem(key,JSON.stringify(merged));
-    personas=merged;
-    if(st)st.textContent=`✓ ${generated.length}人を生成・保存しました`;
-    if(document.getElementById(urlId))document.getElementById(urlId).value="";
-  }catch(e){if(st)st.textContent="エラー: "+e.message;}
-}
-
-let _commentFreqLevel=1;
-function setFrequencyLevel(lv){
-  _commentFreqLevel=lv;
-  document.querySelectorAll(".freq-btn").forEach(b=>b.classList.toggle("active",parseInt(b.dataset.freq)===lv));
-  const labels={1:"少",2:"普通",3:"多め",4:"激熱"};
-  if(typeof setStatus==="function")setStatus("💬 頻度: "+(labels[lv]||lv));
-  if(typeof commentsEnabled!=="undefined"&&commentsEnabled){if(typeof commentTimer!=="undefined")clearTimeout(commentTimer);if(typeof scheduleComment==="function")scheduleComment();}
-}
-// Frequency-scaled interval
-const _baseInterval=intervalRange;
-function intervalRange(){const[mn,mx]=_baseInterval();const d=_commentFreqLevel||1;return[Math.max(700,Math.round(mn/d)),Math.max(1200,Math.round(mx/d))];}
-</script>
-</body>
-</html>
+
+    <section class="section">
+      <div class="section-title"><span class="step">3</span>収録タイマー</div>
+      <div class="grid2">
+        <div class="field"><label for="timerMinutes">分</label><input id="timerMinutes" type="number" min="1" max="240" value="60"></div>
+        <div class="field"><label for="timerPreset">プリセット</label>
+          <select id="timerPreset"><option value="60">60分</option><option value="30">30分</option><option value="90">90分</option><option value="120">120分</option></select>
+        </div>
+      </div>
+      <div class="actions">
+        <button id="timerSetBtn"   type="button">反映</button>
+        <button id="timerStartBtn" class="good" type="button">開始</button>
+        <button id="timerResetBtn" type="button">リセット</button>
+      </div>
+    </section>
+    <section class="section">
+      <div class="section-title"><span class="step">4</span>文字起こし</div>
+      <div class="transcript-plan-row">
+        <button class="plan-btn active" id="planFreeBtn" type="button">無料<span class="plan-tag">Web Speech</span></button>
+        <button class="plan-btn pro"    id="planProBtn"  type="button">Pro<span class="plan-tag">Whisper API</span><span class="plan-soon">準備中</span></button>
+      </div>
+      <div id="planFreeArea">
+        <div class="actions">
+          <button id="clearTranscriptBtn" type="button">字幕クリア</button>
+          <button id="commentBtn" class="warn" type="button">コメント1件</button>
+        </div>
+        <div class="field"><label for="manualTranscript">話題を手入力（Enter で反映）</label><input id="manualTranscript" placeholder="例: この映画のここが好き"></div>
+        <div id="transcriptLog" class="log">まだ文字起こしはありません。</div>
+      </div>
+      <div id="planProArea" style="display:none">
+        <div class="pro-placeholder">
+          <div style="font-size:1.8rem">🎙</div>
+          <div class="pro-placeholder-title">Whisper API 連携</div>
+          <div class="pro-placeholder-desc">高精度な音声認識。Pro プランで利用可能になります。</div>
+        </div>
+      </div>
+    </section>
+    <details>
+      <summary>コメント人格設定</summary>
+      <div class="inner">
+        <div class="field"><label for="personaSheetUrl">人格 CSV / Google Sheets URL</label><input id="personaSheetUrl" value="https://docs.google.com/spreadsheets/d/1YNQUnDv18WsMm7H84Ytg3lIgvWmetLZ3bqyMm3RCgkI/export?format=csv"></div>
+        <div class="grid2">
+          <div class="field"><label for="commentSpeed">コメント速度</label>
+            <select id="commentSpeed"><option value="normal">ふつう</option><option value="slow">ゆっくり</option><option value="fast">多め</option></select>
+          </div>
+          <div class="field"><label for="avatarInput">Vキャラ素材 URL</label><input id="avatarInput" placeholder="assets/v-character.webm"></div>
+        </div>
+        <div class="actions">
+          <button id="syncPersonaBtn" class="primary" type="button">人格同期</button>
+          <a href="https://rainybrainch.github.io/comment-studio/ai-comment-personas.html" target="_blank"
+             style="display:flex;align-items:center;justify-content:center;min-height:44px;padding:7px 10px;border:1px solid rgba(224,160,255,.45);border-radius:8px;background:rgba(224,160,255,.12);color:#e0a0ff;font-weight:900;font-size:12px;text-decoration:none;letter-spacing:.04em;">🎭 Channel OS</a>
+        </div>
+        <div class="status-text" id="personaStatus">未同期</div>
+        <div style="border-top:1px solid rgba(255,255,255,.08);padding-top:10px;display:flex;flex-direction:column;gap:6px;">
+          <div style="font-size:9px;font-weight:900;letter-spacing:.1em;color:var(--muted);text-transform:uppercase;">AI コメント生成 <span style="font-size:9px;background:rgba(100,210,255,.1);color:#64d2ff;border:1px solid rgba(100,210,255,.25);padding:1px 6px;border-radius:999px;text-transform:none;letter-spacing:0;">Gemini 2.0 Flash</span></div>
+          <select id="commentEngine" style="min-height:36px;font-size:11px;"><option value="template">テンプレート（無料）</option><option value="gemini">Gemini AI</option></select>
+          <div id="geminiArea" style="display:none;flex-direction:column;gap:5px;">
+            <div style="display:flex;gap:5px;"><input id="geminiKey" type="password" placeholder="AIzaSy... または AQ.Ab8..." style="flex:1;min-height:36px;font-size:11px;"><button onclick="saveGeminiKey()" style="white-space:nowrap;min-height:36px;padding:0 10px;font-size:11px;font-weight:900;border:1px solid rgba(100,210,255,.3);background:rgba(100,210,255,.08);color:#64d2ff;border-radius:8px;cursor:pointer;flex-shrink:0;">保存</button></div>
+            <div id="geminiStatus" style="font-size:10px;color:var(--muted);"></div>
+          </div>
+        </div>
+      </div>
+    </details>
+  </div>
+</aside>
+
+<button class="open-tab" id="openDock" type="button">
+  <span class="open-tab-dot"></span>設定
+</button>
+
+<script>
+(() => {
+"use strict";
+const SHARED_PERSONA_KEY = "rainybrain_personas_v1";
+const SHARED_COMMENT_KEY = "rainybrain_comment_log_v1";
+const SETTINGS_KEY       = "rainybrain_movie_stream_v1";
+const GEMINI_KEY_STORE   = "streaming_gemini_key_v1";
+const PARAMS = new URLSearchParams(location.search);
+const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+const $ = id => document.getElementById(id);
+
+const state = {
+  movieTitle:"", director:"", releaseYear:"", serviceUrl:"", posterUrl:"",
+  commentEngine:"template",
+  avatarInput:"", personaSheetUrl:"https://docs.google.com/spreadsheets/d/1YNQUnDv18WsMm7H84Ytg3lIgvWmetLZ3bqyMm3RCgkI/export?format=csv",
+  commentSpeed:"normal",
+  timer:{ durationSec:3600, remainingSec:3600, running:false, endAt:0 }
+};
+Object.assign(state, loadSettings());
+if(PARAMS.get("title")) state.movieTitle = PARAMS.get("title");
+state.timer = normalizeTimer(state.timer);
+
+let personas=loadPersonas(), transcript=[], commentTimer=null, recognition=null;
+let restartTimer=null, listening=false, audioCtx=null, micStream=null;
+let lastKey="", transcriptBuf="", flushTimer=null, trackRR=0;
+let commentsEnabled=true, commentCountN=0;
+
+init();
+
+function init() { hydrate(); bind(); applyStage(); startClock(); scheduleComment(); }
+
+function toggleComments(){
+  commentsEnabled=!commentsEnabled;
+  const btn=$("ccBtn");
+  if(btn){btn.textContent=commentsEnabled?"💬 ON":"💬 OFF";btn.classList.toggle("off",!commentsEnabled);}
+  toast(commentsEnabled?"💬 コメント ON":"💬 コメント OFF");
+  if(commentsEnabled)scheduleComment();else clearTimeout(commentTimer);
+}
+function setSpeed(spd){
+  state.commentSpeed=spd;
+  document.querySelectorAll(".spd-btn").forEach(b=>b.classList.toggle("active",b.dataset.speed===spd));
+  if($("commentSpeed"))$("commentSpeed").value=spd;
+  saveSettings();if(commentsEnabled)scheduleComment();
+  toast(spd==="slow"?"🐢 低速":spd==="fast"?"🔥 高速":"▷ 普通速");
+}
+function updateDockMeta(){
+  const el=$("dockMeta");
+  if(el)el.innerHTML=`💬 ${commentCountN}件　🎙 ${listening?'<span class="on">● 収録中</span>':"停止中"}`;
+}
+
+function hydrate() {
+  ["movieTitle","director","releaseYear","serviceUrl","posterUrl","avatarInput","personaSheetUrl","commentSpeed"].forEach(id=>{
+    if($(id)) $(id).value = state[id]||"";
+  });
+  $("timerMinutes").value = Math.max(1, Math.round(state.timer.durationSec/60));
+  $("timerPreset").value  = String(Math.max(1, Math.round(state.timer.durationSec/60)));
+  const gk = localStorage.getItem(GEMINI_KEY_STORE)||"";
+  if($("geminiKey")) $("geminiKey").value = gk;
+  if(state.commentEngine==="gemini"||gk){ if($("commentEngine"))$("commentEngine").value="gemini"; if($("geminiArea"))$("geminiArea").style.display="flex"; state.commentEngine="gemini"; }
+  document.querySelectorAll(".spd-btn").forEach(b=>b.classList.toggle("active",b.dataset.speed===(state.commentSpeed||"normal")));
+}
+
+function bind() {
+  ["movieTitle","director","releaseYear","serviceUrl","posterUrl","avatarInput","personaSheetUrl","commentSpeed"].forEach(id=>{
+    if($(id)) $(id).addEventListener("input",()=>{ state[id]=$(id).value; saveSettings(); applyStage(); });
+  });
+  $("applyBtn")?.addEventListener("click",applyStage);
+  $("copyObsBtn")?.addEventListener("click",copyObsUrl);
+  $("fullscreenBtn")?.addEventListener("click",toggleFullscreen);
+  $("timerPreset")?.addEventListener("change",()=>{ $("timerMinutes").value=$("timerPreset").value; setTimerFromInput(); });
+  $("timerSetBtn")?.addEventListener("click",setTimerFromInput);
+  $("timerStartBtn")?.addEventListener("click",toggleTimer);
+  $("timerResetBtn")?.addEventListener("click",resetTimer);
+  $("stageTimerToggle")?.addEventListener("click",toggleTimer);
+  $("stageTimerReset")?.addEventListener("click",resetTimer);
+  $("micBtn")?.addEventListener("click",toggleMic);
+  $("clearTranscriptBtn")?.addEventListener("click",()=>{ transcript=[]; $("transcriptLog").textContent="まだ文字起こしはありません。"; $("caption").textContent="「マイク開始」で文字起こしが始まります"; });
+  $("commentBtn")?.addEventListener("click",spawnComment);
+  $("manualTranscript")?.addEventListener("keydown",e=>{ if(e.key!=="Enter")return; const v=$("manualTranscript").value.trim(); if(!v)return; $("manualTranscript").value=""; pushTranscript(v); spawnComment(); });
+  $("syncPersonaBtn")?.addEventListener("click",syncPersonas);
+  $("commentEngine")?.addEventListener("change",()=>{ state.commentEngine=$("commentEngine").value; if($("geminiArea"))$("geminiArea").style.display=state.commentEngine==="gemini"?"flex":"none"; saveSettings(); });
+  $("hideDock")?.addEventListener("click",()=>document.body.classList.add("panel-hidden"));
+  $("openDock")?.addEventListener("click",()=>document.body.classList.remove("panel-hidden"));
+  $("planFreeBtn")?.addEventListener("click",()=>{ $("planFreeBtn").classList.add("active"); $("planProBtn").classList.remove("active"); $("planFreeArea").style.display=""; $("planProArea").style.display="none"; });
+  $("planProBtn")?.addEventListener("click",()=>{ $("planProBtn").classList.add("active"); $("planFreeBtn").classList.remove("active"); $("planFreeArea").style.display="none"; $("planProArea").style.display=""; });
+  document.addEventListener("fullscreenchange",()=>{ $("fullscreenBtn").textContent=document.fullscreenElement?"全画面解除":"全画面"; });
+  document.addEventListener("keydown",e=>{
+    if(e.target.matches("input,textarea,select"))return;
+    if(e.code==="Space"){e.preventDefault();toggleTimer();toast(state.timer.running?"⏸ タイマー停止":"▶ タイマー開始");}
+    if(e.key==="m"||e.key==="M") toggleMic();
+    if(e.key==="c"||e.key==="C"){spawnComment();toast("💬 コメント生成");}
+    if(e.key==="f"||e.key==="F") toggleFullscreen();
+    if(e.key==="h"||e.key==="H"){document.body.classList.toggle("panel-hidden");toast(document.body.classList.contains("panel-hidden")?"パネル非表示":"パネル表示");}
+  });
+}
+
+function applyStage() {
+  $("cardTitle").textContent = state.movieTitle||"今日の映画";
+  const meta=[state.director?`監督: ${state.director}`:"",state.releaseYear?`${state.releaseYear}年`:""].filter(Boolean).join("　");
+  $("cardMeta").textContent = meta;
+  const lnk=$("cardLink");
+  if(state.serviceUrl){lnk.href=state.serviceUrl;lnk.style.display="";}
+  else lnk.style.display="none";
+  const poster=$("moviePoster");
+  if(state.posterUrl){$("posterImg").src=state.posterUrl;poster.classList.add("show");}
+  else poster.classList.remove("show");
+  updateAvatar();
+}
+
+function updateAvatar(){
+  const src=state.avatarInput.trim(), av=$("avatar");
+  av.innerHTML=""; av.classList.toggle("empty",!src);
+  if(!src)return;
+  const el=document.createElement(/\.(webm|mp4|mov)(\?.*)?$/i.test(src)?"video":"img");
+  el.src=src;
+  if(el.tagName==="VIDEO"){el.autoplay=true;el.loop=true;el.muted=true;el.playsInline=true;}
+  av.append(el);
+}
+
+function normalizeTimer(t){
+  const dur=Math.max(60,parseInt(t?.durationSec||3600,10)||3600);
+  const endAt=parseInt(t?.endAt||0,10)||0;
+  const run=Boolean(t?.running&&endAt>Date.now());
+  const rem=run?Math.max(0,Math.ceil((endAt-Date.now())/1000)):Math.max(0,Math.min(dur,parseInt(t?.remainingSec||dur,10)||dur));
+  return{durationSec:dur,remainingSec:rem,running:run,endAt:run?endAt:0};
+}
+function setTimerFromInput(){
+  const m=Math.max(1,Math.min(240,parseInt($("timerMinutes").value||"60")||60));
+  state.timer={durationSec:m*60,remainingSec:m*60,running:false,endAt:0};
+  saveSettings();updateClock();
+}
+function toggleTimer(){
+  state.timer=normalizeTimer(state.timer);
+  if(state.timer.running){state.timer.running=false;state.timer.endAt=0;}
+  else{if(state.timer.remainingSec<=0)state.timer.remainingSec=state.timer.durationSec;state.timer.running=true;state.timer.endAt=Date.now()+state.timer.remainingSec*1000;}
+  saveSettings();updateClock();
+}
+function resetTimer(){
+  state.timer=normalizeTimer(state.timer);state.timer.running=false;state.timer.endAt=0;state.timer.remainingSec=state.timer.durationSec;
+  saveSettings();updateClock();
+}
+function updateClock(){
+  const prevRem=state.timer.remainingSec;state.timer=normalizeTimer(state.timer);
+  if(state.timer.running&&state.timer.remainingSec<=0){state.timer.running=false;state.timer.endAt=0;if(prevRem>0){toast("⏱ タイマー終了！");$("timerDisplay")?.classList.add("flash");setTimeout(()=>$("timerDisplay")?.classList.remove("flash"),2800);}}
+  $("timerTime").textContent=fmt(state.timer.remainingSec);
+  $("timerLabel").textContent=state.timer.running?"REC RUNNING":"REC TIMER";
+  $("timerDisplay").classList.toggle("running",state.timer.running);
+  $("timerStartBtn").textContent=state.timer.running?"停止":"開始";
+  $("stageTimerToggle").textContent=state.timer.running?"Ⅱ":"▶";
+  $("stageTimerToggle").classList.toggle("running",state.timer.running);
+}
+function fmt(sec){const n=Math.max(0,parseInt(sec||0)||0),h=Math.floor(n/3600),m=Math.floor((n%3600)/60),s=n%60;return h>0?`${h}:${pad(m)}:${pad(s)}`:`${pad(m)}:${pad(s)}`;}
+function pad(n){return String(n).padStart(2,"0");}
+function startClock(){updateClock();setInterval(updateClock,1000);}
+function toggleFullscreen(){document.fullscreenElement?document.exitFullscreen?.():$("stage").requestFullscreen?.();}
+
+function pushTranscript(text){
+  const clean=text.replace(/\s+/g," ").trim();if(!clean)return;
+  const key=clean.replace(/[\s、。,.!！?？]/g,"");if(!key||key===lastKey)return;
+  lastKey=key;transcript.unshift({text:clean,at:Date.now()});transcript=transcript.slice(0,40);
+  const cap=$("caption");cap.textContent=clean;cap.classList.remove("flash-in");void cap.offsetWidth;cap.classList.add("flash-in");
+  $("transcriptLog").textContent=transcript.slice(0,10).map(x=>x.text).join("\n");
+  if(clean.length>=12)setTimeout(spawnComment,900);
+}
+function queueTranscript(text){
+  transcriptBuf=[transcriptBuf,text].filter(Boolean).join(" ").replace(/\s+/g," ").trim();
+  clearTimeout(flushTimer);flushTimer=setTimeout(()=>{const t=transcriptBuf;transcriptBuf="";if(t)pushTranscript(t);},820);
+}
+function recentText(){return transcript.slice(0,6).map(x=>x.text).reverse().join("\n").slice(-1000);}
+
+function toggleMic(){
+  if(!SpeechRecognition){$("caption").textContent="⚠ Chrome / Edge が必要です";toast("Chrome/Edge の音声認識が必要です");return;}
+  if(listening){clearTimeout(restartTimer);listening=false;try{recognition.stop();}catch{}stopMeter();$("micBtn").textContent="マイク開始";$("micBtn").className="good";$("micLive")?.classList.remove("active");toast("マイク停止");updateDockMeta();return;}
+  recognition=new SpeechRecognition();recognition.lang="ja-JP";recognition.continuous=true;recognition.interimResults=true;
+  recognition.onresult=e=>{let fin="",int="";for(let i=e.resultIndex;i<e.results.length;i++){const t=e.results[i][0]?.transcript||"";if(e.results[i].isFinal)fin+=t;else int+=t;}if(int)$("caption").textContent=int;if(fin.trim())queueTranscript(fin);};
+  recognition.onerror=()=>{if(listening){clearTimeout(restartTimer);restartTimer=setTimeout(()=>{if(listening)try{recognition.start();}catch{}},1200);}};
+  recognition.onend=()=>{if(listening){clearTimeout(restartTimer);restartTimer=setTimeout(()=>{if(listening)try{recognition.start();}catch{}},700);}};
+  recognition.start();listening=true;$("micBtn").textContent="マイク停止";$("micBtn").className="warn";$("micLive")?.classList.add("active");toast("マイク開始 — 話してください");startMeter();updateDockMeta();
+}
+async function startMeter(){try{micStream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true}});audioCtx=new AudioContext();const an=audioCtx.createAnalyser();audioCtx.createMediaStreamSource(micStream).connect(an);}catch{}}
+function stopMeter(){if(audioCtx){audioCtx.close().catch(()=>{});audioCtx=null;}if(micStream){micStream.getTracks().forEach(t=>t.stop());micStream=null;}}
+
+function spawnComment(){
+  const k=localStorage.getItem(GEMINI_KEY_STORE)||"";
+  if(state.commentEngine==="gemini"&&k){spawnGeminiComment();return;}
+  const p=pickPersona();const text=buildComment(p);addComment(text,p.name,p.color);saveCommentLog({user:p.name,text});
+}
+async function spawnGeminiComment(){
+  const apiKey=localStorage.getItem(GEMINI_KEY_STORE)||"";
+  const p=pickPersona();
+  const topic=recentText()||[state.movieTitle,state.director].filter(Boolean).join(" ")||"映画配信中";
+  const prompt=`あなたはYouTubeライブ配信の視聴者です。ロール：${p.roleType||"共感勢"}、名前：${p.name}。\n配信トピック：「${topic.slice(0,200)}」\n自然な日本語コメントを1つ、40文字以内で。コメントのみ返してください。`;
+  try{
+    const resp=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{maxOutputTokens:60,temperature:0.95}})});
+    if(!resp.ok)throw new Error();
+    const data=await resp.json();
+    const comment=(data.candidates?.[0]?.content?.parts?.[0]?.text||"").trim().replace(/\n.*/,"").slice(0,40);
+    if(!comment)throw new Error();
+    addComment(comment,p.name,p.color);saveCommentLog({user:p.name,text:comment});
+  }catch{const text=buildComment(p);addComment(text,p.name,p.color);saveCommentLog({user:p.name,text});}
+}
+function saveGeminiKey(){
+  const k=$("geminiKey")?.value.trim(); if(!k)return;
+  localStorage.setItem(GEMINI_KEY_STORE,k);
+  state.commentEngine="gemini"; if($("commentEngine"))$("commentEngine").value="gemini";
+  if($("geminiArea"))$("geminiArea").style.display="flex";
+  if($("geminiStatus")){$("geminiStatus").textContent="✓ 保存済み";$("geminiStatus").style.color="#64d2ff";}
+  saveSettings(); toast("Gemini APIキーを保存しました");
+}
+function toggleObsMode(){
+  document.body.classList.toggle("obs-mode");
+  const btn=$("btnObs"); if(btn)btn.classList.toggle("active");
+}
+function addComment(text,name,color){ commentCountN++;updateDockMeta();
+  const track=document.getElementById(`track${trackRR%3}`);trackRR++;if(!track)return;
+  const speed=Math.max(10,10+text.length*0.3+Math.random()*5);
+  const node=document.createElement("div");node.className="comment-h";
+  node.style.setProperty("--user-color",color||"var(--accent)");node.style.setProperty("--speed",speed+"s");
+  const u=document.createElement("span");u.className="user";u.textContent="@"+name;
+  const t=document.createElement("span");t.className="text";t.textContent=text;
+  node.append(u,t);track.append(node);node.addEventListener("animationend",()=>node.remove());
+}
+function pickPersona(){
+  const list=personas.length?personas:defaultPersonas();const text=recentText();
+  return list.map(p=>({p,s:relevance(p,text)+Math.random()*.4})).sort((a,b)=>b.s-a.s).slice(0,Math.min(list.length,6))[Math.floor(Math.random()*Math.min(list.length,6))].p;
+}
+function relevance(p,text){
+  const hay=[p.name,p.roleType,p.reactionPattern,p.catchphrase,...(p.words||[]),...(p.interests||[])].join(" ");
+  let s=0;text.split(/[\s、。,]+/).filter(w=>w.length>=2).forEach(w=>{if(hay.includes(w))s+=2;});
+  if(/映画|監督|シーン|演技|脚本|ストーリー|感動|泣いた/.test(text)&&/映画|シネマ|エンタメ/.test(hay))s+=4;
+  if(/音楽|サントラ|BGM/.test(text)&&/音楽|サントラ/.test(hay))s+=3;
+  return s;
+}
+// ══ Advanced Comment Engine v2 ══
+const _RB_RECENT = {};
+function _rbTrack(name,text){const r=_RB_RECENT[name]||(_RB_RECENT[name]=[]);r.unshift(text);if(r.length>10)r.pop();}
+function _rbPick(pool,name){const r=_RB_RECENT[name]||[];const f=pool.filter(t=>!r.includes(t));const s=f.length>0?f:pool;return s[Math.floor(Math.random()*s.length)];}
+
+function _buildTemplates(role,kw,p){
+  const w=(p.words||[]).concat(p.interests||[]);
+  const pw=w.length?w[Math.floor(Math.random()*w.length)]:kw;
+  const T={
+    "共感勢": [`${kw}なるほど`,`今の話めっちゃわかる`,`${kw}ってそういうことか`,`今日初めて知った`,`深い`,`このシリーズ好き`,`${kw}もっと聞きたい`,`言語化ありがとう`,`ほんとそう思う`,`${pw}と繋がった`,`自分も同じ経験ある`,`何度も見返したい`,`${kw}が刺さった`,`うわそういうことか`,`聞いてよかった`],
+    "知識勢": [`${kw}の見方が面白い`,`もっと掘り下げてほしい`,`${kw}と${pw}の関係が気になる`,`考察したくなる`,`この視点は新しい`,`専門書でも別の説がある`,`実はここ奥が深い`,`${kw}の歴史も気になる`,`文献漁りたくなった`,`研究者の意見も聞きたい`,`データと逆になることある`,`定義から確認したい`,`ここ諸説ある`,`${pw}目線だと違う`,`理論と実践の乖離がある`],
+    "質問勢": [`${kw}はどこが入口？`,`もう少し詳しく`,`生活とどう繋がる？`,`初心者でもわかる？`,`${kw}と${pw}の違いは？`,`具体例があると助かる`,`どこで勉強した？`,`参考になる本ある？`,`次回のテーマは？`,`もう一度説明して`,`なんで${kw}が大事なの？`,`実生活での使い方が知りたい`,`初心者向けにまとめて`,`${pw}との関連も教えて`,`聞いていい？`],
+    "懐疑勢": [`${kw}本当に合ってる？`,`別の見方もある`,`前提から確認したい`,`慎重に見た方がいい`,`反論もある`,`それだけじゃない`,`エビデンスは？`,`${kw}って定義が違う`,`100%そうとは言えない`,`ケースによる`,`留保が必要では`,`データ次第じゃない？`,`専門家も意見分かれる`,`前提が違うと結論変わる`,`鵜呑みにしない方がいい`],
+    "応援勢": [`いい流れ！`,`${kw}のとこ好き`,`続けてください`,`この調子で`,`配信待ってた`,`いつも楽しみ`,`頑張れ`,`最高`,`ずっと応援してる`,`次回も来る`,`${pw}の話もいつか`,`毎回楽しみ`,`今日も良かった`,`モチベ上がる`,`ありがとう`],
+    "初心者勢": [`なるほど！`,`${kw}初めて聞いた`,`わかりやすい`,`ありがとうございます`,`勉強になった`,`難しいけど面白い`,`もっと知りたい`,`メモしてます`,`初心者でもわかった`,`${pw}との違いがわかった`,`次回も見ます`,`初めて来たけどわかりやすい`,`好きになった`,`友達にも教えたい`,`全然知らなかった`],
+    "ネタ勢": [`草`,`天才か`,`${kw}クセ強い`,`これは名言`,`待って笑う`,`草不可避`,`天才の発想`,`ほんと？笑`,`やばすぎ`,`なんでそうなった`,`それで笑う`,`好きすぎる`,`伝説の配信`,`歴史に残る`,`最高すぎ`],
+    "妄想勢": [`${kw}から広がる世界が好き`,`次回の展開が気になる`,`別の角度で考えると`,`もしも${kw}がなかったら`,`10年後どうなってるんだろ`,`${pw}との掛け合わせが面白い`,`深掘りしたら無限に広がる`,`誰かと議論したくなった`,`自分なりの答え出てきた`,`違う分野にも繋がる`,`壮大だな`,`想像膨らむ`,`あとで調べる`,`もっと考えたい`,`ここから派生する話がある`],
+    "開発者勢": [`実装してみたくなった`,`アーキテクチャが気になる`,`データ構造的に面白い`,`自動化できそう`,`${kw}をシステムで表すと`,`API設計に応用できる`,`アルゴリズム的な視点が好き`,`ここ最適化できそう`,`ツール作りたい`,`ロジックが綺麗`,`エンジニアとして共感`,`コードで書くと面白い`,`スケールするかな`,`設計が大事`,`技術的負債になりそう`],
+    "投資家勢": [`リターン計算してた`,`${kw}のリスクは？`,`ポートフォリオ見直すか`,`タイミングが難しい`,`長期目線で見てる`,`短期と長期で違う`,`分散の重要性がわかる`,`NISAで試してる`,`損切りのタイミングって`,`${pw}との相関がある`,`経済指標と連動してる`,`配当狙いで`,`積み立て派なので`,`チャート見てた`,`ベンチマーク比較したい`],
+  };
+  return T[role]||T["共感勢"];
+}
+
+function buildComment(p){
+  const recentTxt=typeof recentText==="function"?recentText():"";
+  const kw=recentTxt.split(/[\s、。,，\n]+/).filter(w=>w.length>=2)[0]||(p.words||[])[0]||(typeof state!=="undefined"?(state.keyword||""):"")|| "今の話";
+  const role=p.roleType||"共感勢";
+  const name=p.name||"?";
+  if(p.catchphrase&&(p.catchphrase.length>3)&&Math.random()<.38)return p.catchphrase.slice(0,40);
+  const templates=_buildTemplates(role,kw,p);
+  const text=_rbPick(templates,name);
+  _rbTrack(name,text);
+  return text.slice(0,40);
+}
+
+function pickPersona(){
+  const list=personas.length?personas:defaultPersonas();
+  if(!list.length)return defaultPersonas()[0];
+  const text=typeof recentText==="function"?recentText():"";
+  const scored=list.map(p=>({p,s:_relevanceScore(p,text)+Math.random()*.4})).sort((a,b)=>b.s-a.s);
+  const topN=Math.min(scored.length,Math.max(3,Math.ceil(scored.length/2)));
+  return scored[Math.floor(Math.random()*topN)].p;
+}
+
+function _relevanceScore(p,text){
+  if(!text)return 0;
+  const hay=[p.name,p.roleType,p.reactionPattern,p.catchphrase,...(p.words||[]),...(p.interests||[]),p.tone||""].join(" ").toLowerCase();
+  const words=text.toLowerCase().split(/[\s、。,，\n]+/).filter(w=>w.length>=2);
+  let s=0;
+  words.forEach(w=>{if(hay.includes(w))s+=2;});
+  const boosts=typeof _domainBoosts!=="undefined"?_domainBoosts:[[/経済|金利|インフレ|為替/,/経済|知識|分析|投資/,5],[/ゲーム|攻略|ボス/,/ゲーム|エンタメ|応援/,4],[/映画|監督|シーン/,/映画|シネマ/,4],[/本|小説|作者/,/読書|文学|知識/,4],[/漫画|キャラ|作画/,/漫画|アニメ/,4],[/投資|株|NISA/,/投資|知識|分析/,5],[/草|笑/,/ネタ|共感/,3]];
+  boosts.forEach(([a,b,sc])=>{if(a.test(text.toLowerCase())&&b.test(hay))s+=sc;});
+  return s;
+}
+// ══ End Advanced Comment Engine v2 ══
+
+function defaultPersonas(){
+  return[
+    {name:"映画好き",roleType:"共感勢",  catchphrase:"何度見ても泣ける",       color:"#ff6b7a",words:[]},
+    {name:"シネマ通",roleType:"知識勢",  catchphrase:"演出が天才的",           color:"#c890d8",words:[]},
+    {name:"初見さん",roleType:"初心者勢",catchphrase:"見てみたくなった",       color:"#64d2ff",words:[]},
+    {name:"ネタ民",  roleType:"ネタ勢",  catchphrase:"草",                    color:"#57c87c",words:[]}
+  ];
+}
+function intervalRange(){if(state.commentSpeed==="fast")return[3000,7000];if(state.commentSpeed==="slow")return[10000,18000];return[6000,12000];}
+function scheduleComment(){clearTimeout(commentTimer);if(!commentsEnabled)return;const[mn,mx]=intervalRange();commentTimer=setTimeout(()=>{spawnComment();scheduleComment();},mn+Math.random()*(mx-mn));}
+
+function loadPersonas(){
+  const result=[];
+  try{const p=JSON.parse(localStorage.getItem("all_domedia_personas_v5")||"[]");result.push(...p.filter(x=>x&&x.name&&x.enabled!==false));}catch{}
+  try{const ids=new Set(result.map(x=>x.id||x.name));const p=JSON.parse(localStorage.getItem(SHARED_PERSONA_KEY)||"[]");result.push(...p.filter(x=>x&&x.name&&!ids.has(x.id||x.name)));}catch{}
+  return result;
+}
+async function syncPersonas(){
+  try{
+    const csvUrl=toSheetCsvUrl(state.personaSheetUrl);let csv=null;
+    try{const r=await fetch(csvUrl,{cache:"no-store"});if(r.ok)csv=await r.text();}catch{}
+    if(!csv)throw new Error("no csv");
+    personas=parsePersonas(csv);localStorage.setItem(SHARED_PERSONA_KEY,JSON.stringify(personas));
+    setStatus(`人格 ${personas.length}件 同期済み`);
+  }catch{personas=loadPersonas();if(!personas.length)personas=defaultPersonas();setStatus(`人格 ${personas.length}件（キャッシュ）`);}
+}
+function parsePersonas(csv){return parseCSV(csv).map((r,i)=>{const name=r[0];if(!name||name==="名前")return null;return{id:"s"+i,name,personalityType:r[1]||"",roleType:r[2]||"",reactionPattern:r[3]||"",catchphrase:r[4]||"",words:tags(r[6]),interests:tags(r[8]),color:["#ff6b7a","#64d2ff","#ff93bd","#9be870","#c890d8"][i%5]};}).filter(Boolean);}
+function parseCSV(text){const rows=[];let row=[],cell="",quote=false;const src=String(text||""),d=src.includes("\t")?"\t":",";for(let i=0;i<src.length;i++){const ch=src[i],nx=src[i+1];if(ch==='"'){if(quote&&nx==='"'){cell+='"';i++;}else quote=!quote;}else if(ch===d&&!quote){row.push(cell.trim());cell="";}else if((ch==="\n"||ch==="\r")&&!quote){if(ch==="\r"&&nx==="\n")i++;row.push(cell.trim());if(row.some(Boolean))rows.push(row);row=[];cell="";}else cell+=ch;}row.push(cell.trim());if(row.some(Boolean))rows.push(row);return rows;}
+function tags(v){return String(v||"").split(/[;,、・\s]+/).map(x=>x.trim()).filter(Boolean).slice(0,12);}
+function saveCommentLog(entry){try{const log=JSON.parse(localStorage.getItem(SHARED_COMMENT_KEY)||"[]");log.push({...entry,screen:"movie",at:new Date().toISOString()});localStorage.setItem(SHARED_COMMENT_KEY,JSON.stringify(log.slice(-200)));}catch{}}
+function saveSettings(){localStorage.setItem(SETTINGS_KEY,JSON.stringify({movieTitle:state.movieTitle,director:state.director,releaseYear:state.releaseYear,serviceUrl:state.serviceUrl,posterUrl:state.posterUrl,avatarInput:state.avatarInput,personaSheetUrl:state.personaSheetUrl,commentSpeed:state.commentSpeed,commentEngine:state.commentEngine,timer:state.timer}));}
+function loadSettings(){try{return JSON.parse(localStorage.getItem(SETTINGS_KEY)||"{}");}catch{return{};}}
+function copyObsUrl(){const url=new URL(location.href);if(state.movieTitle)url.searchParams.set("title",state.movieTitle);const str=url.toString();if(navigator.clipboard){navigator.clipboard.writeText(str).then(()=>toast("OBS URL をコピーしました ✓")).catch(()=>{prompt("URL をコピーしてください:",str);});}else{prompt("URL をコピーしてください:",str);}}
+function toSheetCsvUrl(url){const t=String(url||"").trim(),m=t.match(/\/spreadsheets\/d\/([^/]+)/);if(!m)return t;const gid=(t.match(/[?&]gid=(\d+)/)||[])[1];return`https://docs.google.com/spreadsheets/d/${m[1]}/export?format=csv${gid?`&gid=${gid}`:""}` ;}
+let toastTimer=null;
+function toast(msg){const el=$("toast");if(!el)return;clearTimeout(toastTimer);el.textContent=msg;el.classList.add("show");toastTimer=setTimeout(()=>el.classList.remove("show"),2800);}
+function setStatus(t){if($("personaStatus"))$("personaStatus").textContent=t;toast(t);}
+})();
+</script>
+</body>
+</html>

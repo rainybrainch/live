@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
@@ -13,22 +13,17 @@
   --font-ui: "Yu Gothic","Hiragino Kaku Gothic ProN","Noto Sans JP",system-ui,sans-serif;
   --font-title: "Yu Mincho","Hiragino Mincho ProN","BIZ UDPMincho",serif;
   color-scheme: dark;
+  --accent-rgb: 167,139,250;
 }
 * { box-sizing: border-box; }
 html, body { margin:0; width:100%; height:100%; overflow:hidden; background:#08040a; color:var(--text); font-family:var(--font-ui); }
 button,input,select,textarea { font:inherit; }
-button {
-  min-height:36px; border:1px solid var(--line); border-radius:8px;
-  background:rgba(255,255,255,.08); color:var(--text); padding:7px 10px; cursor:pointer;
-}
+button { min-height:36px; border:1px solid var(--line); border-radius:8px; background:rgba(255,255,255,.08); color:var(--text); padding:7px 10px; cursor:pointer; }
 button:hover { background:rgba(255,255,255,.14); }
 button.primary { border-color:rgba(167,139,250,.55); background:rgba(167,139,250,.18); }
 button.good   { border-color:rgba(100,210,255,.5);  background:rgba(100,210,255,.16); }
 button.warn   { border-color:rgba(196,181,253,.5);  background:rgba(196,181,253,.14); }
-input,select,textarea {
-  width:100%; border:1px solid var(--line); border-radius:8px;
-  background:rgba(0,0,0,.28); color:var(--text); padding:9px 10px; outline:none;
-}
+input,select,textarea { width:100%; border:1px solid var(--line); border-radius:8px; background:rgba(0,0,0,.28); color:var(--text); padding:9px 10px; outline:none; }
 textarea { min-height:70px; resize:vertical; line-height:1.55; }
 
 .stage {
@@ -36,114 +31,56 @@ textarea { min-height:70px; resize:vertical; line-height:1.55; }
   background:
     radial-gradient(circle at 22% 12%, rgba(167,139,250,.18), transparent 30rem),
     radial-gradient(circle at 78% 14%, rgba(109,40,217,.12), transparent 26rem),
-    linear-gradient(160deg, #120608, #0d080e 55%, #08040a);
+    linear-gradient(160deg, #0a0412, #0d080e 55%, #08040a);
 }
-.stage::before, .stage::after {
-  content:''; position:absolute; pointer-events:none; border-radius:50%;
-  filter:blur(90px); z-index:0;
-}
-.stage::before {
-  width:44vw; height:42vh; left:4%; top:5%;
-  background:radial-gradient(circle, rgba(167,139,250,.16), transparent 70%);
-  animation:orb1 28s ease-in-out infinite alternate;
-}
-.stage::after {
-  width:38vw; height:38vh; right:1%; bottom:16%;
-  background:radial-gradient(circle, rgba(120,30,60,.14), transparent 70%);
-  animation:orb2 36s ease-in-out infinite alternate;
-}
+.stage::before, .stage::after { content:''; position:absolute; pointer-events:none; border-radius:50%; filter:blur(90px); z-index:0; }
+.stage::before { width:44vw; height:42vh; left:4%; top:5%; background:radial-gradient(circle, rgba(167,139,250,.16), transparent 70%); animation:orb1 28s ease-in-out infinite alternate; }
+.stage::after  { width:38vw; height:38vh; right:1%; bottom:16%; background:radial-gradient(circle, rgba(80,30,120,.14), transparent 70%); animation:orb2 36s ease-in-out infinite alternate; }
 @keyframes orb1 { from{transform:translate(0,0) scale(1);} to{transform:translate(9vw,11vh) scale(1.22);} }
 @keyframes orb2 { from{transform:translate(0,0) scale(1);} to{transform:translate(-7vw,-9vh) scale(0.82);} }
 
-.brand {
-  position:absolute; top:20px; left:24px;
-  display:flex; align-items:center; gap:10px;
-  padding:9px 12px; border:1px solid var(--line); border-radius:8px;
-  background:rgba(8,4,10,.65); backdrop-filter:blur(10px); z-index:10;
-}
-.mark {
-  width:30px; height:30px; display:grid; place-items:center;
-  border-radius:7px; background:linear-gradient(135deg, var(--accent), #c03040);
-  color:#08040a; font-weight:900; font-size:12px;
-}
+.brand { position:absolute; top:20px; left:24px; display:flex; align-items:center; gap:10px; padding:9px 12px; border:1px solid var(--line); border-radius:8px; background:rgba(8,4,10,.65); backdrop-filter:blur(10px); z-index:10; }
+.mark { width:30px; height:30px; display:grid; place-items:center; border-radius:7px; background:linear-gradient(135deg, var(--accent), #6020b0); color:#08040a; font-weight:900; font-size:12px; }
 .brand strong { display:block; font-size:13px; line-height:1; }
 .brand span   { display:block; color:var(--muted); font-size:10px; font-weight:800; margin-top:2px; }
 
-.timer-display {
-  position:absolute; top:20px; left:50%; transform:translateX(-50%);
-  display:flex; align-items:center; gap:10px;
-  padding:9px 16px; border:1px solid rgba(255,255,255,.14); border-radius:999px;
-  background:rgba(8,4,10,.65); backdrop-filter:blur(10px); z-index:10;
-}
+.timer-display { position:absolute; top:20px; left:50%; transform:translateX(-50%); display:flex; align-items:center; gap:10px; padding:9px 16px; border:1px solid rgba(255,255,255,.14); border-radius:999px; background:rgba(8,4,10,.65); backdrop-filter:blur(10px); z-index:10; }
 .timer-time { font-size:clamp(18px,1.6vw,28px); font-weight:900; font-variant-numeric:tabular-nums; letter-spacing:.06em; }
 .timer-display.running { border-color:rgba(167,139,250,.45); box-shadow:0 0 22px rgba(167,139,250,.16), inset 0 0 12px rgba(167,139,250,.06); }
 .timer-display.running .timer-time { color:var(--accent); }
 .timer-label { font-size:10px; font-weight:900; letter-spacing:.1em; color:var(--muted); text-transform:uppercase; }
 .timer-btn { width:28px; height:28px; min-height:28px; padding:0; display:grid; place-items:center; border-radius:8px; font-size:13px; border-color:rgba(167,139,250,.36); }
-.timer-btn.running { background:linear-gradient(180deg,#ffd0d6,var(--accent)); color:#08040a; }
+.timer-btn.running { background:linear-gradient(180deg,#ddd0ff,var(--accent)); color:#08040a; }
 
 .avatar { position:absolute; right:2vw; bottom:118px; width:30vw; height:calc(100vh - 155px); display:grid; place-items:end center; }
 .avatar.empty::before { content:"V CHARACTER"; width:100%; height:100%; display:grid; place-items:center; border:2px dashed rgba(255,255,255,.16); border-radius:12px; color:rgba(255,255,255,.32); font-weight:900; letter-spacing:.08em; }
 .avatar img, .avatar video { max-width:100%; max-height:100%; object-fit:contain; filter:drop-shadow(0 24px 40px rgba(0,0,0,.48)); }
 
-.movie-poster { position:absolute; left:34vw; bottom:180px; width:clamp(100px,10vw,160px); display:none; }
-.movie-poster img { width:100%; border-radius:6px; box-shadow:4px 8px 28px rgba(0,0,0,.62); }
-.movie-poster.show { display:block; }
+.anime-poster { position:absolute; left:34vw; bottom:180px; width:clamp(100px,10vw,160px); display:none; }
+.anime-poster img { width:100%; border-radius:6px; box-shadow:4px 8px 28px rgba(0,0,0,.62); }
+.anime-poster.show { display:block; }
 
 .comment-tracks { position:absolute; left:0; right:0; bottom:0; height:108px; overflow:hidden; pointer-events:none; z-index:8; background:linear-gradient(0deg,rgba(0,0,0,.40),transparent); box-shadow:0 -28px 56px rgba(0,0,0,.44); }
 .c-track { height:36px; position:relative; overflow:hidden; border-bottom:1px solid rgba(255,255,255,.045); }
-.comment-h {
-  position:absolute; top:0; left:0; height:100%;
-  display:inline-flex; align-items:center; gap:7px;
-  padding:0 18px 0 10px; border-left:3px solid var(--user-color);
-  background:rgba(0,0,0,.56); backdrop-filter:blur(8px);
-  border-radius:0 999px 999px 0; font-size:clamp(13px,1.35vw,19px); font-weight:700;
-  text-shadow:0 1px 2px rgba(0,0,0,.7); transform:translateX(100vw);
-  animation:fly-left var(--speed,14s) linear forwards, comment-enter 1s ease-out forwards;
-  white-space:nowrap;
-}
+.comment-h { position:absolute; top:0; left:0; height:100%; display:inline-flex; align-items:center; gap:7px; padding:0 18px 0 10px; border-left:3px solid var(--user-color); background:rgba(0,0,0,.56); backdrop-filter:blur(8px); border-radius:0 999px 999px 0; font-size:clamp(13px,1.35vw,19px); font-weight:700; text-shadow:0 1px 2px rgba(0,0,0,.7); transform:translateX(100vw); animation:fly-left var(--speed,14s) linear forwards, comment-enter 1s ease-out forwards; white-space:nowrap; }
 .comment-h .user { color:var(--user-color); font-weight:900; font-size:.8em; opacity:.9; }
-.comment-h .user::before { content:'笳・; margin-right:4px; font-size:.55em; vertical-align:middle; opacity:.7; }
+.comment-h .user::before { content:'●'; margin-right:4px; font-size:.55em; vertical-align:middle; opacity:.7; }
 .comment-h .text { color:var(--text); }
 @keyframes fly-left { from{transform:translateX(100vw);} to{transform:translateX(calc(-100% - 20px));} }
 @keyframes comment-enter { 0%{opacity:0;box-shadow:0 0 28px var(--user-color),inset 0 0 10px rgba(255,255,255,.06);} 10%{opacity:1;box-shadow:0 0 16px var(--user-color);} 45%{box-shadow:0 0 6px color-mix(in srgb,var(--user-color) 50%,transparent);} 100%{box-shadow:0 0 2px color-mix(in srgb,var(--user-color) 18%,transparent);} }
 
-.title-card {
-  position:absolute; left:32px; bottom:178px; width:min(500px,42vw);
-  padding:14px 18px; border-left:5px solid var(--accent);
-  border-top:1px solid rgba(255,255,255,.12); border-right:1px solid rgba(255,255,255,.08);
-  border-bottom:1px solid rgba(255,255,255,.08); border-radius:8px;
-  background:linear-gradient(90deg,rgba(8,4,10,.88),rgba(8,4,10,.42)); backdrop-filter:blur(10px);
-}
+.title-card { position:absolute; left:32px; bottom:178px; width:min(500px,42vw); padding:14px 18px; border-left:5px solid var(--accent); border-top:1px solid rgba(255,255,255,.12); border-right:1px solid rgba(255,255,255,.08); border-bottom:1px solid rgba(255,255,255,.08); border-radius:8px; background:linear-gradient(90deg,rgba(8,4,10,.88),rgba(8,4,10,.42)); backdrop-filter:blur(10px); }
 .kicker { color:var(--accent); font-size:11px; font-weight:900; letter-spacing:.1em; margin-bottom:6px; text-transform:uppercase; }
 .card-title { font-family:var(--font-title); font-size:clamp(22px,2.6vw,42px); line-height:1.1; font-weight:900; overflow-wrap:anywhere; }
-.card-meta { margin-top:5px; color:rgba(247,248,251,.7); font-size:clamp(12px,1.1vw,15px); font-family:var(--font-title); }
-.card-link {
-  margin-top:10px; display:inline-flex; align-items:center; gap:6px;
-  padding:7px 14px; border-radius:999px; background:rgba(167,139,250,.18); border:1px solid rgba(167,139,250,.5);
-  color:var(--accent); font-size:11px; font-weight:900; letter-spacing:.08em;
-  text-decoration:none; transition:background .15s, box-shadow .15s;
-}
+.card-meta  { margin-top:5px; color:rgba(247,248,251,.7); font-size:clamp(12px,1.1vw,15px); font-family:var(--font-title); }
+.card-link  { margin-top:10px; display:inline-flex; align-items:center; gap:6px; padding:7px 14px; border-radius:999px; background:rgba(167,139,250,.18); border:1px solid rgba(167,139,250,.5); color:var(--accent); font-size:11px; font-weight:900; letter-spacing:.08em; text-decoration:none; transition:background .15s, box-shadow .15s; }
 .card-link:hover { background:rgba(167,139,250,.28); box-shadow:0 0 14px rgba(167,139,250,.22); }
 
-.caption {
-  position:absolute; left:50%; bottom:112px; transform:translateX(-50%);
-  width:min(860px,calc(100vw - 56px)); min-height:52px; display:grid; place-items:center;
-  padding:11px 20px; border:1px solid rgba(255,255,255,.14); border-top:2px solid rgba(167,139,250,.28);
-  border-radius:8px; background:rgba(4,2,4,.75); backdrop-filter:blur(10px);
-  text-align:center; font-family:var(--font-title); font-size:clamp(18px,1.9vw,28px); line-height:1.35; font-weight:900;
-  text-shadow:0 2px 3px rgba(0,0,0,.6); z-index:6; transition:border-top-color .3s;
-}
+.caption { position:absolute; left:50%; bottom:112px; transform:translateX(-50%); width:min(860px,calc(100vw - 56px)); min-height:52px; display:grid; place-items:center; padding:11px 20px; border:1px solid rgba(255,255,255,.14); border-top:2px solid rgba(167,139,250,.28); border-radius:8px; background:rgba(4,2,4,.75); backdrop-filter:blur(10px); text-align:center; font-family:var(--font-title); font-size:clamp(18px,1.9vw,28px); line-height:1.35; font-weight:900; text-shadow:0 2px 3px rgba(0,0,0,.6); z-index:6; transition:border-top-color .3s; }
 @keyframes cap-flash { 0%{border-top-color:var(--accent);box-shadow:0 -2px 20px rgba(167,139,250,.32);} 100%{border-top-color:rgba(167,139,250,.28);box-shadow:none;} }
 .caption.flash-in { animation:cap-flash 0.8s ease-out forwards; }
 
-.dock {
-  position:fixed; right:14px; top:14px;
-  width:min(420px,calc(100vw - 28px)); max-height:calc(100vh - 28px); overflow:auto;
-  border:1px solid rgba(255,255,255,.13); border-radius:10px;
-  background:linear-gradient(180deg,rgba(255,255,255,.055),rgba(255,255,255,.018)), rgba(10,4,12,.92);
-  backdrop-filter:blur(16px); z-index:20; box-shadow:0 28px 80px rgba(0,0,0,.44);
-}
+.dock { position:fixed; right:14px; top:14px; width:min(420px,calc(100vw - 28px)); max-height:calc(100vh - 28px); overflow:auto; border:1px solid rgba(255,255,255,.13); border-radius:10px; background:linear-gradient(180deg,rgba(255,255,255,.055),rgba(255,255,255,.018)), rgba(10,4,12,.92); backdrop-filter:blur(16px); z-index:20; box-shadow:0 28px 80px rgba(0,0,0,.44); }
 body.panel-hidden .dock { display:none; }
 .dock-head { display:flex; align-items:center; gap:9px; padding:12px 14px; border-bottom:1px solid var(--line); background:linear-gradient(90deg,rgba(167,139,250,.14),transparent 60%),rgba(255,255,255,.04); }
 .dock-title { flex:1; font-size:14px; font-weight:900; }
@@ -177,7 +114,6 @@ details .inner { padding:0 10px 10px; display:grid; gap:10px; }
 .open-tab { position:fixed; right:14px; bottom:122px; z-index:40; display:none; align-items:center; gap:8px; min-height:44px; padding:0 14px; border:1px solid rgba(255,255,255,.22); border-radius:8px; background:rgba(8,4,10,.86); color:var(--text); box-shadow:0 16px 40px rgba(0,0,0,.44); backdrop-filter:blur(14px); font-weight:900; font-size:13px; }
 body.panel-hidden .open-tab { display:inline-flex; }
 .open-tab-dot { width:8px; height:8px; border-radius:999px; background:var(--accent); box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 18%,transparent); }
-
 .toast { position:absolute; bottom:230px; left:50%; transform:translateX(-50%); padding:9px 18px; border-radius:8px; background:rgba(6,2,8,.92); border:1px solid rgba(255,255,255,.2); color:var(--text); font-size:12px; font-weight:900; letter-spacing:.04em; z-index:50; pointer-events:none; white-space:nowrap; opacity:0; transition:opacity .22s; }
 .toast.show { opacity:1; }
 .mic-live { display:none; color:var(--accent); font-size:10px; font-weight:900; letter-spacing:.1em; }
@@ -191,7 +127,6 @@ body.obs-mode .stage::before,body.obs-mode .stage::after{display:none;}
 body.obs-mode .dock,body.obs-mode .open-tab{display:none!important;}
 .obs-btn{padding:3px 9px;border-radius:5px;border:1px solid rgba(255,255,255,.2);background:0;font-size:9px;font-weight:900;color:rgba(255,255,255,.4);cursor:pointer;letter-spacing:.06em;transition:all .15s;flex-shrink:0;}
 .obs-btn.active{border-color:rgba(167,139,250,.5);background:rgba(167,139,250,.12);color:var(--accent);}
-/* 笏笏 DOCK ENHANCEMENTS 笏笏 */
 .dock-meta{font-size:10px;color:var(--muted);font-weight:700;margin-top:2px;min-height:14px;letter-spacing:.02em;}
 .dock-meta .on{color:#57c87c;}
 .cc-btn{padding:5px 10px;border-radius:7px;border:1px solid rgba(100,210,255,.3);background:rgba(100,210,255,.08);color:#64d2ff;font-size:11px;font-weight:900;cursor:pointer;min-height:36px;transition:all .15s;flex-shrink:0;}
@@ -200,7 +135,22 @@ body.obs-mode .dock,body.obs-mode .open-tab{display:none!important;}
 .spd-btn{flex:1;padding:6px 4px;border-radius:7px;border:1px solid var(--line);background:rgba(255,255,255,.04);font-size:10px;font-weight:900;cursor:pointer;transition:all .15s;color:var(--muted);}
 .spd-btn.active[data-speed="slow"]{border-color:rgba(100,210,255,.4);background:rgba(100,210,255,.08);color:#64d2ff;}
 .spd-btn.active[data-speed="normal"]{border-color:rgba(87,200,124,.4);background:rgba(87,200,124,.08);color:#57c87c;}
-.spd-btn.active[data-speed="fast"]{border-color:rgba(167,139,250,.4);background:rgba(167,139,250,.08);color:#ff6b7a;}
+.spd-btn.active[data-speed="fast"]{border-color:rgba(167,139,250,.4);background:rgba(167,139,250,.08);color:#a78bfa;}
+
+/* ── KISO FLOW ── */
+.kiso-flow { display:grid; gap:6px; }
+.kiso-step { display:flex; gap:10px; padding:9px 10px; border-radius:8px; border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.02); transition:background .15s; }
+.kiso-step.active { border-color:rgba(var(--accent-rgb),.3); background:rgba(var(--accent-rgb),.06); }
+.kiso-step.done { opacity:.5; }
+.kiso-num { width:24px; height:24px; border-radius:6px; background:var(--accent); color:#000; font-weight:900; font-size:11px; display:grid; place-items:center; flex-shrink:0; margin-top:1px; }
+.kiso-step.done .kiso-num { background:rgba(255,255,255,.2); color:rgba(255,255,255,.5); }
+.kiso-body { flex:1; min-width:0; }
+.kiso-label { font-size:11px; font-weight:900; color:var(--text); line-height:1.3; }
+.kiso-guide { font-size:10px; color:var(--muted); margin-top:2px; line-height:1.45; }
+.kiso-nav { display:flex; gap:6px; }
+.kiso-nav button { flex:1; min-height:36px; font-size:11px; font-weight:900; }
+.kiso-progress { height:3px; background:rgba(255,255,255,.08); border-radius:999px; overflow:hidden; }
+.kiso-bar { height:100%; background:var(--accent); border-radius:999px; transition:width .3s; }
 </style>
 </head>
 <body>
@@ -209,123 +159,164 @@ body.obs-mode .dock,body.obs-mode .open-tab{display:none!important;}
   <div id="toast" class="toast"></div>
   <div class="brand">
     <div class="mark">RB</div>
-    <div><strong>RAINYBRAIN</strong><span id="brandMode">Anime Review</span></div>
-    <div class="mic-live" id="micLive">笳・LIVE</div>
-    <button class="obs-btn" id="btnObs" onclick="toggleObsMode()">銅 OBS</button>
+    <div><strong>RAINYBRAIN</strong><span id="brandMode">ANIME REVIEW</span></div>
+    <div class="mic-live" id="micLive">● LIVE</div>
+    <button class="obs-btn" id="btnObs" onclick="toggleObsMode()">📺 OBS</button>
   </div>
   <div class="timer-display" id="timerDisplay">
     <div>
       <div class="timer-time" id="timerTime">--:--</div>
       <div class="timer-label" id="timerLabel">REC TIMER</div>
     </div>
-    <button class="timer-btn" id="stageTimerToggle" type="button">笆ｶ</button>
-    <button class="timer-btn" id="stageTimerReset"  type="button">竊ｺ</button>
+    <button class="timer-btn" id="stageTimerToggle" type="button">▶</button>
+    <button class="timer-btn" id="stageTimerReset"  type="button">↺</button>
   </div>
   <div class="avatar empty" id="avatar"></div>
-  <div class="movie-poster" id="moviePoster"><img id="posterImg" src="" alt="poster"></div>
+  <div class="anime-poster" id="animePoster"><img id="posterImg" src="" alt="poster"></div>
   <div class="comment-tracks" id="commentTracks">
     <div class="c-track" id="track0"></div>
     <div class="c-track" id="track1"></div>
     <div class="c-track" id="track2"></div>
   </div>
   <section class="title-card">
-    <div class="kicker" id="kicker">Anime Review</div>
-    <div class="card-title" id="cardTitle">莉頑律縺ｮ譏逕ｻ</div>
-    <div class="card-meta" id="cardMeta"></div>
-    <a class="card-link" id="cardLink" href="#" target="_blank" style="display:none">汐 隧ｳ邏ｰ繝ｻ驟堺ｿ｡繧定ｦ九ｋ</a>
+    <div class="kicker" id="kicker">ANIME REVIEW</div>
+    <div class="card-title" id="cardTitle">今日のアニメ</div>
+    <div class="card-meta"  id="cardMeta"></div>
+    <a class="card-link" id="cardLink" href="#" target="_blank" style="display:none">🎬 配信で見る</a>
   </section>
-  <div class="caption" id="caption">縲後・繧､繧ｯ髢句ｧ九阪〒譁・ｭ苓ｵｷ縺薙＠縺悟ｧ九∪繧翫∪縺・/div>
-  <div class="shortcut-hint">Space=繧ｿ繧､繝槭・縲M=繝槭う繧ｯ縲C=繧ｳ繝｡繝ｳ繝医F=蜈ｨ逕ｻ髱｢縲H=繝代ロ繝ｫ</div>
+  <div class="caption" id="caption">「マイク開始」で文字起こしが始まります</div>
+  <div class="shortcut-hint">Space=タイマー　M=マイク　C=コメント　F=全画面　H=パネル</div>
 </main>
 
 <aside id="dock" class="dock">
   <div class="dock-head">
     <div style="flex:1;min-width:0;">
-      <div class="dock-title">Anime Review<span>RAINYBRAIN 譏逕ｻ邏ｹ莉矩・菫｡</span></div>
-      <div class="dock-meta" id="dockMeta">町 0莉ｶ縲児 蛛懈ｭ｢荳ｭ</div>
+      <div class="dock-title">Anime Review<span>RAINYBRAIN アニメ紹介配信</span></div>
+      <div class="dock-meta" id="dockMeta">💬 0件　🎙 停止中</div>
     </div>
-    <button class="cc-btn" id="ccBtn" onclick="toggleComments()" type="button">町 ON</button>
-    <button id="hideDock"  type="button">髢峨§繧・/button>
-    <button id="micBtn" class="good" type="button">繝槭う繧ｯ髢句ｧ・/button>
+    <button class="cc-btn" id="ccBtn" onclick="toggleComments()" type="button">💬 ON</button>
+    <button id="hideDock"  type="button">閉じる</button>
+    <button id="micBtn" class="good" type="button">マイク開始</button>
   </div>
   <div class="speed-row">
-    <button class="spd-btn" data-speed="slow"   onclick="setSpeed('slow')"   type="button">世 菴・/button>
-    <button class="spd-btn active" data-speed="normal" onclick="setSpeed('normal')" type="button">笆ｷ 譎ｮ騾・/button>
-    <button class="spd-btn" data-speed="fast"   onclick="setSpeed('fast')"   type="button">櫨 鬮・/button>
+    <button class="spd-btn" data-speed="slow"   onclick="setSpeed('slow')"   type="button">🐢 低</button>
+    <button class="spd-btn active" data-speed="normal" onclick="setSpeed('normal')" type="button">▷ 普通</button>
+    <button class="spd-btn" data-speed="fast"   onclick="setSpeed('fast')"   type="button">🔥 高</button>
   </div>
   <div class="dock-body">
     <section class="section">
-      <div class="section-title"><span class="step">1</span>譏逕ｻ縺ｮ諠・ｱ</div>
-      <div class="field"><label for="movieTitle">繧ｿ繧､繝医Ν</label><input id="movieTitle" placeholder="萓・ 蜷帙・蜷阪・縲・></div>
+      <div class="section-title"><span class="step">1</span>アニメの情報</div>
+      <div class="field"><label for="animeTitle">タイトル</label><input id="animeTitle" placeholder="例: 進撃の巨人 / SPY×FAMILY"></div>
       <div class="grid2">
-        <div class="field"><label for="director">逶｣逹｣</label><input id="director" placeholder="萓・ 譁ｰ豬ｷ隱"></div>
-        <div class="field"><label for="releaseYear">蜈ｬ髢句ｹｴ</label><input id="releaseYear" placeholder="萓・ 2016" type="number" min="1900" max="2099"></div>
+        <div class="field"><label for="studio">制作会社</label><input id="studio" placeholder="例: MAPPA / WIT"></div>
+        <div class="field"><label for="season">放送時期</label><input id="season" placeholder="例: 2024年秋"></div>
       </div>
-      <div class="field"><label for="serviceUrl">驟堺ｿ｡繧ｵ繝ｼ繝薙せ URL・井ｻｻ諢擾ｼ・/label><input id="serviceUrl" placeholder="https://..."></div>
-      <div class="field"><label for="posterUrl">繝昴せ繧ｿ繝ｼ逕ｻ蜒・URL・井ｻｻ諢擾ｼ・/label><input id="posterUrl" placeholder="https://..."></div>
+      <div class="field"><label for="serviceUrl">配信サービス URL（任意）</label><input id="serviceUrl" placeholder="https://..."></div>
+      <div class="field"><label for="posterUrl">キービジュアル URL（任意）</label><input id="posterUrl" placeholder="https://..."></div>
       <div class="actions">
-        <button id="applyBtn" class="primary wide" type="button">繧ｹ繝・・繧ｸ縺ｫ蜿肴丐</button>
+        <button id="applyBtn" class="primary wide" type="button">ステージに反映</button>
         <button id="copyObsBtn" type="button">OBS URL</button>
-        <button id="fullscreenBtn" type="button">蜈ｨ逕ｻ髱｢</button>
+        <button id="fullscreenBtn" type="button">全画面</button>
       </div>
     </section>
+
     <section class="section">
-      <div class="section-title"><span class="step">2</span>蜿朱鹸繧ｿ繧､繝槭・</div>
+      <div class="section-title"><span class="step">2</span>起承転結フロー</div>
+      <div class="kiso-progress"><div class="kiso-bar" id="kisoBar" style="width:0%"></div></div>
+      <div class="kiso-flow" id="kisoFlow">
+      <div class="kiso-step active" id="kisoStep0">
+        <div class="kiso-num">起</div>
+        <div class="kiso-body">
+          <div class="kiso-label">「このアニメ、一言で言うと◯◯な作品です」</div>
+          <div class="kiso-guide">世界観や空気感から入る。タイトルは後でもOK</div>
+        </div>
+      </div>
+      <div class="kiso-step " id="kisoStep1">
+        <div class="kiso-num">承</div>
+        <div class="kiso-body">
+          <div class="kiso-label">あらすじ・キャラ紹介・制作会社</div>
+          <div class="kiso-guide">ネタバレなし5文以内でまとめる。推しキャラを1人紹介</div>
+        </div>
+      </div>
+      <div class="kiso-step " id="kisoStep2">
+        <div class="kiso-num">転</div>
+        <div class="kiso-body">
+          <div class="kiso-label">作画・音楽・声優の見どころ</div>
+          <div class="kiso-guide">「特にここが好き」と具体的なシーンや楽曲名で語る</div>
+        </div>
+      </div>
+      <div class="kiso-step " id="kisoStep3">
+        <div class="kiso-num">結</div>
+        <div class="kiso-body">
+          <div class="kiso-label">「刺さる人はこういう人」＋星評価</div>
+          <div class="kiso-guide">ターゲット視聴者を明示して締める</div>
+        </div>
+      </div>
+      </div>
+      <div class="kiso-nav">
+        <button onclick="kisoBack()" type="button">← 戻る</button>
+        <button onclick="kisoNext()" type="button" id="kisoNextBtn" style="border-color:rgba(var(--accent-rgb),.45);background:rgba(var(--accent-rgb),.14);color:var(--accent);">次のステップ →</button>
+        <button onclick="kisoReset()" type="button">リセット</button>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-title"><span class="step">3</span>収録タイマー</div>
       <div class="grid2">
-        <div class="field"><label for="timerMinutes">蛻・/label><input id="timerMinutes" type="number" min="1" max="240" value="60"></div>
-        <div class="field"><label for="timerPreset">繝励Μ繧ｻ繝・ヨ</label>
-          <select id="timerPreset"><option value="60">60蛻・/option><option value="30">30蛻・/option><option value="90">90蛻・/option><option value="120">120蛻・/option></select>
+        <div class="field"><label for="timerMinutes">分</label><input id="timerMinutes" type="number" min="1" max="240" value="60"></div>
+        <div class="field"><label for="timerPreset">プリセット</label>
+          <select id="timerPreset"><option value="60">60分</option><option value="30">30分</option><option value="90">90分</option><option value="120">120分</option></select>
         </div>
       </div>
       <div class="actions">
-        <button id="timerSetBtn"   type="button">蜿肴丐</button>
-        <button id="timerStartBtn" class="good" type="button">髢句ｧ・/button>
-        <button id="timerResetBtn" type="button">繝ｪ繧ｻ繝・ヨ</button>
+        <button id="timerSetBtn"   type="button">反映</button>
+        <button id="timerStartBtn" class="good" type="button">開始</button>
+        <button id="timerResetBtn" type="button">リセット</button>
       </div>
     </section>
     <section class="section">
-      <div class="section-title"><span class="step">3</span>譁・ｭ苓ｵｷ縺薙＠</div>
+      <div class="section-title"><span class="step">4</span>文字起こし</div>
       <div class="transcript-plan-row">
-        <button class="plan-btn active" id="planFreeBtn" type="button">辟｡譁・span class="plan-tag">Web Speech</span></button>
-        <button class="plan-btn pro"    id="planProBtn"  type="button">Pro<span class="plan-tag">Whisper API</span><span class="plan-soon">貅門ｙ荳ｭ</span></button>
+        <button class="plan-btn active" id="planFreeBtn" type="button">無料<span class="plan-tag">Web Speech</span></button>
+        <button class="plan-btn pro"    id="planProBtn"  type="button">Pro<span class="plan-tag">Whisper API</span><span class="plan-soon">準備中</span></button>
       </div>
       <div id="planFreeArea">
         <div class="actions">
-          <button id="clearTranscriptBtn" type="button">蟄怜ｹ輔け繝ｪ繧｢</button>
-          <button id="commentBtn" class="warn" type="button">繧ｳ繝｡繝ｳ繝・莉ｶ</button>
+          <button id="clearTranscriptBtn" type="button">字幕クリア</button>
+          <button id="commentBtn" class="warn" type="button">コメント1件</button>
         </div>
-        <div class="field"><label for="manualTranscript">隧ｱ鬘後ｒ謇句・蜉幢ｼ・nter 縺ｧ蜿肴丐・・/label><input id="manualTranscript" placeholder="萓・ 縺薙・譏逕ｻ縺ｮ縺薙％縺悟･ｽ縺・></div>
-        <div id="transcriptLog" class="log">縺ｾ縺譁・ｭ苓ｵｷ縺薙＠縺ｯ縺ゅｊ縺ｾ縺帙ｓ縲・/div>
+        <div class="field"><label for="manualTranscript">話題を手入力（Enter で反映）</label><input id="manualTranscript" placeholder="例: このシーンの作画が..."></div>
+        <div id="transcriptLog" class="log">まだ文字起こしはありません。</div>
       </div>
       <div id="planProArea" style="display:none">
         <div class="pro-placeholder">
-          <div style="font-size:1.8rem">児</div>
-          <div class="pro-placeholder-title">Whisper API 騾｣謳ｺ</div>
-          <div class="pro-placeholder-desc">鬮倡ｲｾ蠎ｦ縺ｪ髻ｳ螢ｰ隱崎ｭ倥１ro 繝励Λ繝ｳ縺ｧ蛻ｩ逕ｨ蜿ｯ閭ｽ縺ｫ縺ｪ繧翫∪縺吶・/div>
+          <div style="font-size:1.8rem">🎙</div>
+          <div class="pro-placeholder-title">Whisper API 連携</div>
+          <div class="pro-placeholder-desc">高精度な音声認識。Pro プランで利用可能になります。</div>
         </div>
       </div>
     </section>
     <details>
-      <summary>繧ｳ繝｡繝ｳ繝井ｺｺ譬ｼ險ｭ螳・/summary>
+      <summary>コメント・人格設定</summary>
       <div class="inner">
-        <div class="field"><label for="personaSheetUrl">莠ｺ譬ｼ CSV / Google Sheets URL</label><input id="personaSheetUrl" value="https://docs.google.com/spreadsheets/d/1YNQUnDv18WsMm7H84Ytg3lIgvWmetLZ3bqyMm3RCgkI/export?format=csv"></div>
+        <div class="field"><label for="personaSheetUrl">人格 CSV / Google Sheets URL</label><input id="personaSheetUrl" value="https://docs.google.com/spreadsheets/d/1YNQUnDv18WsMm7H84Ytg3lIgvWmetLZ3bqyMm3RCgkI/export?format=csv"></div>
         <div class="grid2">
-          <div class="field"><label for="commentSpeed">繧ｳ繝｡繝ｳ繝磯溷ｺｦ</label>
-            <select id="commentSpeed"><option value="normal">縺ｵ縺､縺・/option><option value="slow">繧・▲縺上ｊ</option><option value="fast">螟壹ａ</option></select>
+          <div class="field"><label for="commentSpeed">コメント速度</label>
+            <select id="commentSpeed"><option value="normal">ふつう</option><option value="slow">ゆっくり</option><option value="fast">多め</option></select>
           </div>
-          <div class="field"><label for="avatarInput">V繧ｭ繝｣繝ｩ邏譚・URL</label><input id="avatarInput" placeholder="assets/v-character.webm"></div>
+          <div class="field"><label for="avatarInput">Vキャラ素材 URL</label><input id="avatarInput" placeholder="assets/v-character.webm"></div>
         </div>
         <div class="actions">
-          <button id="syncPersonaBtn" class="primary" type="button">莠ｺ譬ｼ蜷梧悄</button>
+          <button id="syncPersonaBtn" class="primary" type="button">人格同期</button>
           <a href="https://rainybrainch.github.io/comment-studio/ai-comment-personas.html" target="_blank"
-             style="display:flex;align-items:center;justify-content:center;min-height:44px;padding:7px 10px;border:1px solid rgba(224,160,255,.45);border-radius:8px;background:rgba(224,160,255,.12);color:#e0a0ff;font-weight:900;font-size:12px;text-decoration:none;letter-spacing:.04em;">鹿 Channel OS</a>
+             style="display:flex;align-items:center;justify-content:center;min-height:44px;padding:7px 10px;border:1px solid rgba(224,160,255,.45);border-radius:8px;background:rgba(224,160,255,.12);color:#e0a0ff;font-weight:900;font-size:12px;text-decoration:none;letter-spacing:.04em;">🎭 Channel OS</a>
         </div>
-        <div class="status-text" id="personaStatus">譛ｪ蜷梧悄</div>
+        <div class="status-text" id="personaStatus">未同期</div>
         <div style="border-top:1px solid rgba(255,255,255,.08);padding-top:10px;display:flex;flex-direction:column;gap:6px;">
-          <div style="font-size:9px;font-weight:900;letter-spacing:.1em;color:var(--muted);text-transform:uppercase;">AI 繧ｳ繝｡繝ｳ繝育函謌・<span style="font-size:9px;background:rgba(100,210,255,.1);color:#64d2ff;border:1px solid rgba(100,210,255,.25);padding:1px 6px;border-radius:999px;text-transform:none;letter-spacing:0;">Gemini 2.0 Flash</span></div>
-          <select id="commentEngine" style="min-height:36px;font-size:11px;"><option value="template">繝・Φ繝励Ξ繝ｼ繝茨ｼ育┌譁呻ｼ・/option><option value="gemini">Gemini AI</option></select>
+          <div style="font-size:9px;font-weight:900;letter-spacing:.1em;color:var(--muted);text-transform:uppercase;">AI コメント生成 <span style="font-size:9px;background:rgba(100,210,255,.1);color:#64d2ff;border:1px solid rgba(100,210,255,.25);padding:1px 6px;border-radius:999px;text-transform:none;letter-spacing:0;">Gemini 2.0 Flash</span></div>
+          <select id="commentEngine" style="min-height:36px;font-size:11px;"><option value="template">テンプレート（無料）</option><option value="gemini">Gemini AI</option></select>
           <div id="geminiArea" style="display:none;flex-direction:column;gap:5px;">
-            <div style="display:flex;gap:5px;"><input id="geminiKey" type="password" placeholder="AIzaSy... 縺ｾ縺溘・ AQ.Ab8..." style="flex:1;min-height:36px;font-size:11px;"><button onclick="saveGeminiKey()" style="white-space:nowrap;min-height:36px;padding:0 10px;font-size:11px;font-weight:900;border:1px solid rgba(100,210,255,.3);background:rgba(100,210,255,.08);color:#64d2ff;border-radius:8px;cursor:pointer;flex-shrink:0;">菫晏ｭ・/button></div>
+            <div style="display:flex;gap:5px;"><input id="geminiKey" type="password" placeholder="AIzaSy..." style="flex:1;min-height:36px;font-size:11px;"><button onclick="saveGeminiKey()" style="white-space:nowrap;min-height:36px;padding:0 10px;font-size:11px;font-weight:900;border:1px solid rgba(100,210,255,.3);background:rgba(100,210,255,.08);color:#64d2ff;border-radius:8px;cursor:pointer;flex-shrink:0;">保存</button></div>
             <div id="geminiStatus" style="font-size:10px;color:var(--muted);"></div>
           </div>
         </div>
@@ -335,7 +326,7 @@ body.obs-mode .dock,body.obs-mode .open-tab{display:none!important;}
 </aside>
 
 <button class="open-tab" id="openDock" type="button">
-  <span class="open-tab-dot"></span>險ｭ螳・
+  <span class="open-tab-dot"></span>設定
 </button>
 
 <script>
@@ -343,21 +334,21 @@ body.obs-mode .dock,body.obs-mode .open-tab{display:none!important;}
 "use strict";
 const SHARED_PERSONA_KEY = "rainybrain_personas_v1";
 const SHARED_COMMENT_KEY = "rainybrain_comment_log_v1";
-const SETTINGS_KEY       = "rainybrain_movie_stream_v1";
+const SETTINGS_KEY       = "rainybrain_anime_stream_v1";
 const GEMINI_KEY_STORE   = "streaming_gemini_key_v1";
 const PARAMS = new URLSearchParams(location.search);
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 const $ = id => document.getElementById(id);
 
 const state = {
-  movieTitle:"", director:"", releaseYear:"", serviceUrl:"", posterUrl:"",
+  animeTitle:"", studio:"", season:"", serviceUrl:"", posterUrl:"",
   commentEngine:"template",
   avatarInput:"", personaSheetUrl:"https://docs.google.com/spreadsheets/d/1YNQUnDv18WsMm7H84Ytg3lIgvWmetLZ3bqyMm3RCgkI/export?format=csv",
   commentSpeed:"normal",
   timer:{ durationSec:3600, remainingSec:3600, running:false, endAt:0 }
 };
 Object.assign(state, loadSettings());
-if(PARAMS.get("title")) state.movieTitle = PARAMS.get("title");
+if(PARAMS.get("title")) state.animeTitle = PARAMS.get("title");
 state.timer = normalizeTimer(state.timer);
 
 let personas=loadPersonas(), transcript=[], commentTimer=null, recognition=null;
@@ -372,8 +363,8 @@ function init() { hydrate(); bind(); applyStage(); startClock(); scheduleComment
 function toggleComments(){
   commentsEnabled=!commentsEnabled;
   const btn=$("ccBtn");
-  if(btn){btn.textContent=commentsEnabled?"町 ON":"町 OFF";btn.classList.toggle("off",!commentsEnabled);}
-  toast(commentsEnabled?"町 繧ｳ繝｡繝ｳ繝・ON":"町 繧ｳ繝｡繝ｳ繝・OFF");
+  if(btn){btn.textContent=commentsEnabled?"💬 ON":"💬 OFF";btn.classList.toggle("off",!commentsEnabled);}
+  toast(commentsEnabled?"💬 コメント ON":"💬 コメント OFF");
   if(commentsEnabled)scheduleComment();else clearTimeout(commentTimer);
 }
 function setSpeed(spd){
@@ -381,15 +372,15 @@ function setSpeed(spd){
   document.querySelectorAll(".spd-btn").forEach(b=>b.classList.toggle("active",b.dataset.speed===spd));
   if($("commentSpeed"))$("commentSpeed").value=spd;
   saveSettings();if(commentsEnabled)scheduleComment();
-  toast(spd==="slow"?"世 菴朱・:spd==="fast"?"櫨 鬮倬・:"笆ｷ 譎ｮ騾夐・);
+  toast(spd==="slow"?"🐢 低速":spd==="fast"?"🔥 高速":"▷ 普通速");
 }
 function updateDockMeta(){
   const el=$("dockMeta");
-  if(el)el.innerHTML=`町 ${commentCountN}莉ｶ縲児 ${listening?'<span class="on">笳・蜿朱鹸荳ｭ</span>':"蛛懈ｭ｢荳ｭ"}`;
+  if(el)el.innerHTML=`💬 ${commentCountN}件　🎙 ${listening?'<span class="on">● 収録中</span>':"停止中"}`;
 }
 
 function hydrate() {
-  ["movieTitle","director","releaseYear","serviceUrl","posterUrl","avatarInput","personaSheetUrl","commentSpeed"].forEach(id=>{
+  ["animeTitle","studio","season","serviceUrl","posterUrl","avatarInput","personaSheetUrl","commentSpeed"].forEach(id=>{
     if($(id)) $(id).value = state[id]||"";
   });
   $("timerMinutes").value = Math.max(1, Math.round(state.timer.durationSec/60));
@@ -401,7 +392,7 @@ function hydrate() {
 }
 
 function bind() {
-  ["movieTitle","director","releaseYear","serviceUrl","posterUrl","avatarInput","personaSheetUrl","commentSpeed"].forEach(id=>{
+  ["animeTitle","studio","season","serviceUrl","posterUrl","avatarInput","personaSheetUrl","commentSpeed"].forEach(id=>{
     if($(id)) $(id).addEventListener("input",()=>{ state[id]=$(id).value; saveSettings(); applyStage(); });
   });
   $("applyBtn")?.addEventListener("click",applyStage);
@@ -414,7 +405,7 @@ function bind() {
   $("stageTimerToggle")?.addEventListener("click",toggleTimer);
   $("stageTimerReset")?.addEventListener("click",resetTimer);
   $("micBtn")?.addEventListener("click",toggleMic);
-  $("clearTranscriptBtn")?.addEventListener("click",()=>{ transcript=[]; $("transcriptLog").textContent="縺ｾ縺譁・ｭ苓ｵｷ縺薙＠縺ｯ縺ゅｊ縺ｾ縺帙ｓ縲・; $("caption").textContent="縲後・繧､繧ｯ髢句ｧ九阪〒譁・ｭ苓ｵｷ縺薙＠縺悟ｧ九∪繧翫∪縺・; });
+  $("clearTranscriptBtn")?.addEventListener("click",()=>{ transcript=[]; $("transcriptLog").textContent="まだ文字起こしはありません。"; $("caption").textContent="「マイク開始」で文字起こしが始まります"; });
   $("commentBtn")?.addEventListener("click",spawnComment);
   $("manualTranscript")?.addEventListener("keydown",e=>{ if(e.key!=="Enter")return; const v=$("manualTranscript").value.trim(); if(!v)return; $("manualTranscript").value=""; pushTranscript(v); spawnComment(); });
   $("syncPersonaBtn")?.addEventListener("click",syncPersonas);
@@ -423,30 +414,29 @@ function bind() {
   $("openDock")?.addEventListener("click",()=>document.body.classList.remove("panel-hidden"));
   $("planFreeBtn")?.addEventListener("click",()=>{ $("planFreeBtn").classList.add("active"); $("planProBtn").classList.remove("active"); $("planFreeArea").style.display=""; $("planProArea").style.display="none"; });
   $("planProBtn")?.addEventListener("click",()=>{ $("planProBtn").classList.add("active"); $("planFreeBtn").classList.remove("active"); $("planFreeArea").style.display="none"; $("planProArea").style.display=""; });
-  document.addEventListener("fullscreenchange",()=>{ $("fullscreenBtn").textContent=document.fullscreenElement?"蜈ｨ逕ｻ髱｢隗｣髯､":"蜈ｨ逕ｻ髱｢"; });
+  document.addEventListener("fullscreenchange",()=>{ $("fullscreenBtn").textContent=document.fullscreenElement?"全画面解除":"全画面"; });
   document.addEventListener("keydown",e=>{
     if(e.target.matches("input,textarea,select"))return;
-    if(e.code==="Space"){e.preventDefault();toggleTimer();toast(state.timer.running?"竢ｸ 繧ｿ繧､繝槭・蛛懈ｭ｢":"笆ｶ 繧ｿ繧､繝槭・髢句ｧ・);}
+    if(e.code==="Space"){e.preventDefault();toggleTimer();toast(state.timer.running?"⏸ タイマー停止":"▶ タイマー開始");}
     if(e.key==="m"||e.key==="M") toggleMic();
-    if(e.key==="c"||e.key==="C"){spawnComment();toast("町 繧ｳ繝｡繝ｳ繝育函謌・);}
+    if(e.key==="c"||e.key==="C"){spawnComment();toast("💬 コメント生成");}
     if(e.key==="f"||e.key==="F") toggleFullscreen();
-    if(e.key==="h"||e.key==="H"){document.body.classList.toggle("panel-hidden");toast(document.body.classList.contains("panel-hidden")?"繝代ロ繝ｫ髱櫁｡ｨ遉ｺ":"繝代ロ繝ｫ陦ｨ遉ｺ");}
+    if(e.key==="h"||e.key==="H"){document.body.classList.toggle("panel-hidden");toast(document.body.classList.contains("panel-hidden")?"パネル非表示":"パネル表示");}
   });
 }
 
 function applyStage() {
-  $("cardTitle").textContent = state.movieTitle||"莉頑律縺ｮ譏逕ｻ";
-  const meta=[state.director?`逶｣逹｣: ${state.director}`:"",state.releaseYear?`${state.releaseYear}蟷ｴ`:""].filter(Boolean).join("縲");
+  $("cardTitle").textContent = state.animeTitle||"今日のアニメ";
+  const meta=[state.studio?`制作: ${state.studio}`:"",state.season].filter(Boolean).join("　");
   $("cardMeta").textContent = meta;
   const lnk=$("cardLink");
   if(state.serviceUrl){lnk.href=state.serviceUrl;lnk.style.display="";}
   else lnk.style.display="none";
-  const poster=$("moviePoster");
+  const poster=$("animePoster");
   if(state.posterUrl){$("posterImg").src=state.posterUrl;poster.classList.add("show");}
   else poster.classList.remove("show");
   updateAvatar();
 }
-
 function updateAvatar(){
   const src=state.avatarInput.trim(), av=$("avatar");
   av.innerHTML=""; av.classList.toggle("empty",!src);
@@ -481,12 +471,12 @@ function resetTimer(){
 }
 function updateClock(){
   const prevRem=state.timer.remainingSec;state.timer=normalizeTimer(state.timer);
-  if(state.timer.running&&state.timer.remainingSec<=0){state.timer.running=false;state.timer.endAt=0;if(prevRem>0){toast("竢ｱ 繧ｿ繧､繝槭・邨ゆｺ・ｼ・);$("timerDisplay")?.classList.add("flash");setTimeout(()=>$("timerDisplay")?.classList.remove("flash"),2800);}}
+  if(state.timer.running&&state.timer.remainingSec<=0){state.timer.running=false;state.timer.endAt=0;if(prevRem>0){toast("⏱ タイマー終了！");$("timerDisplay")?.classList.add("flash");setTimeout(()=>$("timerDisplay")?.classList.remove("flash"),2800);}}
   $("timerTime").textContent=fmt(state.timer.remainingSec);
   $("timerLabel").textContent=state.timer.running?"REC RUNNING":"REC TIMER";
   $("timerDisplay").classList.toggle("running",state.timer.running);
-  $("timerStartBtn").textContent=state.timer.running?"蛛懈ｭ｢":"髢句ｧ・;
-  $("stageTimerToggle").textContent=state.timer.running?"竇｡":"笆ｶ";
+  $("timerStartBtn").textContent=state.timer.running?"停止":"開始";
+  $("stageTimerToggle").textContent=state.timer.running?"Ⅱ":"▶";
   $("stageTimerToggle").classList.toggle("running",state.timer.running);
 }
 function fmt(sec){const n=Math.max(0,parseInt(sec||0)||0),h=Math.floor(n/3600),m=Math.floor((n%3600)/60),s=n%60;return h>0?`${h}:${pad(m)}:${pad(s)}`:`${pad(m)}:${pad(s)}`;}
@@ -496,7 +486,7 @@ function toggleFullscreen(){document.fullscreenElement?document.exitFullscreen?.
 
 function pushTranscript(text){
   const clean=text.replace(/\s+/g," ").trim();if(!clean)return;
-  const key=clean.replace(/[\s縲√・.!・・・歉/g,"");if(!key||key===lastKey)return;
+  const key=clean.replace(/[\s、。,.!！?？]/g,"");if(!key||key===lastKey)return;
   lastKey=key;transcript.unshift({text:clean,at:Date.now()});transcript=transcript.slice(0,40);
   const cap=$("caption");cap.textContent=clean;cap.classList.remove("flash-in");void cap.offsetWidth;cap.classList.add("flash-in");
   $("transcriptLog").textContent=transcript.slice(0,10).map(x=>x.text).join("\n");
@@ -509,13 +499,13 @@ function queueTranscript(text){
 function recentText(){return transcript.slice(0,6).map(x=>x.text).reverse().join("\n").slice(-1000);}
 
 function toggleMic(){
-  if(!SpeechRecognition){$("caption").textContent="笞 Chrome / Edge 縺悟ｿ・ｦ√〒縺・;toast("Chrome/Edge 縺ｮ髻ｳ螢ｰ隱崎ｭ倥′蠢・ｦ√〒縺・);return;}
-  if(listening){clearTimeout(restartTimer);listening=false;try{recognition.stop();}catch{}stopMeter();$("micBtn").textContent="繝槭う繧ｯ髢句ｧ・;$("micBtn").className="good";$("micLive")?.classList.remove("active");toast("繝槭う繧ｯ蛛懈ｭ｢");updateDockMeta();return;}
+  if(!SpeechRecognition){$("caption").textContent="⚠ Chrome / Edge が必要です";toast("Chrome/Edge の音声認識が必要です");return;}
+  if(listening){clearTimeout(restartTimer);listening=false;try{recognition.stop();}catch{}stopMeter();$("micBtn").textContent="マイク開始";$("micBtn").className="good";$("micLive")?.classList.remove("active");toast("マイク停止");updateDockMeta();return;}
   recognition=new SpeechRecognition();recognition.lang="ja-JP";recognition.continuous=true;recognition.interimResults=true;
   recognition.onresult=e=>{let fin="",int="";for(let i=e.resultIndex;i<e.results.length;i++){const t=e.results[i][0]?.transcript||"";if(e.results[i].isFinal)fin+=t;else int+=t;}if(int)$("caption").textContent=int;if(fin.trim())queueTranscript(fin);};
   recognition.onerror=()=>{if(listening){clearTimeout(restartTimer);restartTimer=setTimeout(()=>{if(listening)try{recognition.start();}catch{}},1200);}};
   recognition.onend=()=>{if(listening){clearTimeout(restartTimer);restartTimer=setTimeout(()=>{if(listening)try{recognition.start();}catch{}},700);}};
-  recognition.start();listening=true;$("micBtn").textContent="繝槭う繧ｯ蛛懈ｭ｢";$("micBtn").className="warn";$("micLive")?.classList.add("active");toast("繝槭う繧ｯ髢句ｧ・窶・隧ｱ縺励※縺上□縺輔＞");startMeter();updateDockMeta();
+  recognition.start();listening=true;$("micBtn").textContent="マイク停止";$("micBtn").className="warn";$("micLive")?.classList.add("active");toast("マイク開始 — 話してください");startMeter();updateDockMeta();
 }
 async function startMeter(){try{micStream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true}});audioCtx=new AudioContext();const an=audioCtx.createAnalyser();audioCtx.createMediaStreamSource(micStream).connect(an);}catch{}}
 function stopMeter(){if(audioCtx){audioCtx.close().catch(()=>{});audioCtx=null;}if(micStream){micStream.getTracks().forEach(t=>t.stop());micStream=null;}}
@@ -528,8 +518,8 @@ function spawnComment(){
 async function spawnGeminiComment(){
   const apiKey=localStorage.getItem(GEMINI_KEY_STORE)||"";
   const p=pickPersona();
-  const topic=recentText()||[state.movieTitle,state.director].filter(Boolean).join(" ")||"譏逕ｻ驟堺ｿ｡荳ｭ";
-  const prompt=`縺ゅ↑縺溘・YouTube繝ｩ繧､繝夜・菫｡縺ｮ隕冶・閠・〒縺吶ゅΟ繝ｼ繝ｫ・・{p.roleType||"蜈ｱ諢溷兇"}縲∝錐蜑搾ｼ・{p.name}縲・n驟堺ｿ｡繝医ヴ繝・け・壹・{topic.slice(0,200)}縲構n閾ｪ辟ｶ縺ｪ譌･譛ｬ隱槭さ繝｡繝ｳ繝医ｒ1縺､縲・0譁・ｭ嶺ｻ･蜀・〒縲ゅさ繝｡繝ｳ繝医・縺ｿ霑斐＠縺ｦ縺上□縺輔＞縲Ａ;
+  const topic=recentText()||[state.animeTitle,state.studio].filter(Boolean).join(" ")||"アニメ配信中";
+  const prompt=`あなたはYouTubeライブ配信の視聴者です。ロール：${p.roleType||"共感勢"}、名前：${p.name}。\n配信トピック：「${topic.slice(0,200)}」\n自然な日本語コメントを1つ、40文字以内で。コメントのみ返してください。`;
   try{
     const resp=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{maxOutputTokens:60,temperature:0.95}})});
     if(!resp.ok)throw new Error();
@@ -544,14 +534,11 @@ function saveGeminiKey(){
   localStorage.setItem(GEMINI_KEY_STORE,k);
   state.commentEngine="gemini"; if($("commentEngine"))$("commentEngine").value="gemini";
   if($("geminiArea"))$("geminiArea").style.display="flex";
-  if($("geminiStatus")){$("geminiStatus").textContent="笨・菫晏ｭ俶ｸ医∩";$("geminiStatus").style.color="#64d2ff";}
-  saveSettings(); toast("Gemini API繧ｭ繝ｼ繧剃ｿ晏ｭ倥＠縺ｾ縺励◆");
+  if($("geminiStatus")){$("geminiStatus").textContent="✓ 保存済み";$("geminiStatus").style.color="#64d2ff";}
+  saveSettings(); toast("Gemini APIキーを保存しました");
 }
-function toggleObsMode(){
-  document.body.classList.toggle("obs-mode");
-  const btn=$("btnObs"); if(btn)btn.classList.toggle("active");
-}
-function addComment(text,name,color){ commentCountN++;updateDockMeta();
+function toggleObsMode(){document.body.classList.toggle("obs-mode");const btn=$("btnObs");if(btn)btn.classList.toggle("active");}
+function addComment(text,name,color){commentCountN++;updateDockMeta();
   const track=document.getElementById(`track${trackRR%3}`);trackRR++;if(!track)return;
   const speed=Math.max(10,10+text.length*0.3+Math.random()*5);
   const node=document.createElement("div");node.className="comment-h";
@@ -560,79 +547,47 @@ function addComment(text,name,color){ commentCountN++;updateDockMeta();
   const t=document.createElement("span");t.className="text";t.textContent=text;
   node.append(u,t);track.append(node);node.addEventListener("animationend",()=>node.remove());
 }
-function pickPersona(){
-  const list=personas.length?personas:defaultPersonas();const text=recentText();
-  return list.map(p=>({p,s:relevance(p,text)+Math.random()*.4})).sort((a,b)=>b.s-a.s).slice(0,Math.min(list.length,6))[Math.floor(Math.random()*Math.min(list.length,6))].p;
-}
-function relevance(p,text){
-  const hay=[p.name,p.roleType,p.reactionPattern,p.catchphrase,...(p.words||[]),...(p.interests||[])].join(" ");
-  let s=0;text.split(/[\s縲√・]+/).filter(w=>w.length>=2).forEach(w=>{if(hay.includes(w))s+=2;});
-  if(/譏逕ｻ|逶｣逹｣|繧ｷ繝ｼ繝ｳ|貍疲橿|閼壽悽|繧ｹ繝医・繝ｪ繝ｼ|諢溷虚|豕｣縺・◆/.test(text)&&/譏逕ｻ|繧ｷ繝阪・|繧ｨ繝ｳ繧ｿ繝｡/.test(hay))s+=4;
-  if(/髻ｳ讌ｽ|繧ｵ繝ｳ繝医Λ|BGM/.test(text)&&/髻ｳ讌ｽ|繧ｵ繝ｳ繝医Λ/.test(hay))s+=3;
-  return s;
-}
-// 笊絶武 Advanced Comment Engine v2 笊絶武
+
 const _RB_RECENT = {};
 function _rbTrack(name,text){const r=_RB_RECENT[name]||(_RB_RECENT[name]=[]);r.unshift(text);if(r.length>10)r.pop();}
 function _rbPick(pool,name){const r=_RB_RECENT[name]||[];const f=pool.filter(t=>!r.includes(t));const s=f.length>0?f:pool;return s[Math.floor(Math.random()*s.length)];}
-
 function _buildTemplates(role,kw,p){
-  const w=(p.words||[]).concat(p.interests||[]);
-  const pw=w.length?w[Math.floor(Math.random()*w.length)]:kw;
+  const w=(p.words||[]).concat(p.interests||[]);const pw=w.length?w[Math.floor(Math.random()*w.length)]:kw;
   const T={
-    "蜈ｱ諢溷兇": [`${kw}縺ｪ繧九⊇縺ｩ`,`莉翫・隧ｱ繧√▲縺｡繧・ｏ縺九ｋ`,`${kw}縺｣縺ｦ縺昴≧縺・≧縺薙→縺義,`莉頑律蛻昴ａ縺ｦ遏･縺｣縺歔,`豺ｱ縺Я,`縺薙・繧ｷ繝ｪ繝ｼ繧ｺ螂ｽ縺港,`${kw}繧ゅ▲縺ｨ閨槭″縺溘＞`,`險隱槫喧縺ゅｊ縺後→縺・,`縺ｻ繧薙→縺昴≧諤昴≧`,`${pw}縺ｨ郢九′縺｣縺歔,`閾ｪ蛻・ｂ蜷後§邨碁ｨ薙≠繧義,`菴募ｺｦ繧りｦ玖ｿ斐＠縺溘＞`,`${kw}縺悟絢縺輔▲縺歔,`縺・ｏ縺昴≧縺・≧縺薙→縺義,`閨槭＞縺ｦ繧医°縺｣縺歔],
-    "遏･隴伜兇": [`${kw}縺ｮ隕区婿縺碁擇逋ｽ縺Я,`繧ゅ▲縺ｨ謗倥ｊ荳九￡縺ｦ縺ｻ縺励＞`,`${kw}縺ｨ${pw}縺ｮ髢｢菫ゅ′豌励↓縺ｪ繧義,`閠・ｯ溘＠縺溘￥縺ｪ繧義,`縺薙・隕也せ縺ｯ譁ｰ縺励＞`,`蟆る摩譖ｸ縺ｧ繧ょ挨縺ｮ隱ｬ縺後≠繧義,`螳溘・縺薙％螂･縺梧ｷｱ縺Я,`${kw}縺ｮ豁ｴ蜿ｲ繧よｰ励↓縺ｪ繧義,`譁・鍵貍√ｊ縺溘￥縺ｪ縺｣縺歔,`遐皮ｩｶ閠・・諢剰ｦ九ｂ閨槭″縺溘＞`,`繝・・繧ｿ縺ｨ騾・↓縺ｪ繧九％縺ｨ縺ゅｋ`,`螳夂ｾｩ縺九ｉ遒ｺ隱阪＠縺溘＞`,`縺薙％隲ｸ隱ｬ縺ゅｋ`,`${pw}逶ｮ邱壹□縺ｨ驕輔≧`,`逅・ｫ悶→螳溯ｷｵ縺ｮ荵夜屬縺後≠繧義],
-    "雉ｪ蝠丞兇": [`${kw}縺ｯ縺ｩ縺薙′蜈･蜿｣・歔,`繧ゅ≧蟆代＠隧ｳ縺励￥`,`逕滓ｴｻ縺ｨ縺ｩ縺・ｹ九′繧具ｼ歔,`蛻晏ｿ・・〒繧ゅｏ縺九ｋ・歔,`${kw}縺ｨ${pw}縺ｮ驕輔＞縺ｯ・歔,`蜈ｷ菴謎ｾ九′縺ゅｋ縺ｨ蜉ｩ縺九ｋ`,`縺ｩ縺薙〒蜍牙ｼｷ縺励◆・歔,`蜿り・↓縺ｪ繧区悽縺ゅｋ・歔,`谺｡蝗槭・繝・・繝槭・・歔,`繧ゅ≧荳蠎ｦ隱ｬ譏弱＠縺ｦ`,`縺ｪ繧薙〒${kw}縺悟､ｧ莠九↑縺ｮ・歔,`螳溽函豢ｻ縺ｧ縺ｮ菴ｿ縺・婿縺檎衍繧翫◆縺Я,`蛻晏ｿ・・髄縺代↓縺ｾ縺ｨ繧√※`,`${pw}縺ｨ縺ｮ髢｢騾｣繧よ蕗縺医※`,`閨槭＞縺ｦ縺・＞・歔],
-    "諛千桝蜍｢": [`${kw}譛ｬ蠖薙↓蜷医▲縺ｦ繧具ｼ歔,`蛻･縺ｮ隕区婿繧ゅ≠繧義,`蜑肴署縺九ｉ遒ｺ隱阪＠縺溘＞`,`諷朱㍾縺ｫ隕九◆譁ｹ縺後＞縺Я,`蜿崎ｫ悶ｂ縺ゅｋ`,`縺昴ｌ縺縺代§繧・↑縺Я,`繧ｨ繝薙ョ繝ｳ繧ｹ縺ｯ・歔,`${kw}縺｣縺ｦ螳夂ｾｩ縺碁＆縺・,`100%縺昴≧縺ｨ縺ｯ險縺医↑縺Я,`繧ｱ繝ｼ繧ｹ縺ｫ繧医ｋ`,`逡吩ｿ昴′蠢・ｦ√〒縺ｯ`,`繝・・繧ｿ谺｡隨ｬ縺倥ｃ縺ｪ縺・ｼ歔,`蟆る摩螳ｶ繧よэ隕句・縺九ｌ繧義,`蜑肴署縺碁＆縺・→邨占ｫ門､峨ｏ繧義,`魴懷荘縺ｿ縺ｫ縺励↑縺・婿縺後＞縺Я],
-    "蠢懈抄蜍｢": [`縺・＞豬√ｌ・～,`${kw}縺ｮ縺ｨ縺灘･ｽ縺港,`邯壹￠縺ｦ縺上□縺輔＞`,`縺薙・隱ｿ蟄舌〒`,`驟堺ｿ｡蠕・▲縺ｦ縺歔,`縺・▽繧よ･ｽ縺励∩`,`鬆大ｼｵ繧形,`譛鬮倭,`縺壹▲縺ｨ蠢懈抄縺励※繧義,`谺｡蝗槭ｂ譚･繧義,`${pw}縺ｮ隧ｱ繧ゅ＞縺､縺義,`豈主屓讌ｽ縺励∩`,`莉頑律繧り憶縺九▲縺歔,`繝｢繝√・荳翫′繧義,`縺ゅｊ縺後→縺・],
-    "蛻晏ｿ・・兇": [`縺ｪ繧九⊇縺ｩ・～,`${kw}蛻昴ａ縺ｦ閨槭＞縺歔,`繧上°繧翫ｄ縺吶＞`,`縺ゅｊ縺後→縺・＃縺悶＞縺ｾ縺兪,`蜍牙ｼｷ縺ｫ縺ｪ縺｣縺歔,`髮｣縺励＞縺代←髱｢逋ｽ縺Я,`繧ゅ▲縺ｨ遏･繧翫◆縺Я,`繝｡繝｢縺励※縺ｾ縺兪,`蛻晏ｿ・・〒繧ゅｏ縺九▲縺歔,`${pw}縺ｨ縺ｮ驕輔＞縺後ｏ縺九▲縺歔,`谺｡蝗槭ｂ隕九∪縺兪,`蛻昴ａ縺ｦ譚･縺溘￠縺ｩ繧上°繧翫ｄ縺吶＞`,`螂ｽ縺阪↓縺ｪ縺｣縺歔,`蜿矩＃縺ｫ繧よ蕗縺医◆縺Я,`蜈ｨ辟ｶ遏･繧峨↑縺九▲縺歔],
-    "繝阪ち蜍｢": [`闕荏,`螟ｩ謇阪°`,`${kw}繧ｯ繧ｻ蠑ｷ縺Я,`縺薙ｌ縺ｯ蜷崎ｨ`,`蠕・▲縺ｦ隨代≧`,`闕我ｸ榊庄驕ｿ`,`螟ｩ謇阪・逋ｺ諠ｳ`,`縺ｻ繧薙→・溽ｬ疏,`繧・・縺吶℃`,`縺ｪ繧薙〒縺昴≧縺ｪ縺｣縺歔,`縺昴ｌ縺ｧ隨代≧`,`螂ｽ縺阪☆縺弱ｋ`,`莨晁ｪｬ縺ｮ驟堺ｿ｡`,`豁ｴ蜿ｲ縺ｫ谿九ｋ`,`譛鬮倥☆縺餐],
-    "螯・Φ蜍｢": [`${kw}縺九ｉ蠎・′繧倶ｸ也阜縺悟･ｽ縺港,`谺｡蝗槭・螻暮幕縺梧ｰ励↓縺ｪ繧義,`蛻･縺ｮ隗貞ｺｦ縺ｧ閠・∴繧九→`,`繧ゅ＠繧・{kw}縺後↑縺九▲縺溘ｉ`,`10蟷ｴ蠕後←縺・↑縺｣縺ｦ繧九ｓ縺繧港,`${pw}縺ｨ縺ｮ謗帙￠蜷医ｏ縺帙′髱｢逋ｽ縺Я,`豺ｱ謗倥ｊ縺励◆繧臥┌髯舌↓蠎・′繧義,`隱ｰ縺九→隴ｰ隲悶＠縺溘￥縺ｪ縺｣縺歔,`閾ｪ蛻・↑繧翫・遲斐∴蜃ｺ縺ｦ縺阪◆`,`驕輔≧蛻・㍽縺ｫ繧らｹ九′繧義,`螢ｮ螟ｧ縺縺ｪ`,`諠ｳ蜒剰・繧峨・`,`縺ゅ→縺ｧ隱ｿ縺ｹ繧義,`繧ゅ▲縺ｨ閠・∴縺溘＞`,`縺薙％縺九ｉ豢ｾ逕溘☆繧玖ｩｱ縺後≠繧義],
-    "髢狗匱閠・兇": [`螳溯｣・＠縺ｦ縺ｿ縺溘￥縺ｪ縺｣縺歔,`繧｢繝ｼ繧ｭ繝・け繝√Ε縺梧ｰ励↓縺ｪ繧義,`繝・・繧ｿ讒矩逧・↓髱｢逋ｽ縺Я,`閾ｪ蜍募喧縺ｧ縺阪◎縺・,`${kw}繧偵す繧ｹ繝・Β縺ｧ陦ｨ縺吶→`,`API險ｭ險医↓蠢懃畑縺ｧ縺阪ｋ`,`繧｢繝ｫ繧ｴ繝ｪ繧ｺ繝逧・↑隕也せ縺悟･ｽ縺港,`縺薙％譛驕ｩ蛹悶〒縺阪◎縺・,`繝・・繝ｫ菴懊ｊ縺溘＞`,`繝ｭ繧ｸ繝・け縺檎ｶｺ鮗輿,`繧ｨ繝ｳ繧ｸ繝九い縺ｨ縺励※蜈ｱ諢歔,`繧ｳ繝ｼ繝峨〒譖ｸ縺上→髱｢逋ｽ縺Я,`繧ｹ繧ｱ繝ｼ繝ｫ縺吶ｋ縺九↑`,`險ｭ險医′螟ｧ莠義,`謚陦鍋噪雋蛯ｵ縺ｫ縺ｪ繧翫◎縺・],
-    "謚戊ｳ・ｮｶ蜍｢": [`繝ｪ繧ｿ繝ｼ繝ｳ險育ｮ励＠縺ｦ縺歔,`${kw}縺ｮ繝ｪ繧ｹ繧ｯ縺ｯ・歔,`繝昴・繝医ヵ繧ｩ繝ｪ繧ｪ隕狗峩縺吶°`,`繧ｿ繧､繝溘Φ繧ｰ縺碁屮縺励＞`,`髟ｷ譛溽岼邱壹〒隕九※繧義,`遏ｭ譛溘→髟ｷ譛溘〒驕輔≧`,`蛻・淵縺ｮ驥崎ｦ∵ｧ縺後ｏ縺九ｋ`,`NISA縺ｧ隧ｦ縺励※繧義,`謳榊・繧翫・繧ｿ繧､繝溘Φ繧ｰ縺｣縺ｦ`,`${pw}縺ｨ縺ｮ逶ｸ髢｢縺後≠繧義,`邨梧ｸ域欠讓吶→騾｣蜍輔＠縺ｦ繧義,`驟榊ｽ鍋漁縺・〒`,`遨阪∩遶九※豢ｾ縺ｪ縺ｮ縺ｧ`,`繝√Ε繝ｼ繝郁ｦ九※縺歔,`繝吶Φ繝√・繝ｼ繧ｯ豈碑ｼ・＠縺溘＞`],
+    "共感勢":[`${kw}のシーンで泣いた`,`作画がやばい`,`このキャラ好きすぎる`,`${kw}は名作`,`音楽最高`,`続きが気になる`,`もう一回見たい`,`EDが好き`,`${pw}が刺さった`,`声優が最高`],
+    "知識勢":[`原作と比べると`,`制作会社の特徴が出てる`,`監督の過去作も好き`,`アニメ化の再現度が高い`,`${kw}の世界観が深い`,`OPの演出が凝ってる`,`脚本が丁寧`,`作画枚数がすごい`,`音響設計が好き`,`コンテが好き`],
+    "質問勢":[`${kw}何話まで見た？`,`原作ある？`,`配信どこで見られる？`,`次のシーズンある？`,`${kw}面白い？`,`何話がおすすめ？`,`アニオリある？`,`続編決まってる？`,`どこから見ればいい？`,`${pw}って何話？`],
+    "懐疑勢":[`原作の方が好き`,`作画が崩れてる`,`${kw}は期待外れだった`,`もっとうまくアニメ化できたはず`,`原作ファンとして複雑`,`脚本が改変しすぎ`,`評価しすぎでは？`,`後半失速した`],
+    "応援勢":[`${kw}最高`,`アニメ化してよかった`,`続きがんばれ`,`好き`,`全部見た`,`神アニメ`,`${pw}推し`,`毎週楽しみだった`,`配信ありがとう`],
+    "初心者勢":[`初めて見た`,`${kw}こんなに面白いの`,`アニメあまり見ないけどこれは好き`,`全話一気見した`,`ハマった`,`おすすめありがとう`,`次何見ればいい？`],
+    "ネタ勢":[`草`,`天才`,`${kw}クセつよ`,`これは名シーン`,`待って笑う`,`伝説のアニメ`,`好きすぎる`],
+    "妄想勢":[`${pw}の過去が気になる`,`続編の展開想像してた`,`${kw}の伏線回収が`,`別エンド見たかった`,`スピンオフ欲しい`,`${kw}の世界に行きたい`],
   };
-  return T[role]||T["蜈ｱ諢溷兇"];
+  return T[role]||T["共感勢"];
 }
-
 function buildComment(p){
-  const recentTxt=typeof recentText==="function"?recentText():"";
-  const kw=recentTxt.split(/[\s縲√・・圭n]+/).filter(w=>w.length>=2)[0]||(p.words||[])[0]||(typeof state!=="undefined"?(state.keyword||""):"")|| "莉翫・隧ｱ";
-  const role=p.roleType||"蜈ｱ諢溷兇";
-  const name=p.name||"?";
-  if(p.catchphrase&&(p.catchphrase.length>3)&&Math.random()<.38)return p.catchphrase.slice(0,40);
-  const templates=_buildTemplates(role,kw,p);
-  const text=_rbPick(templates,name);
-  _rbTrack(name,text);
-  return text.slice(0,40);
+  const kw=recentText().split(/[\s、。,，\n]+/).filter(w=>w.length>=2)[0]||(p.words||[])[0]||state.animeTitle||"今の話";
+  const role=p.roleType||"共感勢";const name=p.name||"?";
+  if(p.catchphrase&&p.catchphrase.length>3&&Math.random()<.38)return p.catchphrase.slice(0,40);
+  const templates=_buildTemplates(role,kw,p);const text=_rbPick(templates,name);_rbTrack(name,text);return text.slice(0,40);
 }
-
 function pickPersona(){
-  const list=personas.length?personas:defaultPersonas();
-  if(!list.length)return defaultPersonas()[0];
-  const text=typeof recentText==="function"?recentText():"";
-  const scored=list.map(p=>({p,s:_relevanceScore(p,text)+Math.random()*.4})).sort((a,b)=>b.s-a.s);
-  const topN=Math.min(scored.length,Math.max(3,Math.ceil(scored.length/2)));
-  return scored[Math.floor(Math.random()*topN)].p;
+  const list=personas.length?personas:defaultPersonas();if(!list.length)return defaultPersonas()[0];
+  const text=recentText();const scored=list.map(p=>({p,s:_relevanceScore(p,text)+Math.random()*.4})).sort((a,b)=>b.s-a.s);
+  const topN=Math.min(scored.length,Math.max(3,Math.ceil(scored.length/2)));return scored[Math.floor(Math.random()*topN)].p;
 }
-
 function _relevanceScore(p,text){
-  if(!text)return 0;
-  const hay=[p.name,p.roleType,p.reactionPattern,p.catchphrase,...(p.words||[]),...(p.interests||[]),p.tone||""].join(" ").toLowerCase();
-  const words=text.toLowerCase().split(/[\s縲√・・圭n]+/).filter(w=>w.length>=2);
-  let s=0;
-  words.forEach(w=>{if(hay.includes(w))s+=2;});
-  const boosts=typeof _domainBoosts!=="undefined"?_domainBoosts:[[/邨梧ｸ・驥大茜|繧､繝ｳ繝輔Ξ|轤ｺ譖ｿ/,/邨梧ｸ・遏･隴・蛻・梵|謚戊ｳ・,5],[/繧ｲ繝ｼ繝|謾ｻ逡･|繝懊せ/,/繧ｲ繝ｼ繝|繧ｨ繝ｳ繧ｿ繝｡|蠢懈抄/,4],[/譏逕ｻ|逶｣逹｣|繧ｷ繝ｼ繝ｳ/,/譏逕ｻ|繧ｷ繝阪・/,4],[/譛ｬ|蟆剰ｪｬ|菴懆・,/隱ｭ譖ｸ|譁・ｭｦ|遏･隴・,4],[/貍ｫ逕ｻ|繧ｭ繝｣繝ｩ|菴懃判/,/貍ｫ逕ｻ|繧｢繝九Γ/,4],[/謚戊ｳ・譬ｪ|NISA/,/謚戊ｳ・遏･隴・蛻・梵/,5],[/闕榎隨・,/繝阪ち|蜈ｱ諢・,3]];
-  boosts.forEach(([a,b,sc])=>{if(a.test(text.toLowerCase())&&b.test(hay))s+=sc;});
-  return s;
+  if(!text)return 0;const hay=[p.name,p.roleType,p.reactionPattern,p.catchphrase,...(p.words||[]),...(p.interests||[])].join(" ").toLowerCase();
+  const words=text.toLowerCase().split(/[\s、。,，\n]+/).filter(w=>w.length>=2);let s=0;words.forEach(w=>{if(hay.includes(w))s+=2;});
+  if(/アニメ|作画|声優|キャラ/.test(text.toLowerCase())&&/アニメ|漫画|エンタメ/.test(hay))s+=4;return s;
 }
-// 笊絶武 End Advanced Comment Engine v2 笊絶武
 
 function defaultPersonas(){
   return[
-    {name:"譏逕ｻ螂ｽ縺・,roleType:"蜈ｱ諢溷兇",  catchphrase:"菴募ｺｦ隕九※繧よｳ｣縺代ｋ",       color:"#ff6b7a",words:[]},
-    {name:"繧ｷ繝阪・騾・,roleType:"遏･隴伜兇",  catchphrase:"貍泌・縺悟､ｩ謇咲噪",           color:"#c890d8",words:[]},
-    {name:"蛻晁ｦ九＆繧・,roleType:"蛻晏ｿ・・兇",catchphrase:"隕九※縺ｿ縺溘￥縺ｪ縺｣縺・,       color:"#64d2ff",words:[]},
-    {name:"繝阪ち豌・,  roleType:"繝阪ち蜍｢",  catchphrase:"闕・,                    color:"#57c87c",words:[]}
+    {name:"アニメ好き",roleType:"共感勢",  catchphrase:"このシーンで泣いた",    color:"#a78bfa",words:[]},
+    {name:"考察勢",    roleType:"知識勢",  catchphrase:"伏線回収が天才的",      color:"#c890d8",words:[]},
+    {name:"初見さん",  roleType:"初心者勢",catchphrase:"全話一気見した",        color:"#64d2ff",words:[]},
+    {name:"ネタ民",    roleType:"ネタ勢",  catchphrase:"草",                   color:"#57c87c",words:[]}
   ];
 }
 function intervalRange(){if(state.commentSpeed==="fast")return[3000,7000];if(state.commentSpeed==="slow")return[10000,18000];return[6000,12000];}
@@ -650,22 +605,45 @@ async function syncPersonas(){
     try{const r=await fetch(csvUrl,{cache:"no-store"});if(r.ok)csv=await r.text();}catch{}
     if(!csv)throw new Error("no csv");
     personas=parsePersonas(csv);localStorage.setItem(SHARED_PERSONA_KEY,JSON.stringify(personas));
-    setStatus(`莠ｺ譬ｼ ${personas.length}莉ｶ 蜷梧悄貂医∩`);
-  }catch{personas=loadPersonas();if(!personas.length)personas=defaultPersonas();setStatus(`莠ｺ譬ｼ ${personas.length}莉ｶ・医く繝｣繝・す繝･・荏);}
+    setStatus(`人格 ${personas.length}件 同期済み`);
+  }catch{personas=loadPersonas();if(!personas.length)personas=defaultPersonas();setStatus(`人格 ${personas.length}件（キャッシュ）`);}
 }
-function parsePersonas(csv){return parseCSV(csv).map((r,i)=>{const name=r[0];if(!name||name==="蜷榊燕")return null;return{id:"s"+i,name,personalityType:r[1]||"",roleType:r[2]||"",reactionPattern:r[3]||"",catchphrase:r[4]||"",words:tags(r[6]),interests:tags(r[8]),color:["#ff6b7a","#64d2ff","#ff93bd","#9be870","#c890d8"][i%5]};}).filter(Boolean);}
+function parsePersonas(csv){return parseCSV(csv).map((r,i)=>{const name=r[0];if(!name||name==="名前")return null;return{id:"s"+i,name,personalityType:r[1]||"",roleType:r[2]||"",reactionPattern:r[3]||"",catchphrase:r[4]||"",words:tags(r[6]),interests:tags(r[8]),color:["#a78bfa","#64d2ff","#ff93bd","#9be870","#c890d8"][i%5]};}).filter(Boolean);}
 function parseCSV(text){const rows=[];let row=[],cell="",quote=false;const src=String(text||""),d=src.includes("\t")?"\t":",";for(let i=0;i<src.length;i++){const ch=src[i],nx=src[i+1];if(ch==='"'){if(quote&&nx==='"'){cell+='"';i++;}else quote=!quote;}else if(ch===d&&!quote){row.push(cell.trim());cell="";}else if((ch==="\n"||ch==="\r")&&!quote){if(ch==="\r"&&nx==="\n")i++;row.push(cell.trim());if(row.some(Boolean))rows.push(row);row=[];cell="";}else cell+=ch;}row.push(cell.trim());if(row.some(Boolean))rows.push(row);return rows;}
-function tags(v){return String(v||"").split(/[;,縲√・\s]+/).map(x=>x.trim()).filter(Boolean).slice(0,12);}
-function saveCommentLog(entry){try{const log=JSON.parse(localStorage.getItem(SHARED_COMMENT_KEY)||"[]");log.push({...entry,screen:"movie",at:new Date().toISOString()});localStorage.setItem(SHARED_COMMENT_KEY,JSON.stringify(log.slice(-200)));}catch{}}
-function saveSettings(){localStorage.setItem(SETTINGS_KEY,JSON.stringify({movieTitle:state.movieTitle,director:state.director,releaseYear:state.releaseYear,serviceUrl:state.serviceUrl,posterUrl:state.posterUrl,avatarInput:state.avatarInput,personaSheetUrl:state.personaSheetUrl,commentSpeed:state.commentSpeed,commentEngine:state.commentEngine,timer:state.timer}));}
+function tags(v){return String(v||"").split(/[;,、・\s]+/).map(x=>x.trim()).filter(Boolean).slice(0,12);}
+function saveCommentLog(entry){try{const log=JSON.parse(localStorage.getItem(SHARED_COMMENT_KEY)||"[]");log.push({...entry,screen:"anime",at:new Date().toISOString()});localStorage.setItem(SHARED_COMMENT_KEY,JSON.stringify(log.slice(-200)));}catch{}}
+function saveSettings(){localStorage.setItem(SETTINGS_KEY,JSON.stringify({animeTitle:state.animeTitle,studio:state.studio,season:state.season,serviceUrl:state.serviceUrl,posterUrl:state.posterUrl,avatarInput:state.avatarInput,personaSheetUrl:state.personaSheetUrl,commentSpeed:state.commentSpeed,commentEngine:state.commentEngine,timer:state.timer}));}
 function loadSettings(){try{return JSON.parse(localStorage.getItem(SETTINGS_KEY)||"{}");}catch{return{};}}
-function copyObsUrl(){const url=new URL(location.href);if(state.movieTitle)url.searchParams.set("title",state.movieTitle);const str=url.toString();if(navigator.clipboard){navigator.clipboard.writeText(str).then(()=>toast("OBS URL 繧偵さ繝斐・縺励∪縺励◆ 笨・)).catch(()=>{prompt("URL 繧偵さ繝斐・縺励※縺上□縺輔＞:",str);});}else{prompt("URL 繧偵さ繝斐・縺励※縺上□縺輔＞:",str);}}
+function copyObsUrl(){const url=new URL(location.href);if(state.animeTitle)url.searchParams.set("title",state.animeTitle);const str=url.toString();if(navigator.clipboard){navigator.clipboard.writeText(str).then(()=>toast("OBS URL をコピーしました ✓")).catch(()=>{prompt("URL をコピーしてください:",str);});}else{prompt("URL をコピーしてください:",str);}}
 function toSheetCsvUrl(url){const t=String(url||"").trim(),m=t.match(/\/spreadsheets\/d\/([^/]+)/);if(!m)return t;const gid=(t.match(/[?&]gid=(\d+)/)||[])[1];return`https://docs.google.com/spreadsheets/d/${m[1]}/export?format=csv${gid?`&gid=${gid}`:""}` ;}
 let toastTimer=null;
 function toast(msg){const el=$("toast");if(!el)return;clearTimeout(toastTimer);el.textContent=msg;el.classList.add("show");toastTimer=setTimeout(()=>el.classList.remove("show"),2800);}
 function setStatus(t){if($("personaStatus"))$("personaStatus").textContent=t;toast(t);}
+
+  // ── 起承転結フロー ──
+  let kisoIdx = 0;
+  const KISO_TOTAL = 4;
+  function kisoRender() {
+    for (let i = 0; i < KISO_TOTAL; i++) {
+      const el = document.getElementById('kisoStep' + i);
+      if (!el) continue;
+      el.classList.toggle('active', i === kisoIdx);
+      el.classList.toggle('done', i < kisoIdx);
+    }
+    const bar = document.getElementById('kisoBar');
+    if (bar) bar.style.width = Math.round(kisoIdx / KISO_TOTAL * 100) + '%';
+    const btn = document.getElementById('kisoNextBtn');
+    if (btn) btn.textContent = kisoIdx >= KISO_TOTAL - 1 ? '✓ 完了' : '次のステップ →';
+  }
+  function kisoNext() {
+    if (kisoIdx < KISO_TOTAL - 1) { kisoIdx++; kisoRender(); }
+    else { kisoIdx = 0; kisoRender(); }
+  }
+  function kisoBack() { if (kisoIdx > 0) { kisoIdx--; kisoRender(); } }
+  function kisoReset() { kisoIdx = 0; kisoRender(); }
+  kisoRender();
+
 })();
 </script>
 </body>
 </html>
-
