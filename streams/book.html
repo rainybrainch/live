@@ -1858,7 +1858,12 @@ window.addEventListener("DOMContentLoaded",function(){
 
     const el = $("dockMeta");
 
-    if(el) el.innerHTML = `💬 ${commentCountN}件　🎙 ${listening ? '<span class="on">● 収録中</span>' : "停止中"}`;
+    
+  const t=normalizeTimer(state.timer);
+  const rem=t.running?Math.max(0,Math.ceil((t.endAt-Date.now())/1000)):t.remainingSec;
+  const mm=String(Math.floor(rem/60)).padStart(2,'0'),ss=String(rem%60).padStart(2,'0');
+  const timerStr=t.running?`<span class="on">⏱ ${mm}:${ss}</span>`:`⏱ ${mm}:${ss}`;
+    if(el) el.innerHTML = `💬 ${commentCountN}件　🎙 ${listening ? '<span class="on">● 収録中</span>' : "停止中"}　${timerStr}`;
 
   }
 
