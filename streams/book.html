@@ -1433,7 +1433,9 @@ body.obs-mode .dock,body.obs-mode .open-tab{display:none!important;}
 
     else cover.classList.remove("show");
 
-    updateAvatar();
+  
+  const dot=document.getElementById("setupDot"); if(dot) dot.classList.toggle("ok", !!state.bookTitle);
+  updateAvatar();
 
   }
 
@@ -2278,9 +2280,12 @@ body.obs-mode .dock,body.obs-mode .open-tab{display:none!important;}
     const stepLabels = ['起','承','転','結'];
     const currentStep = stepLabels[kisoIdx] || '起';
 
+    const cmtCnt = (typeof commentCount !== 'undefined' ? commentCount : 0);
     let summary = `【本紹介】${title}
 `;
     summary += `評価: ${stars}
+`;
+    if (cmtCnt > 0) summary += `コメント: ${cmtCnt}件
 `;
     if (hashtag) summary += `${hashtag}
 `;

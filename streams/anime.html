@@ -480,7 +480,7 @@ function bind() {
     if(e.key==="m"||e.key==="M") toggleMic();
     if(e.key==="c"||e.key==="C"){spawnComment();toast("💬 コメント生成");}
     if(e.key==="f"||e.key==="F") toggleFullscreen();
-    if(e.key==="h"||e.key==="H"){document.body.classList.toggle("panel-hidden");toast(document.body.classList.contains("panel-hidden")?"パネル非表示":"パネル表示");}
+    if(e.key==="h"||e.key==="H"){document.body.classList.toggle("panel-hidden");toast(document.body.classList.contains("panel-hidden")?"パネル非表示":"パネル表示");if(!document.body.classList.contains("panel-hidden")){const d=document.getElementById("dock");if(d)d.scrollTop=0;}}
     if(e.key==="n"||e.key==="N"){if(window.kisoNext)window.kisoNext();}
   });
 }
@@ -755,9 +755,12 @@ function setStatus(t){if($("personaStatus"))$("personaStatus").textContent=t;toa
     const stepLabels = ['起','承','転','結'];
     const currentStep = stepLabels[kisoIdx] || '起';
 
+    const cmtCnt = (typeof commentCount !== 'undefined' ? commentCount : 0);
     let summary = `【アニメ紹介】${title}
 `;
     summary += `評価: ${stars}
+`;
+    if (cmtCnt > 0) summary += `コメント: ${cmtCnt}件
 `;
     if (hashtag) summary += `${hashtag}
 `;
