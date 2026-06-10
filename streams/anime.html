@@ -384,6 +384,8 @@ body.obs-mode .dock,body.obs-mode .open-tab{display:none!important;}
 
     <button class="obs-btn" id="btnObs" onclick="toggleObsMode()">📺 OBS</button>
 
+    <div id="clockDisplay" style="font-size:11px;font-weight:900;font-variant-numeric:tabular-nums;color:rgba(255,255,255,.55);letter-spacing:.05em;min-width:3.8em;text-align:right;"></div>
+
   </div>
 
   <div class="timer-display" id="timerDisplay">
@@ -474,7 +476,7 @@ body.obs-mode .dock,body.obs-mode .open-tab{display:none!important;}
 
       <div class="section-title"><span class="setup-dot" id="setupDot"></span><span class="step">1</span>アニメの情報</div>
 
-      <div class="field"><label for="animeTitle">タイトル</label><input id="animeTitle" placeholder="例: 進撃の巨人 / SPY×FAMILY"></div>
+      <div class="field"><label for="animeTitle">タイトル</label><input id="animeTitle" placeholder="例: 進撃の巨人 / SPY×FAMILY" maxlength="60"></div>
 
       <div class="grid2">
 
@@ -843,7 +845,19 @@ init();
 
 
 
-function init() { hydrate(); bind(); applyStage(); startClock(); scheduleComment(); }
+function init() { hydrate(); bind(); applyStage(); startClock(); scheduleComment();
+  // Wall-clock display
+  (function startWallClock(){
+    function tick(){
+      const d=new Date();
+      const h=String(d.getHours()).padStart(2,'0');
+      const m=String(d.getMinutes()).padStart(2,'0');
+      const el=document.getElementById('clockDisplay');
+      if(el) el.textContent=h+':'+m;
+    }
+    tick();
+    setInterval(tick, 10000);
+  })(); }
 
 
 
