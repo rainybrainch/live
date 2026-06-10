@@ -433,7 +433,7 @@ textarea { min-height:70px; resize:vertical; line-height:1.55; }
 
   text-shadow:0 2px 3px rgba(0,0,0,.6); z-index:6;
 
-  transition:border-top-color .3s;
+  transition:border-top-color .3s, opacity .6s;
 
 }
 
@@ -1376,6 +1376,7 @@ body.obs-mode .dock,body.obs-mode .open-tab{display:none!important;}
       if (e.key==="f"||e.key==="F") toggleFullscreen();
 
       if (e.key==="h"||e.key==="H") { document.body.classList.toggle("panel-hidden"); toast(document.body.classList.contains("panel-hidden") ? "パネル非表示" : "パネル表示"); }
+      if (e.key==="n"||e.key==="N") { if(window.kisoNext) { window.kisoNext(); } }
 
     });
 

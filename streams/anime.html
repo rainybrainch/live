@@ -76,7 +76,7 @@ textarea { min-height:70px; resize:vertical; line-height:1.55; }
 .card-link  { margin-top:10px; display:inline-flex; align-items:center; gap:6px; padding:7px 14px; border-radius:999px; background:rgba(167,139,250,.18); border:1px solid rgba(167,139,250,.5); color:var(--accent); font-size:11px; font-weight:900; letter-spacing:.08em; text-decoration:none; transition:background .15s, box-shadow .15s; }
 .card-link:hover { background:rgba(167,139,250,.28); box-shadow:0 0 14px rgba(167,139,250,.22); }
 
-.caption { position:absolute; left:50%; bottom:112px; transform:translateX(-50%); width:min(860px,calc(100vw - 56px)); min-height:52px; display:grid; place-items:center; padding:11px 20px; border:1px solid rgba(255,255,255,.14); border-top:2px solid rgba(167,139,250,.28); border-radius:8px; background:rgba(4,2,4,.75); backdrop-filter:blur(10px); text-align:center; font-family:var(--font-title); font-size:clamp(18px,1.9vw,28px); line-height:1.35; font-weight:900; text-shadow:0 2px 3px rgba(0,0,0,.6); z-index:6; transition:border-top-color .3s; }
+.caption { position:absolute; left:50%; bottom:112px; transform:translateX(-50%); width:min(860px,calc(100vw - 56px)); min-height:52px; display:grid; place-items:center; padding:11px 20px; border:1px solid rgba(255,255,255,.14); border-top:2px solid rgba(167,139,250,.28); border-radius:8px; background:rgba(4,2,4,.75); backdrop-filter:blur(10px); text-align:center; font-family:var(--font-title); font-size:clamp(18px,1.9vw,28px); line-height:1.35; font-weight:900; text-shadow:0 2px 3px rgba(0,0,0,.6); z-index:6; transition:border-top-color .3s, opacity .6s; }
 @keyframes cap-flash { 0%{border-top-color:var(--accent);box-shadow:0 -2px 20px rgba(167,139,250,.32);} 100%{border-top-color:rgba(167,139,250,.28);box-shadow:none;} }
 .caption.flash-in { animation:cap-flash 0.8s ease-out forwards; }
 
@@ -450,6 +450,7 @@ function bind() {
     if(e.key==="c"||e.key==="C"){spawnComment();toast("💬 コメント生成");}
     if(e.key==="f"||e.key==="F") toggleFullscreen();
     if(e.key==="h"||e.key==="H"){document.body.classList.toggle("panel-hidden");toast(document.body.classList.contains("panel-hidden")?"パネル非表示":"パネル表示");}
+    if(e.key==="n"||e.key==="N"){if(window.kisoNext)window.kisoNext();}
   });
 }
 
