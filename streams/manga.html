@@ -1109,7 +1109,7 @@ function tags(v){return String(v||"").split(/[;,、・\s]+/).map(x=>x.trim()).fi
 
 function saveCommentLog(entry){try{const log=JSON.parse(localStorage.getItem(SHARED_COMMENT_KEY)||"[]");log.push({...entry,screen:"manga",at:new Date().toISOString()});localStorage.setItem(SHARED_COMMENT_KEY,JSON.stringify(log.slice(-200)));}catch{}}
 
-function saveSettings(){localStorage.setItem(SETTINGS_KEY,JSON.stringify({mangaTitle:state.mangaTitle,mangaAuthor:state.mangaAuthor,volume:state.volume,chapter:state.chapter,affiliateUrl:state.affiliateUrl,coverUrl:state.coverUrl,avatarInput:state.avatarInput,personaSheetUrl:state.personaSheetUrl,commentSpeed:state.commentSpeed,commentEngine:state.commentEngine,timer:state.timer}));}
+function saveSettings(){localStorage.setItem(SETTINGS_KEY,JSON.stringify({mangaTitle:state.mangaTitle,mangaAuthor:state.mangaAuthor,volume:state.volume,chapter:state.chapter,affiliateUrl:state.affiliateUrl,coverUrl:state.coverUrl,avatarInput:state.avatarInput,personaSheetUrl:state.personaSheetUrl,commentSpeed:state.commentSpeed,commentEngine:state.commentEngine,timer:state.timer,starVal:starVal,hashtag:(document.getElementById("hashtagText")||{}).value||""}));}
 
 function loadSettings(){try{return JSON.parse(localStorage.getItem(SETTINGS_KEY)||"{}");}catch{return{};}}
 
