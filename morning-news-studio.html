@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MS — Morning news Studio</title>
+<title>Morning news Studio</title>
 <link rel="icon" href="ms-icon.png" type="image/png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
@@ -305,7 +305,7 @@
 <header>
   <button id="sidebarToggle" onclick="toggleSidebar()" title="サイドバー開閉">☰</button>
   <img src="ms-icon.png" alt="MS" style="width:32px;height:32px;border-radius:7px;flex-shrink:0;">
-  <h1>MS <span class="sub">Morning news Studio</span></h1>
+  <h1>Morning news Studio</h1>
   <span id="headerSub" style="font-size:.78rem;color:var(--text-muted);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
   <span id="saveIndicator" style="margin-left:auto;font-size:.72rem;color:var(--text-muted);opacity:0;transition:opacity .5s;flex-shrink:0;">💾</span>
   <button onclick="switchTab('settings')" style="margin-left:8px;background:none;border:1px solid var(--border);border-radius:6px;color:var(--text-muted);padding:5px 10px;cursor:pointer;font-size:.78rem;flex-shrink:0;white-space:nowrap;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">⚙️ 設定</button>
@@ -2159,9 +2159,9 @@ function renderMetaPanel(char) {
       </div>
       <p style="font-size:.78rem;color:var(--text-muted);margin-bottom:14px;">貼り付けた台本をもとに Gemini がSEOタイトル・概要欄・タグを自動生成します</p>
       ${!hasGemini ? `<div style="background:rgba(229,85,85,.1);border:1px solid #e55;border-radius:6px;padding:10px 14px;margin-bottom:12px;font-size:.78rem;color:#e55;">⚠️ Gemini APIキーが未設定です。設定タブで入力してください。<button class="btn btn-secondary btn-sm" style="margin-left:8px;" onclick="switchTab('settings')">設定へ</button></div>` : ''}
-      ${generatedScript ? `<div style="background:rgba(76,175,80,.08);border:1px solid rgba(76,175,80,.3);border-radius:6px;padding:8px 12px;margin-bottom:12px;font-size:.76rem;color:#7bcf7e;">✅ 台本セット済み — Geminiで生成できます</div>` : `<div style="background:rgba(229,175,85,.08);border:1px solid rgba(229,175,85,.3);border-radius:6px;padding:8px 12px;margin-bottom:12px;font-size:.76rem;color:#daa560;">⚠️ ニュース入力タブで台本を貼り付けてセットしてください</div>`}
+      ${generatedScript ? `<div style="background:rgba(76,175,80,.08);border:1px solid rgba(76,175,80,.3);border-radius:6px;padding:8px 12px;margin-bottom:12px;font-size:.76rem;color:#7bcf7e;">✅ 台本セット済み</div>` : ''}
       <div style="display:flex;gap:8px;flex-wrap:wrap;">
-        <button class="btn btn-primary" style="flex:1;" onclick="generateMetaWithGemini()" ${!hasGemini?'disabled':''}>
+        <button class="btn btn-primary" style="flex:1;" onclick="generateMetaWithGemini()">
           ✨ Gemini でSEOタイトル・概要欄を生成
         </button>
         ${generatedMeta ? `<button class="btn btn-secondary btn-sm" onclick="generateMetaWithGemini()">🔄 再生成</button>` : ''}
@@ -2177,9 +2177,11 @@ async function generateMetaWithGemini() {
   if (!char) { showToast('キャラクターが見つかりません'); return; }
   const geminiKey = getGeminiKey();
   if (!geminiKey) { showToast('設定タブでGemini APIキーを入力してください'); return; }
-  if (!generatedScript) { showToast('先に台本を設定してください'); return; }
 
-  const scriptLines = parseScript(generatedScript).lines;
+  // 台本があればそれを使用、なければ既存のmeta.descriptionを使用
+  const scriptLines = generatedScript
+    ? parseScript(generatedScript).lines
+    : (generatedMeta?.description || '');
   document.getElementById('metaLoading').style.display = 'flex';
   aiStart('Gemini が概要欄を生成中...');
 
