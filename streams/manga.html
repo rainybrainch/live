@@ -1767,7 +1767,7 @@ function bind() {
 
 
   $("clearTranscriptBtn")?.addEventListener("click",()=>{ transcript=[]; $("transcriptLog").textContent="まだ文字起こしはありません。"; $("caption").textContent="「マイク開始」で文字起こしが始まります"; });
-  $("copyTranscriptBtn")?.addEventListener("click",()=>{ const log=$("transcriptLog"); if(!log||!log.textContent.trim()||log.textContent.includes("まだ文字起こし")){toast("文字起こしがありません");return;} navigator.clipboard.writeText(log.textContent).then(()=>toast("文字起こしをコピーしました ✓")).catch(()=>{prompt("コピーしてください:",log.textContent);}); });
+  $("copyTranscriptBtn")?.addEventListener("click",()=>{ const log=$("transcriptLog"); if(!log||!log.innerText.trim()||log.innerText.includes("まだ文字起こし")){toast("文字起こしがありません");return;} navigator.clipboard.writeText(log.innerText).then(()=>toast("文字起こしをコピーしました ✓")).catch(()=>{prompt("コピーしてください:",log.textContent);}); });
 
 
 
@@ -1969,7 +1969,7 @@ function toggleFullscreen(){document.fullscreenElement?document.exitFullscreen?.
 
 
 
-function pushTranscript(text){ const clean=text.replace(/\s+/g," ").trim();if(!clean)return;const key=clean.replace(/[\s、。,.!！?？]/g,"");if(!key||key===lastKey)return;lastKey=key;transcript.unshift({text:clean,at:Date.now()});transcript=transcript.slice(0,40);const cap=$("caption");cap.textContent=clean;cap.classList.remove("flash-in");void cap.offsetWidth;cap.classList.add("flash-in");$("transcriptLog").textContent=transcript.slice(0,10).map(x=>x.text).join("\n");if(clean.length>=12)setTimeout(spawnComment,900); }
+function pushTranscript(text){ const clean=text.replace(/\s+/g," ").trim();if(!clean)return;const key=clean.replace(/[\s、。,.!！?？]/g,"");if(!key||key===lastKey)return;lastKey=key;transcript.unshift({text:clean,at:Date.now()});transcript=transcript.slice(0,40);const cap=$("caption");cap.textContent=clean;cap.classList.remove("flash-in");void cap.offsetWidth;cap.classList.add("flash-in");{const _tl=$("transcriptLog");if(_tl){_tl.innerHTML=transcript.slice(0,10).map(x=>{const d=new Date(x.at),h=String(d.getHours()).padStart(2,"0"),m=String(d.getMinutes()).padStart(2,"0");return '<span style="color:rgba(255,255,255,.3);font-size:9px;margin-right:5px">'+h+':'+m+'</span>'+x.text.replace(/</g,'&lt;');}).join('<br>');_tl.scrollTop=0;}}if(clean.length>=12)setTimeout(spawnComment,900); }
 
 
 
