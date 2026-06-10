@@ -699,6 +699,8 @@ body.obs-mode .dock,body.obs-mode .open-tab{display:none!important;}
 .neta-item { padding:7px 10px; border-radius:7px; border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.03); font-size:10px; color:var(--muted); cursor:pointer; transition:background .12s, color .12s; line-height:1.45; }
 .neta-item:hover { background:rgba(var(--accent-rgb),.1); color:var(--text); border-color:rgba(var(--accent-rgb),.25); }
 .neta-item:active { transform:scale(.98); }
+@keyframes neta-flash { 0%{background:rgba(var(--accent-rgb),.35);color:var(--text);} 100%{background:rgba(255,255,255,.03);} }
+.neta-item.flashed { animation:neta-flash .45s ease-out; }
 
 
 .setup-dot { width:7px; height:7px; border-radius:50%; background:rgba(255,255,255,.2); display:inline-block; margin-right:5px; transition:background .3s; flex-shrink:0; }

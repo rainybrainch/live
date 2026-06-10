@@ -619,6 +619,8 @@ body.obs-mode .dock,body.obs-mode .open-tab{display:none!important;}
 .neta-item:hover { background:rgba(var(--accent-rgb),.1); color:var(--text); border-color:rgba(var(--accent-rgb),.25); }
 
 .neta-item:active { transform:scale(.98); }
+@keyframes neta-flash { 0%{background:rgba(var(--accent-rgb),.35);color:var(--text);} 100%{background:rgba(255,255,255,.03);} }
+.neta-item.flashed { animation:neta-flash .45s ease-out; }
 
 
 
