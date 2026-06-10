@@ -1223,8 +1223,11 @@ body.obs-mode .dock,body.obs-mode .open-tab{display:none!important;}
   Object.assign(state, loadSettings());
 
   if (PARAMS.get("title"))
-if(PARAMS.get("hashtag")){const h=document.getElementById("hashtagText");if(h)h.value=PARAMS.get("hashtag");}
-if(PARAMS.get("stars")){const sv=parseInt(PARAMS.get("stars")||"0");if(sv>0&&typeof setRating==="function")setRating(sv);}  state.bookTitle  = PARAMS.get("title");
+// Defer hashtag/stars restore until after IIFE exposes window functions
+window.addEventListener("DOMContentLoaded",function(){
+  if(PARAMS.get("hashtag")){const h=document.getElementById("hashtagText");if(h)h.value=PARAMS.get("hashtag");}
+  if(PARAMS.get("stars")){const sv=parseInt(PARAMS.get("stars")||"0");if(sv>0&&window.setRating)window.setRating(sv);}
+},{ once:true });  state.bookTitle  = PARAMS.get("title");
 
   if (PARAMS.get("author")) state.bookAuthor = PARAMS.get("author");
 
