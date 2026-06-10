@@ -198,7 +198,7 @@ body.obs-mode .dock,body.obs-mode .open-tab{display:none!important;}
     <a class="card-link" id="cardLink" href="#" target="_blank" style="display:none">🎬 配信で見る</a>
   </section>
   <div class="caption" id="caption">「マイク開始」で文字起こしが始まります</div>
-  <div class="shortcut-hint">Space=タイマー　M=マイク　C=コメント　F=全画面　H=パネル</div>
+  <div class="shortcut-hint">Space=タイマー　M=マイク　C=コメント　N=次ステップ　F=全画面　H=パネル</div>
 </main>
 
 <aside id="dock" class="dock">
@@ -657,6 +657,7 @@ function setStatus(t){if($("personaStatus"))$("personaStatus").textContent=t;toa
   let kisoIdx = 0;
   const KISO_TOTAL = 4;
   function kisoRender() {
+    const labels = ['起','承','転','結'];
     for (let i = 0; i < KISO_TOTAL; i++) {
       const el = document.getElementById('kisoStep' + i);
       if (!el) continue;
@@ -667,6 +668,8 @@ function setStatus(t){if($("personaStatus"))$("personaStatus").textContent=t;toa
     if (bar) bar.style.width = Math.round(kisoIdx / KISO_TOTAL * 100) + '%';
     const btn = document.getElementById('kisoNextBtn');
     if (btn) btn.textContent = kisoIdx >= KISO_TOTAL - 1 ? '✓ 完了' : '次のステップ →';
+    const kdisp = document.getElementById('kisoStepDisp');
+    if (kdisp) kdisp.textContent = labels[kisoIdx] + ' ' + (kisoIdx+1) + '/4';
   }
 
   // ── 星評価 ──
