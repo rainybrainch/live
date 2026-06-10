@@ -793,7 +793,10 @@ body.obs-mode .dock,body.obs-mode .open-tab,body.obs-mode .brand,body.obs-mode .
 
       <div class="summary-box" id="summaryBox" style="display:none;"></div>
 
-      <button onclick="window.copySummary()" type="button" id="copySummaryBtn" style="display:none;width:100%;margin-top:6px;">コピー</button>
+      <div style="display:flex;gap:6px;">
+      <button onclick="window.copySummary()" type="button" id="copySummaryBtn" style="display:none;flex:1;margin-top:6px;">コピー</button>
+      <button onclick="window.downloadSummary()" type="button" id="dlSummaryBtn" style="display:none;margin-top:6px;padding:0 12px;" title="txtとしてダウンロード">⬇</button>
+      </div>
 
     </section>
 
@@ -988,7 +991,7 @@ function bind() {
 
   $("commentBtn")?.addEventListener("click",spawnComment);
 
-  $("manualTranscript")?.addEventListener("keydown",e=>{ if(e.key!=="Enter")return; const v=$("manualTranscript").value.trim(); if(!v)return; $("manualTranscript").value=""; pushTranscript(v); spawnComment(); });
+  $("manualTranscript")?.addEventListener("keydown",e=>{ if(e.key==="Escape"){e.target.value="";return;} if(e.key!=="Enter")return; const v=$("manualTranscript").value.trim(); if(!v)return; $("manualTranscript").value=""; pushTranscript(v); spawnComment(); });
 
   $("syncPersonaBtn")?.addEventListener("click",syncPersonas);
 
@@ -1632,6 +1635,7 @@ ${lines.join('
     if (box) { box.textContent = summary; box.style.display = ''; }
 
     if (btn) btn.style.display = '';
+    const dlBtn=document.getElementById('dlSummaryBtn');if(dlBtn)dlBtn.style.display='';
 
     if(typeof toast==='function') toast('サマリー生成 ✓');
 
