@@ -1562,6 +1562,19 @@ ${memoLines}
 
 
 
+
+    const tEl = document.getElementById('transcriptLog');
+    const tText = tEl ? tEl.textContent.trim() : '';
+    if (tText && !tText.includes('まだ文字起こし')) {
+      const lines = tText.split('
+').filter(l=>l.trim()).slice(-3);
+      if (lines.length) summary += `
+文字起こし（末尾）:
+${lines.join('
+')}
+`;
+    }
+
     const box = document.getElementById('summaryBox');
 
     const btn = document.getElementById('copySummaryBtn');
