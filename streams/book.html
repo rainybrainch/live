@@ -1013,6 +1013,8 @@ body.obs-mode .dock,body.obs-mode .open-tab{display:none!important;}
 
         <button id="clearTranscriptBtn" type="button">字幕クリア</button>
 
+        <button id="copyTranscriptBtn" type="button">📋 コピー</button>
+
         <button id="commentBtn" class="warn" type="button">コメント1件</button>
 
       </div>
@@ -1347,6 +1349,8 @@ window.addEventListener("DOMContentLoaded",function(){
 
     });
 
+    $("copyTranscriptBtn")?.addEventListener("click",()=>{ const log=$("transcriptLog"); if(!log||!log.textContent.trim()||log.textContent.includes("まだ文字起こし")){toast("文字起こしがありません");return;} navigator.clipboard.writeText(log.textContent).then(()=>toast("文字起こしをコピーしました ✓")).catch(()=>{prompt("コピーしてください:",log.textContent);}); });
+
     $("commentBtn")?.addEventListener("click", spawnComment);
 
     $("manualTranscript")?.addEventListener("keydown", e => {
@@ -1411,7 +1415,7 @@ window.addEventListener("DOMContentLoaded",function(){
 
       if (e.key==="f"||e.key==="F") toggleFullscreen();
 
-      if (e.key==="h"||e.key==="H") { document.body.classList.toggle("panel-hidden"); toast(document.body.classList.contains("panel-hidden") ? "パネル非表示" : "パネル表示"); }
+      if (e.key==="h"||e.key==="H") { document.body.classList.toggle("panel-hidden"); toast(document.body.classList.contains("panel-hidden") ? "パネル非表示" : "パネル表示"); if(!document.body.classList.contains("panel-hidden")){const aside=document.querySelector("aside");if(aside)aside.scrollTop=0;} }
       if (e.key==="n"||e.key==="N") { if(window.kisoNext) { window.kisoNext(); } }
 
     });

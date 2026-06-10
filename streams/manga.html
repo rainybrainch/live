@@ -1172,6 +1172,8 @@ body.obs-mode .dock,body.obs-mode .open-tab{display:none!important;}
 
           <button id="clearTranscriptBtn" type="button">字幕クリア</button>
 
+          <button id="copyTranscriptBtn" type="button">📋 コピー</button>
+
 
 
           <button id="commentBtn" class="warn" type="button">コメント1件</button>
@@ -1747,6 +1749,7 @@ function bind() {
 
 
   $("clearTranscriptBtn")?.addEventListener("click",()=>{ transcript=[]; $("transcriptLog").textContent="まだ文字起こしはありません。"; $("caption").textContent="「マイク開始」で文字起こしが始まります"; });
+  $("copyTranscriptBtn")?.addEventListener("click",()=>{ const log=$("transcriptLog"); if(!log||!log.textContent.trim()||log.textContent.includes("まだ文字起こし")){toast("文字起こしがありません");return;} navigator.clipboard.writeText(log.textContent).then(()=>toast("文字起こしをコピーしました ✓")).catch(()=>{prompt("コピーしてください:",log.textContent);}); });
 
 
 
