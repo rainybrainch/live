@@ -137,6 +137,12 @@ body.obs-mode .dock,body.obs-mode .open-tab{display:none!important;}
 .spd-btn.active[data-speed="normal"]{border-color:rgba(87,200,124,.4);background:rgba(87,200,124,.08);color:#57c87c;}
 .spd-btn.active[data-speed="fast"]{border-color:rgba(167,139,250,.4);background:rgba(167,139,250,.08);color:#a78bfa;}
 
+
+/* ── STAR RATING ── */
+.star-row { display:flex; gap:4px; align-items:center; margin-top:8px; }
+.star-btn { font-size:20px; background:none; border:none; padding:2px; cursor:pointer; min-height:auto; line-height:1; opacity:.35; transition:opacity .1s, transform .1s; }
+.star-btn.active, .star-btn:hover { opacity:1; transform:scale(1.2); }
+
 /* ── KISO FLOW ── */
 .kiso-flow { display:grid; gap:6px; }
 .kiso-step { display:flex; gap:10px; padding:9px 10px; border-radius:8px; border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.02); transition:background .15s; }
@@ -182,6 +188,7 @@ body.obs-mode .dock,body.obs-mode .open-tab{display:none!important;}
     <div class="kicker" id="kicker">ANIME REVIEW</div>
     <div class="card-title" id="cardTitle">今日のアニメ</div>
     <div class="card-meta"  id="cardMeta"></div>
+    <div class="card-rating" id="cardRating" style="display:none;margin-top:6px;font-size:clamp(16px,1.6vw,24px);letter-spacing:2px;"></div>
     <a class="card-link" id="cardLink" href="#" target="_blank" style="display:none">🎬 配信で見る</a>
   </section>
   <div class="caption" id="caption">「マイク開始」で文字起こしが始まります</div>
@@ -635,6 +642,21 @@ function setStatus(t){if($("personaStatus"))$("personaStatus").textContent=t;toa
     if (bar) bar.style.width = Math.round(kisoIdx / KISO_TOTAL * 100) + '%';
     const btn = document.getElementById('kisoNextBtn');
     if (btn) btn.textContent = kisoIdx >= KISO_TOTAL - 1 ? '✓ 完了' : '次のステップ →';
+  }
+
+  // ── 星評価 ──
+  let starVal = 0;
+  function setRating(n) {
+    starVal = n;
+    document.querySelectorAll('.star-btn').forEach((b,i)=>b.classList.toggle('active',i<n));
+    const disp = document.getElementById('cardRating');
+    if (disp) {
+      const stars = '★'.repeat(n) + '☆'.repeat(5-n);
+      disp.textContent = stars;
+      disp.style.display = n > 0 ? '' : 'none';
+      disp.style.color = 'var(--accent)';
+    }
+    toast('評価: ' + '★'.repeat(n) + '☆'.repeat(5-n));
   }
   function kisoNext() {
     if (kisoIdx < KISO_TOTAL - 1) { kisoIdx++; kisoRender(); }
