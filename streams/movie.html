@@ -958,7 +958,7 @@ body.obs-mode .dock,body.obs-mode .open-tab,body.obs-mode .brand,body.obs-mode .
     
     <div style="display:flex;align-items:center;gap:6px;margin-left:4px;">
       <span style="font-size:10px;opacity:.55;">🔆</span>
-      <input id="dimSlider" type="range" min="0" max="80" value="0" step="5" style="width:60px;height:4px;padding:0;border:none;background:rgba(255,255,255,.2);accent-color:var(--accent);cursor:pointer;" oninput="document.getElementById('dimOverlay').style.opacity=this.value/100" title="ステージ暗さ調整">
+      <input id="dimSlider" type="range" min="0" max="80" value="0" step="5" style="width:60px;height:4px;padding:0;border:none;background:rgba(255,255,255,.2);accent-color:var(--accent);cursor:pointer;" oninput="const ov=document.getElementById('dimOverlay');if(ov)ov.style.opacity=this.value/100;localStorage.setItem('rb_dim_v',this.value);" title="ステージ暗さ調整">
     </div>
 
     <div id="clockDisplay" style="font-size:11px;font-weight:900;font-variant-numeric:tabular-nums;color:rgba(255,255,255,.55);letter-spacing:.05em;min-width:3.8em;text-align:right;"></div>
@@ -1761,6 +1761,16 @@ function init() { hydrate(); bind(); applyStage(); startClock(); scheduleComment
     }
     tick();
     setInterval(tick, 10000);
+  })();
+  // Restore dim slider
+  (function(){
+    const saved=localStorage.getItem('rb_dim_v');
+    if(saved){
+      const sl=document.getElementById('dimSlider');
+      const ov=document.getElementById('dimOverlay');
+      if(sl)sl.value=saved;
+      if(ov)ov.style.opacity=saved/100;
+    }
   })(); }
 
 
@@ -2086,7 +2096,8 @@ function applyStage() {
 
 
 
-}
+
+  document.title = state.animeTitle ? state.animeTitle+" | RAINYBRAIN" : "RAINYBRAIN ANIME REVIEW";}
 
 
 
