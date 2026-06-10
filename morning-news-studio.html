@@ -2823,11 +2823,19 @@ function renderThumbPanel() {
           <button class="btn btn-secondary btn-sm" onclick="loadThumbRefFromUrl('chars/char-frog.png','フードちゃん')" style="padding:4px 10px;font-size:.72rem;">🐸 フードちゃん</button>
           <button class="btn btn-secondary btn-sm" onclick="loadThumbRefFromUrl('chars/char-owl.png','ふくろうちゃん')" style="padding:4px 10px;font-size:.72rem;">🦉 ふくろうちゃん</button>
         </div>
-        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px;">
           <label for="thumbRefInput" class="btn btn-secondary btn-sm" style="cursor:pointer;">📁 参照画像</label>
           <input type="file" id="thumbRefInput" accept="image/*" style="display:none;" onchange="loadThumbRef(this)">
           <span id="thumbRefName" style="font-size:.75rem;color:var(--text-muted);">${thumbRefDataUrl ? '✅ 読込済み' : '未選択（任意）'}</span>
           ${thumbRefDataUrl ? `<button class="btn btn-secondary btn-sm" onclick="clearThumbRef()">✕</button>` : ''}
+        </div>
+        <!-- 回転スライダー -->
+        <div style="display:flex;align-items:center;gap:10px;font-size:.75rem;color:var(--text-muted);">
+          <span>↻ 回転</span>
+          <input type="range" min="-45" max="45" value="0" step="1" id="thumbRefAngle"
+            style="flex:1;" oninput="thumbRef.angle=+this.value;document.getElementById('thumbRefAngleLbl').textContent=this.value+'°';redrawThumb();">
+          <span id="thumbRefAngleLbl">0°</span>
+          <span style="margin-left:6px;font-size:.68rem;color:var(--text-muted);">← ドラッグで移動 / ホイールでサイズ変更</span>
         </div>
       </div>
 
@@ -2837,13 +2845,13 @@ function renderThumbPanel() {
     <!-- キャンバスプレビュー -->
     <div class="card">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-        <div style="font-size:.78rem;font-weight:600;color:var(--text-muted);">プレビュー（1280×720）</div>
+        <div style="font-size:.78rem;font-weight:600;color:var(--text-muted);">プレビュー（1080×1920）</div>
         <div style="display:flex;gap:8px;">
           <button class="btn btn-secondary btn-sm" onclick="downloadThumbCanvas()">💾 PNG保存</button>
           <button class="btn btn-primary btn-sm" onclick="saveThumbAndGoPublish()">✅ 保存して投稿へ →</button>
         </div>
       </div>
-      <canvas id="thumbCanvas" width="1280" height="720" style="width:100%;border-radius:6px;background:#1a1a1a;"></canvas>
+      <canvas id="thumbCanvas" width="1080" height="1920" style="max-height:500px;width:auto;display:block;margin:0 auto;border-radius:6px;background:#1a1a1a;"></canvas>
     </div>
 
   </div>`;
@@ -2905,13 +2913,14 @@ function loadThumbRef(input) {
     thumbRefDataUrl = e.target.result;
     const nameEl = document.getElementById('thumbRefName');
     if (nameEl) nameEl.textContent = '✅ ' + file.name;
-    redrawThumb();
+    _updateThumbRefImg(thumbRefDataUrl);
   };
   reader.readAsDataURL(file);
 }
 
 function clearThumbRef() {
   thumbRefDataUrl = '';
+  _thumbRefImg = null;
   const el = document.getElementById('panelThumb');
   if (el) el.outerHTML = renderThumbPanel();
   setTimeout(initThumbCanvas, 50);
@@ -2927,15 +2936,19 @@ async function loadThumbRefFromUrl(url, label) {
       thumbRefDataUrl = e.target.result;
       const nameEl = document.getElementById('thumbRefName');
       if (nameEl) nameEl.textContent = '✅ ' + label;
-      redrawThumb();
+      _updateThumbRefImg(thumbRefDataUrl);
     };
     reader.readAsDataURL(blob);
   } catch(e) { showToast('⚠️ 読込エラー: ' + e.message); }
 }
 
+// 参照画像の変形状態
+let thumbRef = { x: 540, y: 1400, w: 400, h: 600, angle: 0 };
+let _thumbRefImg = null;
+
 function redrawThumb() {
   if (!thumbCtx) { initThumbCanvas(); return; }
-  const W = 1280, H = 720;
+  const W = 1080, H = 1920;
   const mainText  = document.getElementById('thumbMainText')?.value  || '';
   const dateText  = document.getElementById('thumbDateText')?.value  || '';
   const textColor = document.getElementById('thumbTextColor')?.value || '#FFFFFF';
@@ -2943,87 +2956,163 @@ function redrawThumb() {
 
   thumbCtx.clearRect(0, 0, W, H);
 
-  const draw = () => {
-    // 背景
-    if (thumbBgDataUrl) {
-      const img = new Image();
-      img.onload = () => {
-        thumbCtx.drawImage(img, 0, 0, W, H);
-        drawOverlay();
-      };
-      img.src = thumbBgDataUrl;
-    } else {
-      // デフォルト背景（グラデーション）
-      const grad = thumbCtx.createLinearGradient(0, 0, W, H);
-      grad.addColorStop(0, '#0d1a2e');
-      grad.addColorStop(1, '#1a2e45');
-      thumbCtx.fillStyle = grad;
-      thumbCtx.fillRect(0, 0, W, H);
-      drawOverlay();
-    }
-  };
-
   const drawOverlay = () => {
-    // 下部グラデーション幕（テキスト可読性向上）
-    const grad2 = thumbCtx.createLinearGradient(0, H * 0.45, 0, H);
+    // 下部グラデーション幕
+    const grad2 = thumbCtx.createLinearGradient(0, H * 0.5, 0, H);
     grad2.addColorStop(0, 'rgba(0,0,0,0)');
-    grad2.addColorStop(1, 'rgba(0,0,0,0.82)');
+    grad2.addColorStop(1, 'rgba(0,0,0,0.85)');
     thumbCtx.fillStyle = grad2;
     thumbCtx.fillRect(0, 0, W, H);
 
     // 日付ラベル（左上）
     if (dateText) {
       thumbCtx.save();
-      thumbCtx.font = 'bold 44px "Noto Sans JP", sans-serif';
-      thumbCtx.shadowColor = shadowCol;
-      thumbCtx.shadowBlur = 12;
+      thumbCtx.font = 'bold 72px "Noto Sans JP", sans-serif';
+      thumbCtx.shadowColor = shadowCol; thumbCtx.shadowBlur = 16;
       thumbCtx.fillStyle = '#F5C842';
-      thumbCtx.fillText(dateText, 52, 80);
+      thumbCtx.fillText(dateText, 60, 140);
       thumbCtx.restore();
     }
 
-    // マネぼうロゴ風バッジ（左上）
+    // バッジ
     thumbCtx.save();
-    thumbCtx.font = 'bold 26px sans-serif';
+    thumbCtx.font = 'bold 44px sans-serif';
     thumbCtx.fillStyle = 'rgba(245,200,66,0.9)';
-    thumbCtx.fillText('🦉 マネぼうモーニングニュース', 48, 130);
+    thumbCtx.fillText('🦉 マネぼうモーニングニュース', 56, 220);
     thumbCtx.restore();
 
-    // メインタイトルテキスト（中央下部）
+    // メインタイトル（下部）
     if (mainText) {
       thumbCtx.save();
-      thumbCtx.shadowColor = shadowCol;
-      thumbCtx.shadowBlur = 20;
+      thumbCtx.shadowColor = shadowCol; thumbCtx.shadowBlur = 24;
       thumbCtx.fillStyle = textColor;
-      // 折り返し処理
-      const maxW = W - 100;
-      const fontSize = mainText.length > 18 ? 68 : 82;
-      thumbCtx.font = `bold ${fontSize}px "Noto Sans JP", "Hiragino Kaku Gothic ProN", sans-serif`;
-      wrapText(thumbCtx, mainText, 50, H - 140, maxW, fontSize * 1.2);
+      const fontSize = mainText.length > 16 ? 88 : 108;
+      thumbCtx.font = `bold ${fontSize}px "Noto Sans JP","Hiragino Kaku Gothic ProN",sans-serif`;
+      wrapText(thumbCtx, mainText, 60, H - 220, W - 120, fontSize * 1.25);
       thumbCtx.restore();
     }
 
-    // 参照画像（右下）
-    if (thumbRefDataUrl) {
-      const refImg = new Image();
-      refImg.onload = () => {
-        const rw = 240, rh = 160;
-        const rx = W - rw - 36, ry = H - rh - 36;
-        thumbCtx.save();
-        thumbCtx.shadowColor = 'rgba(0,0,0,0.6)';
-        thumbCtx.shadowBlur = 16;
-        thumbCtx.beginPath();
-        thumbCtx.roundRect(rx, ry, rw, rh, 12);
-        thumbCtx.clip();
-        thumbCtx.drawImage(refImg, rx, ry, rw, rh);
-        thumbCtx.restore();
-      };
-      refImg.src = thumbRefDataUrl;
+    // 参照画像（ドラッグ可能）
+    if (_thumbRefImg) {
+      thumbCtx.save();
+      thumbCtx.translate(thumbRef.x, thumbRef.y);
+      thumbCtx.rotate(thumbRef.angle * Math.PI / 180);
+      thumbCtx.drawImage(_thumbRefImg, -thumbRef.w / 2, -thumbRef.h / 2, thumbRef.w, thumbRef.h);
+      thumbCtx.restore();
     }
   };
 
-  draw();
+  if (thumbBgDataUrl) {
+    const img = new Image();
+    img.onload = () => { thumbCtx.drawImage(img, 0, 0, W, H); drawOverlay(); };
+    img.src = thumbBgDataUrl;
+  } else {
+    const grad = thumbCtx.createLinearGradient(0, 0, W, H);
+    grad.addColorStop(0, '#0d1a2e'); grad.addColorStop(1, '#1a2e45');
+    thumbCtx.fillStyle = grad; thumbCtx.fillRect(0, 0, W, H);
+    drawOverlay();
+  }
 }
+
+// 参照画像が変わった時にキャッシュ更新
+function _updateThumbRefImg(dataUrl) {
+  if (!dataUrl) { _thumbRefImg = null; redrawThumb(); return; }
+  const img = new Image();
+  img.onload = () => { _thumbRefImg = img; redrawThumb(); };
+  img.src = dataUrl;
+}
+
+// Canvas上でのドラッグ操作
+(function() {
+  let drag = null;
+  let pinchDist = 0;
+
+  function canvasScale() {
+    const c = document.getElementById('thumbCanvas');
+    if (!c) return 1;
+    return 1920 / c.getBoundingClientRect().height;
+  }
+
+  function getPos(e) {
+    const c = document.getElementById('thumbCanvas');
+    if (!c) return {x:0,y:0};
+    const r = c.getBoundingClientRect();
+    const s = canvasScale();
+    const cx = (e.clientX - r.left) * s;
+    const cy = (e.clientY - r.top) * s;
+    return {x: cx, y: cy};
+  }
+
+  function isOnRef(x, y) {
+    if (!_thumbRefImg) return false;
+    const dx = x - thumbRef.x, dy = y - thumbRef.y;
+    const rad = -thumbRef.angle * Math.PI / 180;
+    const lx = dx * Math.cos(rad) - dy * Math.sin(rad);
+    const ly = dx * Math.sin(rad) + dy * Math.cos(rad);
+    return Math.abs(lx) < thumbRef.w / 2 + 20 && Math.abs(ly) < thumbRef.h / 2 + 20;
+  }
+
+  document.addEventListener('mousedown', e => {
+    const c = document.getElementById('thumbCanvas');
+    if (!c || !c.contains(e.target)) return;
+    const {x, y} = getPos(e);
+    if (isOnRef(x, y)) { drag = {ox: x - thumbRef.x, oy: y - thumbRef.y}; }
+  });
+  document.addEventListener('mousemove', e => {
+    if (!drag) return;
+    const {x, y} = getPos(e);
+    thumbRef.x = x - drag.ox; thumbRef.y = y - drag.oy;
+    redrawThumb();
+  });
+  document.addEventListener('mouseup', () => { drag = null; });
+
+  // ピンチ/ホイールでスケール
+  document.addEventListener('wheel', e => {
+    const c = document.getElementById('thumbCanvas');
+    if (!c || !c.contains(e.target) || !_thumbRefImg) return;
+    e.preventDefault();
+    const delta = e.deltaY < 0 ? 1.05 : 0.95;
+    thumbRef.w = Math.max(80, thumbRef.w * delta);
+    thumbRef.h = Math.max(80, thumbRef.h * delta);
+    redrawThumb();
+  }, {passive: false});
+
+  // タッチ対応
+  document.addEventListener('touchstart', e => {
+    const c = document.getElementById('thumbCanvas');
+    if (!c || !c.contains(e.target)) return;
+    if (e.touches.length === 1) {
+      const t = e.touches[0];
+      const {x, y} = getPos(t);
+      if (isOnRef(x, y)) drag = {ox: x - thumbRef.x, oy: y - thumbRef.y};
+    } else if (e.touches.length === 2) {
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      pinchDist = Math.hypot(dx, dy);
+    }
+  }, {passive: true});
+  document.addEventListener('touchmove', e => {
+    const c = document.getElementById('thumbCanvas');
+    if (!c || !c.contains(e.target)) return;
+    if (e.touches.length === 1 && drag) {
+      const {x, y} = getPos(e.touches[0]);
+      thumbRef.x = x - drag.ox; thumbRef.y = y - drag.oy;
+      redrawThumb();
+    } else if (e.touches.length === 2) {
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      const d = Math.hypot(dx, dy);
+      if (pinchDist) {
+        const s = d / pinchDist;
+        thumbRef.w = Math.max(80, thumbRef.w * s);
+        thumbRef.h = Math.max(80, thumbRef.h * s);
+        redrawThumb();
+      }
+      pinchDist = d;
+    }
+  }, {passive: true});
+  document.addEventListener('touchend', () => { drag = null; pinchDist = 0; });
+})();
 
 function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
   const chars = [...text];
