@@ -590,7 +590,14 @@ function _relevanceScore(p,text){
 }
 function defaultPersonas(){
   return[
-    {name:"ドラマ好き",roleType:"共感勢",  catchphrase:"このシーンで泣いた",    color:"#fb7185",words:[]},
+    {name:"ドラマ好き",roleType:"共感勢",  catchphrase:"一気見した",           color:"#fb7185",words:[]},
+    {name:"脚本通",    roleType:"知識勢",  catchphrase:"キャスティングが完璧",  color:"#c890d8",words:[]},
+    {name:"初見さん",  roleType:"初心者勢",catchphrase:"リアタイすればよかった",color:"#64d2ff",words:[]},
+    {name:"ネタ民",    roleType:"ネタ勢",  catchphrase:"草",                   color:"#57c87c",words:[]},
+    {name:"応援勢",    roleType:"応援勢",  catchphrase:"続編希望",             color:"#ffd700",words:[]},
+    {name:"批評屋",    roleType:"懐疑勢",  catchphrase:"展開が読めた",         color:"#ff7675",words:[]}
+  ];
+},
     {name:"脚本通",    roleType:"知識勢",  catchphrase:"伏線回収が天才的",      color:"#c890d8",words:[]},
     {name:"初見さん",  roleType:"初心者勢",catchphrase:"全話一気見した",        color:"#64d2ff",words:[]},
     {name:"ネタ民",    roleType:"ネタ勢",  catchphrase:"草",                   color:"#57c87c",words:[]}

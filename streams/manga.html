@@ -1089,7 +1089,16 @@ function _relevanceScore(p,text){
 
 
 
-function defaultPersonas(){ return[{name:"漫画好き",roleType:"共感勢",catchphrase:"この作品天才的",color:"#f79f57",words:[]},{name:"考察班",roleType:"知識勢",catchphrase:"伏線が気になる",color:"#c890d8",words:[]},{name:"初見さん",roleType:"初心者勢",catchphrase:"読んでみたくなった",color:"#64d2ff",words:[]},{name:"ネタ民",roleType:"ネタ勢",catchphrase:"草",color:"#57c87c",words:[]}]; }
+function defaultPersonas(){
+  return[
+    {name:"漫画好き",  roleType:"共感勢",  catchphrase:"全巻読んだ",           color:"#f79f57",words:[]},
+    {name:"考察班",    roleType:"知識勢",  catchphrase:"作者の意図が読める",    color:"#e67e22",words:[]},
+    {name:"初見さん",  roleType:"初心者勢",catchphrase:"ハマった",             color:"#64d2ff",words:[]},
+    {name:"ネタ民",    roleType:"ネタ勢",  catchphrase:"草",                   color:"#57c87c",words:[]},
+    {name:"推し活勢",  roleType:"応援勢",  catchphrase:"推しが尊い",           color:"#ffd700",words:[]},
+    {name:"批評家",    roleType:"懐疑勢",  catchphrase:"昔の方が面白かった",    color:"#ff7675",words:[]}
+  ];
+},{name:"考察班",roleType:"知識勢",catchphrase:"伏線が気になる",color:"#c890d8",words:[]},{name:"初見さん",roleType:"初心者勢",catchphrase:"読んでみたくなった",color:"#64d2ff",words:[]},{name:"ネタ民",roleType:"ネタ勢",catchphrase:"草",color:"#57c87c",words:[]}]; }
 
 function intervalRange(){if(state.commentSpeed==="fast")return[2500,6000];if(state.commentSpeed==="slow")return[9000,16000];return[5000,11000];}
 

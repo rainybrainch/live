@@ -1302,10 +1302,15 @@ function _relevanceScore(p,text){
 
 
 function defaultPersonas(){
-
   return[
-
-    {name:"映画好き",roleType:"共感勢",  catchphrase:"何度見ても泣ける",       color:"#ff6b7a",words:[]},
+    {name:"映画好き",  roleType:"共感勢",  catchphrase:"感動して泣いた",        color:"#ff6b7a",words:[]},
+    {name:"シネマ通",  roleType:"知識勢",  catchphrase:"監督の前作も好き",      color:"#e74c3c",words:[]},
+    {name:"初見さん",  roleType:"初心者勢",catchphrase:"映画館で見た",         color:"#64d2ff",words:[]},
+    {name:"ネタ民",    roleType:"ネタ勢",  catchphrase:"名シーン",             color:"#57c87c",words:[]},
+    {name:"映画ファン",roleType:"応援勢",  catchphrase:"何回でも見られる",      color:"#ffd700",words:[]},
+    {name:"映評家",    roleType:"懐疑勢",  catchphrase:"中盤が少し冗長",        color:"#ff7675",words:[]}
+  ];
+},
 
     {name:"シネマ通",roleType:"知識勢",  catchphrase:"演出が天才的",           color:"#c890d8",words:[]},
 
