@@ -828,7 +828,7 @@ body.obs-mode .dock,body.obs-mode .open-tab,body.obs-mode .brand,body.obs-mode .
 
 
 
-  <div class="shortcut-hint">Space=タイマー　M=マイク　C=コメント　N=次ステップ　F=全画面　H=パネル　1-5=評価　O=OBS　D=DL</div>
+  <div class="shortcut-hint">Space=タイマー　M=マイク　C=コメント　N=次ステップ　F=全画面　H=パネル　1-5=評価　O=OBS　D=DL　S=速度</div>
 
 
 
@@ -1882,6 +1882,8 @@ function bind() {
     if(e.key==="o"||e.key==="O"){if(window.toggleObsMode)window.toggleObsMode();toast(document.body.classList.contains("obs-mode")?"🎥 OBS モード ON":"🖥 通常モード");}
 
     if(e.key==="d"||e.key==="D"){if(window.downloadSummary)window.downloadSummary();}
+
+    if(e.key==="s"||e.key==="S"){const speeds=["slow","normal","fast"];const cur=document.querySelector(".spd-btn.active");const curSpeed=cur?cur.dataset.speed:"normal";const next=speeds[(speeds.indexOf(curSpeed)+1)%speeds.length];if(window.setSpeed)window.setSpeed(next);toast({slow:"🐢 低速",normal:"▷ 普通",fast:"🔥 高速"}[next]||next);}
 
 
 
