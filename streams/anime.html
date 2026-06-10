@@ -1424,7 +1424,7 @@ async function syncPersonas(){
 
     personas=parsePersonas(csv);localStorage.setItem(SHARED_PERSONA_KEY,JSON.stringify(personas));
 
-    setStatus(`人格 ${personas.length}件 同期済み`);
+    setStatus(`人格 ${personas.length}件 同期済み (${(()=>{const d=new Date();return String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0");})()} )`);
 
   }catch{personas=loadPersonas();if(!personas.length)personas=defaultPersonas();setStatus(`人格 ${personas.length}件（キャッシュ）`);}
 

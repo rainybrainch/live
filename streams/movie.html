@@ -2893,7 +2893,7 @@ async function syncPersonas(){
 
 
 
-    setStatus(`人格 ${personas.length}件 同期済み`);
+    setStatus(`人格 ${personas.length}件 同期済み (${(()=>{const d=new Date();return String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0");})()} )`);
 
 
 

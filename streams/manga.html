@@ -2402,7 +2402,7 @@ function loadPersonas(){ const result=[];try{const p=JSON.parse(localStorage.get
 
 
 
-async function syncPersonas(){ try{const csvUrl=toSheetCsvUrl(state.personaSheetUrl);let csv=null;try{const r=await fetch(csvUrl,{cache:"no-store"});if(r.ok)csv=await r.text();}catch{}if(!csv)throw new Error("no csv");personas=parsePersonas(csv);localStorage.setItem(SHARED_PERSONA_KEY,JSON.stringify(personas));setStatus(`人格 ${personas.length}件 同期済み`);}catch{personas=loadPersonas();if(!personas.length)personas=defaultPersonas();setStatus(`人格 ${personas.length}件（キャッシュ）`);} }
+async function syncPersonas(){ try{const csvUrl=toSheetCsvUrl(state.personaSheetUrl);let csv=null;try{const r=await fetch(csvUrl,{cache:"no-store"});if(r.ok)csv=await r.text();}catch{}if(!csv)throw new Error("no csv");personas=parsePersonas(csv);localStorage.setItem(SHARED_PERSONA_KEY,JSON.stringify(personas));setStatus(`人格 ${personas.length}件 同期済み (${(()=>{const d=new Date();return String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0");})()} )`);}catch{personas=loadPersonas();if(!personas.length)personas=defaultPersonas();setStatus(`人格 ${personas.length}件（キャッシュ）`);} }
 
 
 
