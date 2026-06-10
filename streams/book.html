@@ -2163,8 +2163,9 @@ body.obs-mode .dock,body.obs-mode .open-tab{display:none!important;}
     const url = new URL(location.href);
 
     if (state.bookTitle)  url.searchParams.set("title",  state.bookTitle);
-
     if (state.bookAuthor) url.searchParams.set("author", state.bookAuthor);
+    const ht = (document.getElementById("hashtagText")||{}).value; if(ht) url.searchParams.set("hashtag",ht);
+    if(typeof starVal!=="undefined"&&starVal>0) url.searchParams.set("stars",starVal);
 
     const str = url.toString();
 
