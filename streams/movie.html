@@ -1380,6 +1380,42 @@ function toast(msg){const el=$("toast");if(!el)return;clearTimeout(toastTimer);e
 
 function setStatus(t){if($("personaStatus"))$("personaStatus").textContent=t;toast(t);}
 
+
+  // 起承転結フロー
+  let kisoIdx = 0;
+  const KISO_TOTAL = 4;
+  function kisoRender() {
+    for (let i = 0; i < KISO_TOTAL; i++) {
+      const el = document.getElementById('kisoStep' + i);
+      if (!el) continue;
+      el.classList.toggle('active', i === kisoIdx);
+      el.classList.toggle('done', i < kisoIdx);
+    }
+    const bar = document.getElementById('kisoBar');
+    if (bar) bar.style.width = Math.round(kisoIdx / KISO_TOTAL * 100) + '%';
+    const btn = document.getElementById('kisoNextBtn');
+    if (btn) btn.textContent = kisoIdx >= KISO_TOTAL - 1 ? '✓ 完了' : '次のステップ →';
+  }
+  function kisoNext() { if (kisoIdx < KISO_TOTAL - 1) { kisoIdx++; kisoRender(); } else { kisoIdx = 0; kisoRender(); } }
+  function kisoBack() { if (kisoIdx > 0) { kisoIdx--; kisoRender(); } }
+  function kisoReset() { kisoIdx = 0; kisoRender(); }
+
+  // 星評価
+  let starVal = 0;
+  function setRating(n) {
+    starVal = n;
+    document.querySelectorAll('.star-btn').forEach((b,i)=>b.classList.toggle('active',i<n));
+    const disp = document.getElementById('cardRating');
+    if (disp) {
+      const stars = '★'.repeat(n) + '☆'.repeat(5-n);
+      disp.textContent = stars;
+      disp.style.display = n > 0 ? '' : 'none';
+      disp.style.color = 'var(--accent)';
+    }
+    if (typeof toast === 'function') toast('評価: ' + '★'.repeat(n) + '☆'.repeat(5-n));
+  }
+
+  kisoRender();
 })();
 
 </script>
