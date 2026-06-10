@@ -1745,7 +1745,7 @@ body.obs-mode .dock,body.obs-mode .open-tab{display:none!important;}
 
     const topic = recentText()||[state.bookTitle,state.bookAuthor].filter(Boolean).join(" / ")||"本紹介配信中";
 
-    const prompt = `あなたはYouTubeライブ配信の視聴者です。ロール：${p.roleType||"共感勢"}、名前：${p.name}。\n配信トピック：「${topic.slice(0,200)}」\n自然な日本語コメントを1つ、40文字以内で。コメントのみ返してください。`;
+    const prompt = `あなたは本・読書紹介配信の視聴者です。ロール：${p.roleType||"共感勢"}、名前：${p.name}。\n配信トピック：「${topic.slice(0,200)}」\nそのジャンルらしい自然な日本語コメントを1つ、40文字以内で。コメントのみ返してください。`;
 
     try {
 
