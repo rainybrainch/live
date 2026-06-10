@@ -1943,7 +1943,7 @@ function setTimerFromInput(){ const m=Math.max(1,Math.min(240,parseInt($("timerM
 
 
 
-function toggleTimer(){ state.timer=normalizeTimer(state.timer);if(state.timer.running){state.timer.running=false;state.timer.endAt=0;}else{if(state.timer.remainingSec<=0)state.timer.remainingSec=state.timer.durationSec;state.timer.running=true;state.timer.endAt=Date.now()+state.timer.remainingSec*1000;}saveSettings();updateClock(); }
+function toggleTimer(){ state.timer=normalizeTimer(state.timer);if(state.timer.running){state.timer.running=false;state.timer.endAt=0;}else{if(state.timer.remainingSec<=0)state.timer.remainingSec=state.timer.durationSec;state.timer.running=true;state.timer.endAt=Date.now()+state.timer.remainingSec*1000;if(!state.streamStartedAt)state.streamStartedAt=Date.now();}saveSettings();updateClock(); }
 
 
 
@@ -2557,6 +2557,9 @@ function setStatus(t){if($("personaStatus"))$("personaStatus").textContent=t;toa
     summary += `評価: ${stars}
 
 `;
+    if(state.streamStartedAt){const sd=new Date(state.streamStartedAt);const elapsed=Math.floor((Date.now()-state.streamStartedAt)/60000);summary+=`配信開始: ${String(sd.getHours()).padStart(2,'0')}:${String(sd.getMinutes()).padStart(2,'0')} (${elapsed}分経過)
+
+`;}
 
     if (cmtCnt > 0) summary += `コメント: ${cmtCnt}件
 

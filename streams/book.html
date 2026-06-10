@@ -1536,7 +1536,7 @@ window.addEventListener("DOMContentLoaded",function(){
 
       if (state.timer.remainingSec <= 0) state.timer.remainingSec = state.timer.durationSec;
 
-      state.timer.running = true; state.timer.endAt = Date.now() + state.timer.remainingSec * 1000;
+      state.timer.running = true; state.timer.endAt = Date.now() + state.timer.remainingSec * 1000; if(!state.streamStartedAt) state.streamStartedAt = Date.now();
 
     }
 
@@ -2320,6 +2320,7 @@ window.addEventListener("DOMContentLoaded",function(){
 `;
     summary += `評価: ${stars}
 `;
+    if(state.streamStartedAt){const sd=new Date(state.streamStartedAt);const elapsed=Math.floor((Date.now()-state.streamStartedAt)/60000);summary+=`配信開始: ${String(sd.getHours()).padStart(2,'0')}:${String(sd.getMinutes()).padStart(2,'0')} (${elapsed}分経過)\n\n`;}
     if (cmtCnt > 0) summary += `コメント: ${cmtCnt}件
 `;
     if (hashtag) summary += `${hashtag}
