@@ -795,6 +795,8 @@ body.obs-mode .dock,body.obs-mode .open-tab{display:none!important;}
 
     <div class="card-author" id="cardAuthor"></div>
 
+    <div id="cardKisoStep" style="display:none;margin-top:8px;font-size:11px;font-weight:900;letter-spacing:.12em;opacity:.7;text-transform:uppercase;color:var(--accent);"></div>
+
     <a class="card-affiliate" id="cardAffiliate" href="#" target="_blank" style="display:none">🛒 Amazon で購入する</a>
 
   </section>
@@ -933,7 +935,7 @@ body.obs-mode .dock,body.obs-mode .open-tab{display:none!important;}
       </div>
     </section>
     <section class="section">
-      <div class="section-title"><span class="step">3</span>配信ネタ帳</div>
+      <div class="section-title"><span class="step">3</span>配信ネタ帳 <button onclick="copyAllNeta()" style="font-size:10px;padding:3px 8px;min-height:24px;margin-left:6px;opacity:.7;" type="button">📋 全コピー</button></div>
       <div class="neta-list">
         <div class="neta-item" onclick="window.setCaption('「読む前と後で◯◯が変わった」変化から入る')">「読む前と後で◯◯が変わった」変化から入る</div>
         <div class="neta-item" onclick="window.setCaption('著者・出版年・ページ数を簡単に紹介')">著者・出版年・ページ数を簡単に紹介</div>
@@ -2252,6 +2254,7 @@ window.addEventListener("DOMContentLoaded",function(){
     if (btn) btn.textContent = kisoIdx >= KISO_TOTAL - 1 ? '✓ 完了' : '次のステップ →';
     const kdisp = document.getElementById('kisoStepDisp');
     if (kdisp) kdisp.textContent = labels[kisoIdx] + ' ' + (kisoIdx+1) + '/4';
+    const kStep=document.getElementById("cardKisoStep");if(kStep){kStep.textContent=KISO_CAPTIONS[kisoIdx]||"";kStep.style.display=kisoIdx>0?"block":"none";}
   }
   const KISO_CAPTIONS = ["起: 「読む前と後で◯◯が変わった」","承: 著者・テーマ・概要を紹介","転: 一番刺さったポイントを具体的に","結: 「こんな人に読んでほしい」＋星評価"];
   function kisoNext() {
@@ -2376,6 +2379,14 @@ ${lines.join('
       clearTimeout(window._captionTimer);
       window._captionTimer = setTimeout(() => { el.style.opacity = '0'; setTimeout(() => { el.textContent = ''; el.style.opacity = ''; }, 600); }, 12000);
     }
+  };
+  
+  window.copyAllNeta = function(){
+    const items = Array.from(document.querySelectorAll('.neta-item')).map(el=>el.textContent.trim());
+    if(!items.length){toast('ネタ帳が空です');return;}
+    const text = items.map((t,i)=>`${i+1}. ${t}`).join('
+');
+    navigator.clipboard ? navigator.clipboard.writeText(text).then(()=>toast('ネタ帳をコピーしました ✓')).catch(()=>prompt('コピー:',text)) : prompt('コピー:',text);
   };
   window.kisoNext = kisoNext;
   window.kisoBack = kisoBack;

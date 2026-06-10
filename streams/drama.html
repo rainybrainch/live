@@ -426,6 +426,8 @@ body.obs-mode .dock,body.obs-mode .open-tab{display:none!important;}
 
     <div class="card-meta"  id="cardMeta"></div>
 
+    <div id="cardKisoStep" style="display:none;margin-top:8px;font-size:11px;font-weight:900;letter-spacing:.12em;opacity:.7;text-transform:uppercase;color:var(--accent);"></div>
+
     <a class="card-link" id="cardLink" href="#" target="_blank" style="display:none">🎬 配信で見る</a>
 
   </section>
@@ -586,7 +588,7 @@ body.obs-mode .dock,body.obs-mode .open-tab{display:none!important;}
 
     <section class="section">
 
-      <div class="section-title"><span class="step">3</span>配信ネタ帳</div>
+      <div class="section-title"><span class="step">3</span>配信ネタ帳 <button onclick="copyAllNeta()" style="font-size:10px;padding:3px 8px;min-height:24px;margin-left:6px;opacity:.7;" type="button">📋 全コピー</button></div>
 
       <div class="neta-list">
 
@@ -1430,6 +1432,7 @@ function setStatus(t){if($("personaStatus"))$("personaStatus").textContent=t;toa
 
     if (kdisp) kdisp.textContent = labels[kisoIdx] + ' ' + (kisoIdx+1) + '/4';
 
+    const kStep=document.getElementById("cardKisoStep");if(kStep){kStep.textContent=KISO_CAPTIONS[kisoIdx]||"";kStep.style.display=kisoIdx>0?"block":"none";}
   }
 
 
@@ -1665,6 +1668,14 @@ ${lines.join('
 
   };
 
+  
+  window.copyAllNeta = function(){
+    const items = Array.from(document.querySelectorAll('.neta-item')).map(el=>el.textContent.trim());
+    if(!items.length){toast('ネタ帳が空です');return;}
+    const text = items.map((t,i)=>`${i+1}. ${t}`).join('
+');
+    navigator.clipboard ? navigator.clipboard.writeText(text).then(()=>toast('ネタ帳をコピーしました ✓')).catch(()=>prompt('コピー:',text)) : prompt('コピー:',text);
+  };
   window.kisoNext = kisoNext;
 
   window.kisoBack = kisoBack;
