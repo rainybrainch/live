@@ -2771,6 +2771,10 @@ function renderThumbPanel() {
       <!-- 背景画像（localStorage保存） -->
       <div style="margin-bottom:12px;">
         <label style="display:block;font-size:.78rem;color:var(--text-muted);margin-bottom:6px;font-weight:600;">① 背景画像</label>
+        <!-- 背景プリセット -->
+        <div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap;">
+          <button class="btn btn-secondary btn-sm" onclick="loadThumbBgFromUrl('chars/bg-classroom.png','教室')" style="padding:4px 10px;font-size:.72rem;">🏫 教室</button>
+        </div>
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
           <label for="thumbBgInput" class="btn btn-secondary btn-sm" style="cursor:pointer;">📁 ${thumbBgDataUrl ? '画像を変更' : '画像を選択'}</label>
           <input type="file" id="thumbBgInput" accept="image/*" style="display:none;" onchange="loadThumbBg(this)">
@@ -2865,6 +2869,24 @@ function loadThumbBg(input) {
     setTimeout(() => { initThumbCanvas(); redrawThumb(); }, 50);
   };
   reader.readAsDataURL(file);
+}
+
+async function loadThumbBgFromUrl(url, label) {
+  try {
+    const resp = await fetch(url);
+    if (!resp.ok) { showToast('⚠️ 背景画像が見つかりません: ' + url); return; }
+    const blob = await resp.blob();
+    const reader = new FileReader();
+    reader.onload = e => {
+      thumbBgDataUrl = e.target.result;
+      localStorage.setItem('ms_thumb_bg_v1', thumbBgDataUrl);
+      const panel = document.getElementById('panelThumb');
+      if (panel) panel.outerHTML = renderThumbPanel();
+      setTimeout(() => { initThumbCanvas(); redrawThumb(); }, 50);
+      showToast('✅ 背景: ' + label);
+    };
+    reader.readAsDataURL(blob);
+  } catch(e) { showToast('⚠️ 読込エラー: ' + e.message); }
 }
 
 function clearThumbBg() {
