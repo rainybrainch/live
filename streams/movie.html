@@ -413,6 +413,15 @@ body.obs-mode .dock,body.obs-mode .open-tab{display:none!important;}
 .star-btn.active, .star-btn:hover { opacity:1; transform:scale(1.2); }
 
 
+
+/* ── QUICK MEMO ── */
+.memo-wrap { display:flex; gap:6px; }
+.memo-input { flex:1; min-height:36px; resize:none; height:36px; overflow:hidden; }
+.memo-list { display:grid; gap:3px; max-height:120px; overflow-y:auto; margin-top:6px; }
+.memo-item { font-size:10px; color:var(--muted); padding:4px 8px; border-left:2px solid rgba(var(--accent-rgb),.4); background:rgba(255,255,255,.03); border-radius:0 4px 4px 0; display:flex; gap:6px; }
+.memo-item .memo-ts { color:rgba(255,255,255,.25); flex-shrink:0; }
+.memo-item .memo-txt { flex:1; word-break:break-all; }
+
 /* ── NETA ── */
 .neta-list { display:grid; gap:4px; }
 .neta-item { padding:7px 10px; border-radius:7px; border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.03); font-size:10px; color:var(--muted); cursor:pointer; transition:background .12s, color .12s; line-height:1.45; }
@@ -752,6 +761,14 @@ body.obs-mode .dock,body.obs-mode .open-tab{display:none!important;}
 
   </div>
 
+    <section class="section">
+      <div class="section-title">📝 クイックメモ</div>
+      <div class="memo-wrap">
+        <textarea class="memo-input" id="memoInput" placeholder="気づいたことをメモ…" rows="1"></textarea>
+        <button onclick="window.saveMemo()" type="button">保存</button>
+      </div>
+      <div class="memo-list" id="memoList"></div>
+    </section>
 </aside>
 
 
@@ -949,6 +966,7 @@ function bind() {
     if(e.key==="f"||e.key==="F") toggleFullscreen();
 
     if(e.key==="h"||e.key==="H"){document.body.classList.toggle("panel-hidden");toast(document.body.classList.contains("panel-hidden")?"パネル非表示":"パネル表示");}
+    if(e.key==="n"||e.key==="N"){if(window.kisoNext)window.kisoNext();}
 
   });
 
@@ -1446,6 +1464,7 @@ function setStatus(t){if($("personaStatus"))$("personaStatus").textContent=t;toa
   }
 
   kisoRender();
+  renderMemos();
 
 
   function copyHashtag() {
