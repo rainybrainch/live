@@ -2814,10 +2814,15 @@ function renderThumbPanel() {
       <!-- 参照画像（任意） -->
       <div style="margin-bottom:14px;">
         <label style="display:block;font-size:.78rem;color:var(--text-muted);margin-bottom:6px;font-weight:600;">④ 参照画像（任意・右下に配置）</label>
+        <!-- キャラプリセット -->
+        <div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap;">
+          <button class="btn btn-secondary btn-sm" onclick="loadThumbRefFromUrl('chars/char-frog.png','フードちゃん')" style="padding:4px 10px;font-size:.72rem;">🐸 フードちゃん</button>
+          <button class="btn btn-secondary btn-sm" onclick="loadThumbRefFromUrl('chars/char-owl.png','ふくろうちゃん')" style="padding:4px 10px;font-size:.72rem;">🦉 ふくろうちゃん</button>
+        </div>
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
           <label for="thumbRefInput" class="btn btn-secondary btn-sm" style="cursor:pointer;">📁 参照画像</label>
           <input type="file" id="thumbRefInput" accept="image/*" style="display:none;" onchange="loadThumbRef(this)">
-          <span style="font-size:.75rem;color:var(--text-muted);">${thumbRefDataUrl ? '✅ 読込済み' : '未選択（任意）'}</span>
+          <span id="thumbRefName" style="font-size:.75rem;color:var(--text-muted);">${thumbRefDataUrl ? '✅ 読込済み' : '未選択（任意）'}</span>
           ${thumbRefDataUrl ? `<button class="btn btn-secondary btn-sm" onclick="clearThumbRef()">✕</button>` : ''}
         </div>
       </div>
@@ -2888,6 +2893,22 @@ function clearThumbRef() {
   const el = document.getElementById('panelThumb');
   if (el) el.outerHTML = renderThumbPanel();
   setTimeout(initThumbCanvas, 50);
+}
+
+async function loadThumbRefFromUrl(url, label) {
+  try {
+    const resp = await fetch(url);
+    if (!resp.ok) { showToast('⚠️ 画像が見つかりません: ' + url); return; }
+    const blob = await resp.blob();
+    const reader = new FileReader();
+    reader.onload = e => {
+      thumbRefDataUrl = e.target.result;
+      const nameEl = document.getElementById('thumbRefName');
+      if (nameEl) nameEl.textContent = '✅ ' + label;
+      redrawThumb();
+    };
+    reader.readAsDataURL(blob);
+  } catch(e) { showToast('⚠️ 読込エラー: ' + e.message); }
 }
 
 function redrawThumb() {
