@@ -432,6 +432,9 @@ body.obs-mode .dock,body.obs-mode .open-tab{display:none!important;}
 .neta-item:hover { background:rgba(var(--accent-rgb),.1); color:var(--text); border-color:rgba(var(--accent-rgb),.25); }
 .neta-item:active { transform:scale(.98); }
 
+
+.setup-dot { width:7px; height:7px; border-radius:50%; background:rgba(255,255,255,.2); display:inline-block; margin-right:5px; transition:background .3s; flex-shrink:0; }
+.setup-dot.ok { background:#57d68d; box-shadow:0 0 6px #57d68d88; }
 /* ── KISO FLOW ── */
 .kiso-flow { display:grid; gap:6px; }
 .kiso-step { display:flex; gap:10px; padding:9px 10px; border-radius:8px; border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.02); transition:background .15s; }
@@ -554,7 +557,7 @@ body.obs-mode .dock,body.obs-mode .open-tab{display:none!important;}
 
     <section class="section">
 
-      <div class="section-title"><span class="step">1</span>映画の情報</div>
+      <div class="section-title"><span class="setup-dot" id="setupDot"></span><span class="step">1</span>映画の情報</div>
 
       <div class="field"><label for="movieTitle">タイトル</label><input id="movieTitle" placeholder="例: 君の名は。"></div>
 
