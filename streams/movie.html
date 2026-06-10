@@ -1056,7 +1056,7 @@ body.obs-mode .dock,body.obs-mode .open-tab,body.obs-mode .brand,body.obs-mode .
 
 
 
-  <div class="shortcut-hint">Space=タイマー　M=マイク　C=コメント　N=次ステップ　F=全画面　H=パネル　1-5=評価</div>
+  <div class="shortcut-hint">Space=タイマー　M=マイク　C=コメント　N=次ステップ　F=全画面　H=パネル　1-5=評価　O=OBS</div>
 
 
 
@@ -2033,6 +2033,8 @@ function bind() {
 
     if(e.key==="n"||e.key==="N"){if(window.kisoNext)window.kisoNext();}
     if(/^[1-5]$/.test(e.key)&&window.setRating){window.setRating(parseInt(e.key));toast("★".repeat(parseInt(e.key))+" に評価");}
+
+    if(e.key==="o"||e.key==="O"){if(window.toggleObsMode)window.toggleObsMode();toast(document.body.classList.contains("obs-mode")?"🎥 OBS モード ON":"🖥 通常モード");}
 
 
 

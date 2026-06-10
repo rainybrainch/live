@@ -820,7 +820,7 @@ body.obs-mode .dock,body.obs-mode .open-tab,body.obs-mode .brand,body.obs-mode .
 
 
   <div class="caption" id="caption">「マイク開始」で文字起こしが始まります</div>
-  <div class="shortcut-hint">Space=タイマー　M=マイク　C=コメント　N=次ステップ　F=全画面　H=パネル　1-5=評価</div>
+  <div class="shortcut-hint">Space=タイマー　M=マイク　C=コメント　N=次ステップ　F=全画面　H=パネル　1-5=評価　O=OBS</div>
 
 
 
@@ -1475,6 +1475,8 @@ window.addEventListener("DOMContentLoaded",function(){
       if (e.key==="h"||e.key==="H") { document.body.classList.toggle("panel-hidden"); toast(document.body.classList.contains("panel-hidden") ? "パネル非表示" : "パネル表示"); if(!document.body.classList.contains("panel-hidden")){const aside=document.querySelector("aside");if(aside)aside.scrollTop=0;} }
       if (e.key==="n"||e.key==="N") { if(window.kisoNext) { window.kisoNext(); } }
     if(/^[1-5]$/.test(e.key)&&window.setRating){window.setRating(parseInt(e.key));toast("★".repeat(parseInt(e.key))+" に評価");}
+
+    if(e.key==="o"||e.key==="O"){if(window.toggleObsMode)window.toggleObsMode();toast(document.body.classList.contains("obs-mode")?"🎥 OBS モード ON":"🖥 通常モード");}
 
     });
 
