@@ -2190,6 +2190,13 @@ body.obs-mode .dock,body.obs-mode .open-tab{display:none!important;}
   }
 
   kisoRender();
+
+  // グローバル公開（HTML onclick から呼べるように）
+  window.kisoNext = kisoNext;
+  window.kisoBack = kisoBack;
+  window.kisoReset = kisoReset;
+  window.setRating = setRating;
+  window.copyHashtag = copyHashtag;
 })();
 
 </script>
