@@ -213,7 +213,8 @@ body.obs-mode .dock,body.obs-mode .open-tab{display:none!important;}
       </div>
       <div class="field"><label for="serviceUrl">配信サービス URL（任意）</label><input id="serviceUrl" placeholder="https://..."></div>
       <div class="field"><label for="posterUrl">ポスター URL（任意）</label><input id="posterUrl" placeholder="https://..."></div>
-      <div class="actions">
+            <div class="field"><label for="hashtagText">ハッシュタグ（スペース区切り）</label><div style="display:flex;gap:6px;"><input id="hashtagText" placeholder="#アニメ感想 #配信"><button onclick="copyHashtag()" type="button">コピー</button></div></div>
+<div class="actions">
         <button id="applyBtn" class="primary wide" type="button">ステージに反映</button>
         <button id="copyObsBtn" type="button">OBS URL</button>
         <button id="fullscreenBtn" type="button">全画面</button>
