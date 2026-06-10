@@ -1143,6 +1143,7 @@ body.obs-mode .dock,body.obs-mode .open-tab{display:none!important;}
         <button onclick="window.saveMemo()" type="button">保存</button>
       </div>
       <div class="memo-list" id="memoList"></div>
+      <button onclick="window.clearMemos()" type="button" style="font-size:10px;margin-top:4px;opacity:.5;">メモ全削除</button>
     </section>
 </aside>
 
@@ -2238,6 +2239,11 @@ body.obs-mode .dock,body.obs-mode .open-tab{display:none!important;}
   }
 
   kisoRender();
+
+  // メモ Enter キー保存
+  document.getElementById('memoInput')?.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); saveMemo(); }
+  });
   renderMemos();
 
 
