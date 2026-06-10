@@ -1169,6 +1169,12 @@ function setStatus(t){if($("personaStatus"))$("personaStatus").textContent=t;toa
 
   kisoRender();
 
+
+  function copyHashtag() {
+    const val = (document.getElementById('hashtagText')||{}).value||'';
+    if (!val.trim()) { if(typeof toast==='function') toast('ハッシュタグを入力してください'); return; }
+    navigator.clipboard ? navigator.clipboard.writeText(val).then(()=>{ if(typeof toast==='function') toast('ハッシュタグをコピー ✓'); }).catch(()=>prompt('コピー:',val)) : prompt('コピー:',val);
+  }
   // グローバル公開（HTML onclick から呼べるように）
   window.kisoNext = kisoNext;
   window.kisoBack = kisoBack;
