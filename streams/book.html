@@ -680,6 +680,13 @@ body.obs-mode .dock,body.obs-mode .open-tab{display:none!important;}
 .star-btn { font-size:20px; background:none; border:none; padding:2px; cursor:pointer; min-height:auto; line-height:1; opacity:.35; transition:opacity .1s, transform .1s; }
 .star-btn.active, .star-btn:hover { opacity:1; transform:scale(1.2); }
 
+
+/* ── NETA ── */
+.neta-list { display:grid; gap:4px; }
+.neta-item { padding:7px 10px; border-radius:7px; border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.03); font-size:10px; color:var(--muted); cursor:pointer; transition:background .12s, color .12s; line-height:1.45; }
+.neta-item:hover { background:rgba(var(--accent-rgb),.1); color:var(--text); border-color:rgba(var(--accent-rgb),.25); }
+.neta-item:active { transform:scale(.98); }
+
 /* ── KISO FLOW ── */
 .kiso-flow { display:grid; gap:6px; }
 .kiso-step { display:flex; gap:10px; padding:9px 10px; border-radius:8px; border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.02); transition:background .15s; }
@@ -913,7 +920,7 @@ body.obs-mode .dock,body.obs-mode .open-tab{display:none!important;}
 
     <section class="section">
 
-      <div class="section-title"><span class="step">3</span>収録タイマー</div>
+      <div class="section-title"><span class="step">4</span>収録タイマー</div>
 
       <div class="grid2">
 
@@ -959,7 +966,7 @@ body.obs-mode .dock,body.obs-mode .open-tab{display:none!important;}
 
     <section class="section">
 
-      <div class="section-title"><span class="step">4</span>文字起こし</div>
+      <div class="section-title"><span class="step">5</span>文字起こし</div>
 
       <div class="transcript-plan-row">
 
@@ -2198,6 +2205,7 @@ body.obs-mode .dock,body.obs-mode .open-tab{display:none!important;}
     navigator.clipboard ? navigator.clipboard.writeText(val).then(()=>{ if(typeof toast==='function') toast('ハッシュタグをコピー ✓'); }).catch(()=>prompt('コピー:',val)) : prompt('コピー:',val);
   }
   // グローバル公開（HTML onclick から呼べるように）
+  window.setCaption = function(t){ const el=document.getElementById("caption"); if(el){el.textContent=t;el.classList.add("flash-in");setTimeout(()=>el.classList.remove("flash-in"),800);} };
   window.kisoNext = kisoNext;
   window.kisoBack = kisoBack;
   window.kisoReset = kisoReset;
