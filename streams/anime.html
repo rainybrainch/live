@@ -441,7 +441,7 @@ body.obs-mode .dock,body.obs-mode .open-tab{display:none!important;}
 
   <div class="caption" id="caption">「マイク開始」で文字起こしが始まります</div>
 
-  <div class="shortcut-hint">Space=タイマー　M=マイク　C=コメント　N=次ステップ　F=全画面　H=パネル</div>
+  <div class="shortcut-hint">Space=タイマー　M=マイク　C=コメント　N=次ステップ　F=全画面　H=パネル　1-5=評価</div>
 
 </main>
 
@@ -1002,6 +1002,8 @@ function bind() {
     if(e.key==="h"||e.key==="H"){document.body.classList.toggle("panel-hidden");toast(document.body.classList.contains("panel-hidden")?"パネル非表示":"パネル表示");if(!document.body.classList.contains("panel-hidden")){const d=document.getElementById("dock");if(d)d.scrollTop=0;}}
 
     if(e.key==="n"||e.key==="N"){if(window.kisoNext)window.kisoNext();}
+
+    if(/^[1-5]$/.test(e.key)&&window.setRating){window.setRating(parseInt(e.key));toast("★".repeat(parseInt(e.key))+" に評価");}
 
   });
 
