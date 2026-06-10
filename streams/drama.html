@@ -411,7 +411,7 @@ body.obs-mode .dock,body.obs-mode .open-tab{display:none!important;}
 
   <div class="avatar empty" id="avatar"></div>
 
-  <div class="drama-poster" id="dramaPoster"><img id="posterImg" src="" alt="poster"></div>
+  <div class="drama-poster" id="dramaPoster"><img id="posterImg" src="" alt="poster" onerror="this.style.display='none'" onload="this.style.display=''"></div>
 
   <div class="comment-tracks" id="commentTracks">
 
@@ -596,6 +596,9 @@ body.obs-mode .dock,body.obs-mode .open-tab{display:none!important;}
       <div class="section-title"><span class="step">3</span>配信ネタ帳 <button onclick="copyAllNeta()" style="font-size:10px;padding:3px 8px;min-height:24px;margin-left:6px;opacity:.7;" type="button">📋 全コピー</button></div>
 
       <div class="neta-list">
+
+        <div class="neta-item" onclick="netaClick('「{T}」の推しポイントは？')">🎯 「{T}」の推しポイントは？</div>
+
 
         <div class="neta-item" onclick="setCaption('「◯話まで一気見しました」から始める')">「◯話まで一気見しました」から始める</div>
 
@@ -1674,6 +1677,14 @@ ${lines.join('
   };
 
   
+  
+  window.netaClick = function(t){
+    const titleKeys = ['animeTitle','mangaTitle','movieTitle','dramaTitle','bookTitle'];
+    let title = '';
+    for(const k of titleKeys){ if(state[k]){ title=state[k]; break; } }
+    const caption = title ? t.replace(/\{T\}/g, title) : t;
+    if(window.setCaption) window.setCaption(caption, false);
+  };
   window.copyAllNeta = function(){
     const items = Array.from(document.querySelectorAll('.neta-item')).map(el=>el.textContent.trim());
     if(!items.length){toast('ネタ帳が空です');return;}
