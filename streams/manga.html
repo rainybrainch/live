@@ -300,6 +300,10 @@ body.obs-mode .dock,body.obs-mode .open-tab{display:none!important;}
 .memo-item .memo-ts { color:rgba(255,255,255,.25); flex-shrink:0; }
 .memo-item .memo-txt { flex:1; word-break:break-all; }
 
+
+/* ── SUMMARY ── */
+.summary-box { background:rgba(0,0,0,.35); border:1px solid rgba(255,255,255,.12); border-radius:8px; padding:10px 12px; font-size:11px; color:var(--muted); white-space:pre-wrap; line-height:1.7; word-break:break-all; max-height:160px; overflow-y:auto; }
+
 /* ── NETA ── */
 .neta-list { display:grid; gap:4px; }
 .neta-item { padding:7px 10px; border-radius:7px; border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.03); font-size:10px; color:var(--muted); cursor:pointer; transition:background .12s, color .12s; line-height:1.45; }
@@ -665,6 +669,12 @@ body.obs-mode .dock,body.obs-mode .open-tab{display:none!important;}
       </div>
       <div class="memo-list" id="memoList"></div>
       <button onclick="window.clearMemos()" type="button" style="font-size:10px;margin-top:4px;opacity:.5;">メモ全削除</button>
+    </section>
+    <section class="section">
+      <div class="section-title">📋 配信サマリー</div>
+      <button onclick="window.genSummary()" type="button" class="primary wide" style="width:100%;margin-bottom:8px;">サマリー生成</button>
+      <div class="summary-box" id="summaryBox" style="display:none;"></div>
+      <button onclick="window.copySummary()" type="button" id="copySummaryBtn" style="display:none;width:100%;margin-top:6px;">コピー</button>
     </section>
 </aside>
 
@@ -1229,6 +1239,48 @@ function setStatus(t){if($("personaStatus"))$("personaStatus").textContent=t;toa
     const val = (document.getElementById('hashtagText')||{}).value||'';
     if (!val.trim()) { if(typeof toast==='function') toast('ハッシュタグを入力してください'); return; }
     navigator.clipboard ? navigator.clipboard.writeText(val).then(()=>{ if(typeof toast==='function') toast('ハッシュタグをコピー ✓'); }).catch(()=>prompt('コピー:',val)) : prompt('コピー:',val);
+  }
+
+  function genSummary() {
+    const titleKey = 'mangaTitle';
+    const genre = '漫画';
+    const title = state[titleKey] || '（タイトル未入力）';
+    const stars = starVal > 0 ? '★'.repeat(starVal) + '☆'.repeat(5-starVal) : '（未評価）';
+    const hashtag = (document.getElementById('hashtagText')||{}).value || '';
+    const memos = loadMemos ? loadMemos().slice(-5) : [];
+    const memoLines = memos.length ? memos.map(m => '・' + m.text).join('
+') : '';
+    const stepLabels = ['起','承','転','結'];
+    const currentStep = stepLabels[kisoIdx] || '起';
+
+    let summary = `【漫画紹介】${title}
+`;
+    summary += `評価: ${stars}
+`;
+    if (hashtag) summary += `${hashtag}
+`;
+    summary += `
+▼ 話した内容
+`;
+    summary += `現在ステップ: ${currentStep}
+`;
+    if (memoLines) summary += `
+メモ:
+${memoLines}
+`;
+    summary += `
+#RAINYBRAIN #${genre}紹介配信`;
+
+    const box = document.getElementById('summaryBox');
+    const btn = document.getElementById('copySummaryBtn');
+    if (box) { box.textContent = summary; box.style.display = ''; }
+    if (btn) btn.style.display = '';
+    if(typeof toast==='function') toast('サマリー生成 ✓');
+  }
+  function copySummary() {
+    const box = document.getElementById('summaryBox');
+    if (!box || !box.textContent) return;
+    navigator.clipboard ? navigator.clipboard.writeText(box.textContent).then(()=>{ if(typeof toast==='function') toast('コピー ✓'); }).catch(()=>prompt('コピー:',box.textContent)) : prompt('コピー:',box.textContent);
   }
   // グローバル公開（HTML onclick から呼べるように）
   window.setCaption = function(t, autoClear) {
