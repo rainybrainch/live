@@ -955,7 +955,7 @@ function toggleTimer(){ state.timer=normalizeTimer(state.timer);if(state.timer.r
 
 function resetTimer(){ state.timer=normalizeTimer(state.timer);state.timer.running=false;state.timer.endAt=0;state.timer.remainingSec=state.timer.durationSec;saveSettings();updateClock(); }
 
-function updateClock(){ const prevRem=state.timer.remainingSec;state.timer=normalizeTimer(state.timer);if(state.timer.running&&state.timer.remainingSec<=0){state.timer.running=false;state.timer.endAt=0;if(prevRem>0){toast("⏱ タイマー終了！");$("timerDisplay")?.classList.add("flash");setTimeout(()=>$("timerDisplay")?.classList.remove("flash"),2800);}}$("timerTime").textContent=fmt(state.timer.remainingSec);$("timerLabel").textContent=state.timer.running?"REC RUNNING":"REC TIMER";$("timerDisplay").classList.toggle("running",state.timer.running);$("timerStartBtn").textContent=state.timer.running?"停止":"開始";$("stageTimerToggle").textContent=state.timer.running?"Ⅱ":"▶";$("stageTimerToggle").classList.toggle("running",state.timer.running); }
+function updateClock(){ const prevRem=state.timer.remainingSec;state.timer=normalizeTimer(state.timer);if(state.timer.running&&state.timer.remainingSec<=0){state.timer.running=false;state.timer.endAt=0;if(prevRem>0){toast("⏱ タイマー終了！");playTimerBeep();$("timerDisplay")?.classList.add("flash");setTimeout(()=>$("timerDisplay")?.classList.remove("flash"),2800);}}$("timerTime").textContent=fmt(state.timer.remainingSec);$("timerLabel").textContent=state.timer.running?"REC RUNNING":"REC TIMER";$("timerDisplay").classList.toggle("running",state.timer.running);$("timerStartBtn").textContent=state.timer.running?"停止":"開始";$("stageTimerToggle").textContent=state.timer.running?"Ⅱ":"▶";$("stageTimerToggle").classList.toggle("running",state.timer.running); }
 
 function fmt(sec){const n=Math.max(0,parseInt(sec||0)||0),h=Math.floor(n/3600),m=Math.floor((n%3600)/60),s=n%60;return h>0?`${h}:${pad(m)}:${pad(s)}`:`${pad(m)}:${pad(s)}`;}
 
@@ -1281,6 +1281,21 @@ ${memoLines}
     const box = document.getElementById('summaryBox');
     if (!box || !box.textContent) return;
     navigator.clipboard ? navigator.clipboard.writeText(box.textContent).then(()=>{ if(typeof toast==='function') toast('コピー ✓'); }).catch(()=>prompt('コピー:',box.textContent)) : prompt('コピー:',box.textContent);
+  }
+
+  function playTimerBeep() {
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      [0, 0.25, 0.5].forEach(t => {
+        const o = ctx.createOscillator();
+        const g = ctx.createGain();
+        o.connect(g); g.connect(ctx.destination);
+        o.type = 'sine'; o.frequency.value = 880;
+        g.gain.setValueAtTime(0.4, ctx.currentTime + t);
+        g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + t + 0.2);
+        o.start(ctx.currentTime + t); o.stop(ctx.currentTime + t + 0.22);
+      });
+    } catch {}
   }
   // グローバル公開（HTML onclick から呼べるように）
   window.setCaption = function(t, autoClear) {

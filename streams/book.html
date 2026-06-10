@@ -1528,7 +1528,7 @@ body.obs-mode .dock,body.obs-mode .open-tab{display:none!important;}
 
       if (prevRem > 0) {
 
-        toast("⏱ タイマー終了！");
+        toast("⏱ タイマー終了！");playTimerBeep();
 
         $("timerDisplay")?.classList.add("flash");
 
@@ -2303,6 +2303,21 @@ ${memoLines}
     const box = document.getElementById('summaryBox');
     if (!box || !box.textContent) return;
     navigator.clipboard ? navigator.clipboard.writeText(box.textContent).then(()=>{ if(typeof toast==='function') toast('コピー ✓'); }).catch(()=>prompt('コピー:',box.textContent)) : prompt('コピー:',box.textContent);
+  }
+
+  function playTimerBeep() {
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      [0, 0.25, 0.5].forEach(t => {
+        const o = ctx.createOscillator();
+        const g = ctx.createGain();
+        o.connect(g); g.connect(ctx.destination);
+        o.type = 'sine'; o.frequency.value = 880;
+        g.gain.setValueAtTime(0.4, ctx.currentTime + t);
+        g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + t + 0.2);
+        o.start(ctx.currentTime + t); o.stop(ctx.currentTime + t + 0.22);
+      });
+    } catch {}
   }
   // グローバル公開（HTML onclick から呼べるように）
   window.setCaption = function(t, autoClear) {
