@@ -2882,7 +2882,10 @@ function renderThumbPanel() {
       <!-- ── 右: プレビュー（常時表示・sticky） ── -->
       <div style="position:sticky;top:16px;">
         <div class="card" style="padding:12px;margin:0;">
-          <div style="font-size:.72rem;color:var(--text-muted);margin-bottom:8px;font-weight:600;">プレビュー (1080×1920)</div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+            <div style="font-size:.72rem;color:var(--text-muted);font-weight:600;">プレビュー (1080×1920)</div>
+            <button class="btn btn-secondary btn-sm" style="padding:3px 10px;font-size:.72rem;" onclick="openThumbZoom()">🔍 拡大</button>
+          </div>
           <canvas id="thumbCanvas" width="1080" height="1920"
             style="width:100%;height:auto;border-radius:8px;background:#1a1a1a;display:block;cursor:grab;"></canvas>
           <div style="display:flex;flex-direction:column;gap:6px;margin-top:10px;">
@@ -2892,9 +2895,35 @@ function renderThumbPanel() {
         </div>
       </div>
 
+      <!-- 拡大プレビューオーバーレイ -->
+      <div id="thumbZoomOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:9999;align-items:center;justify-content:center;"
+        onclick="if(event.target===this)closeThumbZoom()">
+        <div style="position:relative;max-height:96vh;max-width:96vw;">
+          <img id="thumbZoomImg" style="max-height:96vh;max-width:96vw;border-radius:10px;display:block;" src="">
+          <button onclick="closeThumbZoom()" style="position:absolute;top:-14px;right:-14px;background:#333;border:2px solid #555;color:#fff;border-radius:50%;width:32px;height:32px;font-size:1.1rem;cursor:pointer;line-height:1;">✕</button>
+          <button onclick="downloadThumbCanvas()" style="position:absolute;bottom:-44px;left:50%;transform:translateX(-50%);background:var(--char-color);color:#0d0d0d;border:none;border-radius:8px;padding:8px 24px;font-size:.85rem;font-weight:700;cursor:pointer;">💾 PNG保存</button>
+        </div>
+      </div>
+
     </div>
   </div>`;
 }
+
+function openThumbZoom() {
+  const c = document.getElementById('thumbCanvas');
+  const overlay = document.getElementById('thumbZoomOverlay');
+  const img = document.getElementById('thumbZoomImg');
+  if (!c || !overlay || !img) return;
+  img.src = c.toDataURL('image/png');
+  overlay.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+function closeThumbZoom() {
+  const overlay = document.getElementById('thumbZoomOverlay');
+  if (overlay) overlay.style.display = 'none';
+  document.body.style.overflow = '';
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeThumbZoom(); });
 
 function initThumbCanvas() {
   thumbCanvas = document.getElementById('thumbCanvas');
