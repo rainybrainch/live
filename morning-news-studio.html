@@ -3041,9 +3041,11 @@ const _thumbRefDefault = { x: 810, y: 1500, w: 400, h: 600, angle: 0 };
 let thumbRef = (() => { try { return { ..._thumbRefDefault, ...JSON.parse(localStorage.getItem('ms_thumb_ref_state_v1') || '{}') }; } catch { return { ..._thumbRefDefault }; } })();
 function _saveThumbRefState() { localStorage.setItem('ms_thumb_ref_state_v1', JSON.stringify(thumbRef)); }
 let _thumbRefImg = null;
+let _thumbDrawToken = 0;
 
 function redrawThumb() {
   if (!thumbCtx) { initThumbCanvas(); return; }
+  const token = ++_thumbDrawToken;
   const W = 1080, H = 1920;
   const mainText  = document.getElementById('thumbMainText')?.value  || '';
   const dateText  = document.getElementById('thumbDateText')?.value  || '';
@@ -3102,7 +3104,11 @@ function redrawThumb() {
 
   if (thumbBgDataUrl) {
     const img = new Image();
-    img.onload = () => { thumbCtx.drawImage(img, 0, 0, W, H); drawOverlay(); };
+    img.onload = () => {
+      if (token !== _thumbDrawToken) return; // 古い描画は破棄
+      thumbCtx.drawImage(img, 0, 0, W, H);
+      drawOverlay();
+    };
     img.src = thumbBgDataUrl;
   } else {
     const grad = thumbCtx.createLinearGradient(0, 0, W, H);
