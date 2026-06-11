@@ -3298,7 +3298,9 @@ function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
 function downloadThumbCanvas() {
   if (!thumbCanvas) { showToast('サムネイルを先に作成してください'); return; }
   const link = document.createElement('a');
-  link.download = 'thumbnail_' + new Date().toISOString().slice(0,10) + '.png';
+  const titleVal = (document.getElementById('thumbMainText')?.value || '').replace(/[^\w぀-鿿]/g, '_').replace(/_+/g, '_').slice(0, 20);
+  const datePart = new Date().toISOString().slice(0, 10);
+  link.download = `thumb_${titleVal || 'notext'}_${datePart}.png`;
   link.href = thumbCanvas.toDataURL('image/png');
   link.click();
   showToast('💾 サムネイルをダウンロードしました');
