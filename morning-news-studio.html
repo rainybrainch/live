@@ -2746,114 +2746,153 @@ function useAssetInScene(idx) {
 //  Thumb Panel（サムネ作成）
 // ════════════════════════════════════
 let thumbBgDataUrl  = localStorage.getItem('ms_thumb_bg_v1') || '';
-let thumbRefDataUrl = '';
+let thumbRefDataUrl = localStorage.getItem('ms_thumb_ref_v1') || '';
 let thumbCanvas, thumbCtx;
 let _parsedNewsDate = '';
 
 function renderThumbPanel() {
   const suggestedText = generatedMeta?.thumb_text_horizontal || (window._parsedThumbTexts?.[0] || '');
-  // 日付: newsDate → M/D 形式
   const autoDate = (() => {
     const d = _parsedNewsDate || document.getElementById('newsDate')?.value || new Date().toISOString().slice(0,10);
     const m = d.match(/(\d{4})-(\d{2})-(\d{2})/);
     return m ? `${parseInt(m[2])}/${parseInt(m[3])}` : d;
   })();
   const thumbTexts = window._parsedThumbTexts || [];
+  const charScale = Math.round((thumbRef.w / 400) * 100);
+
   return `
   <div class="panel ${currentTab==='thumb'?'active':''}" id="panelThumb">
 
-    <div class="card" style="border:1px solid var(--border-accent);background:linear-gradient(135deg,rgba(212,168,67,.06),transparent);">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
-        <div style="font-size:.9rem;font-weight:700;color:var(--char-color);">🖼 サムネイル作成</div>
-        <button class="btn btn-secondary btn-sm" onclick="switchTab('meta')">← 概要・タイトルへ</button>
+    <!-- 2カラムレイアウト: 左=コントロール / 右=プレビュー常時表示 -->
+    <div style="display:grid;grid-template-columns:1fr 270px;gap:16px;align-items:start;">
+
+      <!-- ── 左: コントロール ── -->
+      <div style="display:flex;flex-direction:column;gap:12px;">
+
+        <!-- ヘッダー -->
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div style="font-size:.9rem;font-weight:700;color:var(--char-color);">🖼 サムネイル作成</div>
+          <button class="btn btn-secondary btn-sm" onclick="switchTab('meta')">← 概要・タイトルへ</button>
+        </div>
+
+        <!-- ① 背景 -->
+        <div class="card" style="padding:14px;margin:0;">
+          <div style="font-size:.78rem;font-weight:700;color:var(--text-muted);margin-bottom:8px;">① 背景画像</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;">
+            <button class="btn btn-secondary btn-sm" onclick="loadThumbBgFromUrl('chars/bg-classroom.png','教室')"
+              style="${thumbBgDataUrl?'border-color:var(--char-color);':''}padding:5px 12px;font-size:.78rem;">🏫 教室</button>
+            <label for="thumbBgInput" class="btn btn-secondary btn-sm" style="cursor:pointer;padding:5px 12px;font-size:.78rem;">📁 カスタム</label>
+            <input type="file" id="thumbBgInput" accept="image/*" style="display:none;" onchange="loadThumbBg(this)">
+            ${thumbBgDataUrl ? `<button class="btn btn-secondary btn-sm" style="padding:5px 10px;font-size:.72rem;color:#e57373;" onclick="clearThumbBg()">✕ クリア</button>` : ''}
+          </div>
+          ${thumbBgDataUrl ? `<div style="font-size:.7rem;color:#4caf50;">✅ 設定済み（次回も保持）</div>` : `<div style="font-size:.7rem;color:var(--text-muted);">未選択（一度設定すると次回も記憶）</div>`}
+        </div>
+
+        <!-- ② タイトル文字 -->
+        <div class="card" style="padding:14px;margin:0;">
+          <div style="font-size:.78rem;font-weight:700;color:var(--text-muted);margin-bottom:8px;">② タイトル文字</div>
+          ${thumbTexts.length > 0 ? `
+          <div style="display:flex;flex-direction:column;gap:4px;margin-bottom:8px;">
+            ${thumbTexts.map((t, i) => `
+              <button class="btn btn-secondary btn-sm" style="text-align:left;padding:6px 10px;font-size:.78rem;white-space:normal;height:auto;line-height:1.4;"
+                onclick="document.getElementById('thumbMainText').value=this.dataset.t;redrawThumb();" data-t="${escHtml(t)}">
+                ${i+1}. ${escHtml(t)}
+              </button>`).join('')}
+          </div>` : ''}
+          <input type="text" id="thumbMainText" value="${escHtml(suggestedText)}"
+            placeholder="例: 日経38,500円突破！今日の注目ニュース" oninput="redrawThumb()"
+            style="margin-bottom:8px;">
+          <!-- テキスト縦位置 -->
+          <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+            <span style="font-size:.72rem;color:var(--text-muted);">位置:</span>
+            ${['上','中','下'].map((v,i)=>{
+              const pos=['top','mid','bot'][i];
+              return `<button class="btn btn-secondary btn-sm" id="txtpos_${pos}"
+                style="padding:3px 10px;font-size:.72rem;${(window._thumbTextPos||'bot')===pos?'border-color:var(--char-color);background:rgba(212,168,67,.15);':''}"
+                onclick="window._thumbTextPos='${pos}';['top','mid','bot'].forEach(p=>{const b=document.getElementById('txtpos_'+p);if(b)b.style.cssText=b.style.cssText.replace(/border-color[^;]+;/,'').replace(/background[^;]+;/,'');});this.style.borderColor='var(--char-color)';this.style.background='rgba(212,168,67,.15)';redrawThumb();">${v}</button>`;
+            }).join('')}
+          </div>
+        </div>
+
+        <!-- ③ 日付 + 色 -->
+        <div class="card" style="padding:14px;margin:0;">
+          <div style="font-size:.78rem;font-weight:700;color:var(--text-muted);margin-bottom:8px;">③ 日付 / テキスト色</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;align-items:end;">
+            <div>
+              <div style="font-size:.7rem;color:var(--text-muted);margin-bottom:4px;">日付</div>
+              <input type="text" id="thumbDateText" value="${escHtml(autoDate)}" oninput="redrawThumb()" style="padding:6px 8px;font-size:.85rem;">
+            </div>
+            <div>
+              <div style="font-size:.7rem;color:var(--text-muted);margin-bottom:4px;">テキスト色</div>
+              <input type="color" id="thumbTextColor" value="#FFFFFF" oninput="redrawThumb()" style="height:34px;width:100%;cursor:pointer;border-radius:6px;">
+            </div>
+            <div>
+              <div style="font-size:.7rem;color:var(--text-muted);margin-bottom:4px;">影の色</div>
+              <input type="color" id="thumbShadowColor" value="#000000" oninput="redrawThumb()" style="height:34px;width:100%;cursor:pointer;border-radius:6px;">
+            </div>
+          </div>
+        </div>
+
+        <!-- ④ キャラクター -->
+        <div class="card" style="padding:14px;margin:0;">
+          <div style="font-size:.78rem;font-weight:700;color:var(--text-muted);margin-bottom:8px;">④ キャラクター</div>
+          <!-- プリセット -->
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;">
+            <button class="btn btn-secondary btn-sm" onclick="loadThumbRefFromUrl('chars/char-frog.png','フードちゃん')" style="padding:5px 12px;font-size:.78rem;">🐸 フードちゃん</button>
+            <button class="btn btn-secondary btn-sm" onclick="loadThumbRefFromUrl('chars/char-owl.png','ふくろうちゃん')" style="padding:5px 12px;font-size:.78rem;">🦉 ふくろうちゃん</button>
+            <label for="thumbRefInput" class="btn btn-secondary btn-sm" style="cursor:pointer;padding:5px 12px;font-size:.78rem;">📁 カスタム</label>
+            <input type="file" id="thumbRefInput" accept="image/*" style="display:none;" onchange="loadThumbRef(this)">
+            ${thumbRefDataUrl ? `<button class="btn btn-secondary btn-sm" style="padding:5px 10px;font-size:.72rem;color:#e57373;" onclick="clearThumbRef()">✕ 削除</button>` : ''}
+          </div>
+          ${thumbRefDataUrl ? `
+          <!-- 位置プリセット -->
+          <div style="margin-bottom:10px;">
+            <div style="font-size:.7rem;color:var(--text-muted);margin-bottom:5px;">位置プリセット</div>
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;">
+              <button class="btn btn-secondary btn-sm" style="padding:4px;font-size:.7rem;" onclick="setCharPos(810,1500)">右下</button>
+              <button class="btn btn-secondary btn-sm" style="padding:4px;font-size:.7rem;" onclick="setCharPos(270,1500)">左下</button>
+              <button class="btn btn-secondary btn-sm" style="padding:4px;font-size:.7rem;" onclick="setCharPos(810,500)">右上</button>
+              <button class="btn btn-secondary btn-sm" style="padding:4px;font-size:.7rem;" onclick="setCharPos(540,960)">中央</button>
+            </div>
+          </div>
+          <!-- サイズスライダー -->
+          <div style="margin-bottom:8px;">
+            <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+              <span style="font-size:.7rem;color:var(--text-muted);">サイズ</span>
+              <span id="charScaleLbl" style="font-size:.7rem;color:var(--char-color);">${charScale}%</span>
+            </div>
+            <input type="range" min="20" max="200" value="${charScale}" step="1" id="thumbRefScale"
+              style="width:100%;" oninput="const s=+this.value/100;thumbRef.w=Math.round(400*s);thumbRef.h=Math.round(600*s);document.getElementById('charScaleLbl').textContent=this.value+'%';redrawThumb();">
+          </div>
+          <!-- 回転スライダー -->
+          <div>
+            <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+              <span style="font-size:.7rem;color:var(--text-muted);">↻ 回転</span>
+              <span id="thumbRefAngleLbl" style="font-size:.7rem;color:var(--char-color);">${thumbRef.angle}°</span>
+            </div>
+            <input type="range" min="-45" max="45" value="${thumbRef.angle}" step="1" id="thumbRefAngle"
+              style="width:100%;" oninput="thumbRef.angle=+this.value;document.getElementById('thumbRefAngleLbl').textContent=this.value+'°';redrawThumb();">
+          </div>
+          <div style="margin-top:8px;font-size:.68rem;color:var(--text-muted);">💡 ドラッグで移動 · ホイール/ピンチでサイズ変更</div>
+          ` : `<div style="font-size:.75rem;color:var(--text-muted);">キャラを選択してください</div>`}
+        </div>
+
       </div>
 
-      <!-- 背景画像（localStorage保存） -->
-      <div style="margin-bottom:12px;">
-        <label style="display:block;font-size:.78rem;color:var(--text-muted);margin-bottom:6px;font-weight:600;">① 背景画像</label>
-        <!-- 背景プリセット -->
-        <div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap;">
-          <button class="btn btn-secondary btn-sm" onclick="loadThumbBgFromUrl('chars/bg-classroom.png','教室')" style="padding:4px 10px;font-size:.72rem;">🏫 教室</button>
-        </div>
-        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-          <label for="thumbBgInput" class="btn btn-secondary btn-sm" style="cursor:pointer;">📁 ${thumbBgDataUrl ? '画像を変更' : '画像を選択'}</label>
-          <input type="file" id="thumbBgInput" accept="image/*" style="display:none;" onchange="loadThumbBg(this)">
-          ${thumbBgDataUrl
-            ? `<span style="font-size:.75rem;color:#4caf50;">✅ 設定済み（次回も保持）</span>
-               <button class="btn btn-secondary btn-sm" style="font-size:.7rem;padding:3px 8px;" onclick="clearThumbBg()">✕ クリア</button>`
-            : `<span style="font-size:.75rem;color:var(--text-muted);">未選択（一度設定すると記憶します）</span>`}
+      <!-- ── 右: プレビュー（常時表示・sticky） ── -->
+      <div style="position:sticky;top:16px;">
+        <div class="card" style="padding:12px;margin:0;">
+          <div style="font-size:.72rem;color:var(--text-muted);margin-bottom:8px;font-weight:600;">プレビュー (1080×1920)</div>
+          <canvas id="thumbCanvas" width="1080" height="1920"
+            style="width:100%;height:auto;border-radius:8px;background:#1a1a1a;display:block;cursor:grab;"></canvas>
+          <div style="display:flex;flex-direction:column;gap:6px;margin-top:10px;">
+            <button class="btn btn-primary btn-sm" style="width:100%;padding:8px;" onclick="downloadThumbCanvas()">💾 PNG保存（1080×1920）</button>
+            <button class="btn btn-secondary btn-sm" style="width:100%;padding:8px;" onclick="saveThumbAndGoPublish()">✅ 保存して投稿へ →</button>
+          </div>
         </div>
       </div>
 
-      <!-- メインタイトルテキスト + 文言案ボタン -->
-      <div style="margin-bottom:12px;">
-        <label style="display:block;font-size:.78rem;color:var(--text-muted);margin-bottom:6px;font-weight:600;">② メインタイトル文字</label>
-        ${thumbTexts.length > 0 ? `
-        <div style="display:flex;flex-direction:column;gap:4px;margin-bottom:8px;">
-          ${thumbTexts.map((t, i) => `
-            <button class="btn btn-secondary btn-sm" style="text-align:left;padding:7px 12px;font-size:.8rem;white-space:normal;height:auto;"
-              onclick="document.getElementById('thumbMainText').value=this.dataset.t;redrawThumb();" data-t="${escHtml(t)}">
-              ${i+1}. ${escHtml(t)}
-            </button>`).join('')}
-        </div>` : ''}
-        <input type="text" id="thumbMainText" value="${escHtml(suggestedText)}" placeholder="例: 日経38,500円突破！今日の注目ニュース" oninput="redrawThumb()">
-      </div>
-
-      <!-- 日付テキスト（自動セット） -->
-      <div class="form-row" style="margin-bottom:12px;gap:10px;align-items:flex-end;">
-        <div style="flex:1;">
-          <label style="display:block;font-size:.78rem;color:var(--text-muted);margin-bottom:6px;font-weight:600;">③ 日付テキスト（自動）</label>
-          <input type="text" id="thumbDateText" value="${escHtml(autoDate)}" placeholder="例: 6/8" oninput="redrawThumb()">
-        </div>
-        <div style="flex:1;">
-          <label style="display:block;font-size:.78rem;color:var(--text-muted);margin-bottom:6px;">テキスト色</label>
-          <input type="color" id="thumbTextColor" value="#FFFFFF" oninput="redrawThumb()" style="height:36px;width:100%;cursor:pointer;">
-        </div>
-        <div style="flex:1;">
-          <label style="display:block;font-size:.78rem;color:var(--text-muted);margin-bottom:6px;">影の色</label>
-          <input type="color" id="thumbShadowColor" value="#000000" oninput="redrawThumb()" style="height:36px;width:100%;cursor:pointer;">
-        </div>
-      </div>
-
-      <!-- 参照画像（任意） -->
-      <div style="margin-bottom:14px;">
-        <label style="display:block;font-size:.78rem;color:var(--text-muted);margin-bottom:6px;font-weight:600;">④ 参照画像（任意・右下に配置）</label>
-        <!-- キャラプリセット -->
-        <div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap;">
-          <button class="btn btn-secondary btn-sm" onclick="loadThumbRefFromUrl('chars/char-frog.png','フードちゃん')" style="padding:4px 10px;font-size:.72rem;">🐸 フードちゃん</button>
-          <button class="btn btn-secondary btn-sm" onclick="loadThumbRefFromUrl('chars/char-owl.png','ふくろうちゃん')" style="padding:4px 10px;font-size:.72rem;">🦉 ふくろうちゃん</button>
-        </div>
-        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px;">
-          <label for="thumbRefInput" class="btn btn-secondary btn-sm" style="cursor:pointer;">📁 参照画像</label>
-          <input type="file" id="thumbRefInput" accept="image/*" style="display:none;" onchange="loadThumbRef(this)">
-          <span id="thumbRefName" style="font-size:.75rem;color:var(--text-muted);">${thumbRefDataUrl ? '✅ 読込済み' : '未選択（任意）'}</span>
-          ${thumbRefDataUrl ? `<button class="btn btn-secondary btn-sm" onclick="clearThumbRef()">✕</button>` : ''}
-        </div>
-        <!-- 回転スライダー -->
-        <div style="display:flex;align-items:center;gap:10px;font-size:.75rem;color:var(--text-muted);">
-          <span>↻ 回転</span>
-          <input type="range" min="-45" max="45" value="0" step="1" id="thumbRefAngle"
-            style="flex:1;" oninput="thumbRef.angle=+this.value;document.getElementById('thumbRefAngleLbl').textContent=this.value+'°';redrawThumb();">
-          <span id="thumbRefAngleLbl">0°</span>
-          <span style="margin-left:6px;font-size:.68rem;color:var(--text-muted);">← ドラッグで移動 / ホイールでサイズ変更</span>
-        </div>
-      </div>
-
-      <button class="btn btn-primary" style="width:100%;padding:12px;" onclick="redrawThumb()">🔄 プレビュー更新</button>
     </div>
-
-    <!-- キャンバスプレビュー -->
-    <div class="card">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-        <div style="font-size:.78rem;font-weight:600;color:var(--text-muted);">プレビュー（1080×1920）</div>
-        <div style="display:flex;gap:8px;">
-          <button class="btn btn-secondary btn-sm" onclick="downloadThumbCanvas()">💾 PNG保存</button>
-          <button class="btn btn-primary btn-sm" onclick="saveThumbAndGoPublish()">✅ 保存して投稿へ →</button>
-        </div>
-      </div>
-      <canvas id="thumbCanvas" width="1080" height="1920" style="max-height:500px;width:auto;display:block;margin:0 auto;border-radius:6px;background:#1a1a1a;"></canvas>
-    </div>
-
   </div>`;
 }
 
@@ -2861,7 +2900,14 @@ function initThumbCanvas() {
   thumbCanvas = document.getElementById('thumbCanvas');
   if (!thumbCanvas) return;
   thumbCtx = thumbCanvas.getContext('2d');
-  redrawThumb();
+  // localStorage からキャラ画像復元
+  if (thumbRefDataUrl && !_thumbRefImg) {
+    const img = new Image();
+    img.onload = () => { _thumbRefImg = img; redrawThumb(); };
+    img.src = thumbRefDataUrl;
+  } else {
+    redrawThumb();
+  }
 }
 
 function loadThumbBg(input) {
@@ -2905,15 +2951,22 @@ function clearThumbBg() {
   setTimeout(() => { initThumbCanvas(); redrawThumb(); }, 50);
 }
 
+function setCharPos(x, y) {
+  thumbRef.x = x; thumbRef.y = y;
+  redrawThumb();
+}
+
 function loadThumbRef(input) {
   const file = input.files[0];
   if (!file) return;
   const reader = new FileReader();
   reader.onload = e => {
     thumbRefDataUrl = e.target.result;
-    const nameEl = document.getElementById('thumbRefName');
-    if (nameEl) nameEl.textContent = '✅ ' + file.name;
+    localStorage.setItem('ms_thumb_ref_v1', thumbRefDataUrl);
     _updateThumbRefImg(thumbRefDataUrl);
+    const el = document.getElementById('panelThumb');
+    if (el) el.outerHTML = renderThumbPanel();
+    setTimeout(initThumbCanvas, 50);
   };
   reader.readAsDataURL(file);
 }
@@ -2921,6 +2974,7 @@ function loadThumbRef(input) {
 function clearThumbRef() {
   thumbRefDataUrl = '';
   _thumbRefImg = null;
+  localStorage.removeItem('ms_thumb_ref_v1');
   const el = document.getElementById('panelThumb');
   if (el) el.outerHTML = renderThumbPanel();
   setTimeout(initThumbCanvas, 50);
@@ -2934,9 +2988,11 @@ async function loadThumbRefFromUrl(url, label) {
     const reader = new FileReader();
     reader.onload = e => {
       thumbRefDataUrl = e.target.result;
-      const nameEl = document.getElementById('thumbRefName');
-      if (nameEl) nameEl.textContent = '✅ ' + label;
+      localStorage.setItem('ms_thumb_ref_v1', thumbRefDataUrl);
       _updateThumbRefImg(thumbRefDataUrl);
+      const el = document.getElementById('panelThumb');
+      if (el) el.outerHTML = renderThumbPanel();
+      setTimeout(initThumbCanvas, 50);
     };
     reader.readAsDataURL(blob);
   } catch(e) { showToast('⚠️ 読込エラー: ' + e.message); }
@@ -2981,14 +3037,16 @@ function redrawThumb() {
     thumbCtx.fillText('🦉 マネぼうモーニングニュース', 56, 220);
     thumbCtx.restore();
 
-    // メインタイトル（下部）
+    // メインタイトル（縦位置対応）
     if (mainText) {
       thumbCtx.save();
       thumbCtx.shadowColor = shadowCol; thumbCtx.shadowBlur = 24;
       thumbCtx.fillStyle = textColor;
       const fontSize = mainText.length > 16 ? 88 : 108;
       thumbCtx.font = `bold ${fontSize}px "Noto Sans JP","Hiragino Kaku Gothic ProN",sans-serif`;
-      wrapText(thumbCtx, mainText, 60, H - 220, W - 120, fontSize * 1.25);
+      const pos = window._thumbTextPos || 'bot';
+      const ty = pos === 'top' ? 400 : pos === 'mid' ? H / 2 : H - 220;
+      wrapText(thumbCtx, mainText, 60, ty, W - 120, fontSize * 1.25);
       thumbCtx.restore();
     }
 
