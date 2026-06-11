@@ -2862,7 +2862,7 @@ function renderThumbPanel() {
               <span id="charScaleLbl" style="font-size:.7rem;color:var(--char-color);">${charScale}%</span>
             </div>
             <input type="range" min="20" max="200" value="${charScale}" step="1" id="thumbRefScale"
-              style="width:100%;" oninput="const s=+this.value/100;thumbRef.w=Math.round(400*s);thumbRef.h=Math.round(600*s);document.getElementById('charScaleLbl').textContent=this.value+'%';redrawThumb();">
+              style="width:100%;" oninput="const s=+this.value/100;thumbRef.w=Math.round(400*s);thumbRef.h=Math.round(600*s);document.getElementById('charScaleLbl').textContent=this.value+'%';_saveThumbRefState();redrawThumb();">
           </div>
           <!-- 回転スライダー -->
           <div>
@@ -2871,7 +2871,7 @@ function renderThumbPanel() {
               <span id="thumbRefAngleLbl" style="font-size:.7rem;color:var(--char-color);">${thumbRef.angle}°</span>
             </div>
             <input type="range" min="-45" max="45" value="${thumbRef.angle}" step="1" id="thumbRefAngle"
-              style="width:100%;" oninput="thumbRef.angle=+this.value;document.getElementById('thumbRefAngleLbl').textContent=this.value+'°';redrawThumb();">
+              style="width:100%;" oninput="thumbRef.angle=+this.value;document.getElementById('thumbRefAngleLbl').textContent=this.value+'°';_saveThumbRefState();redrawThumb();">
           </div>
           <div style="margin-top:8px;font-size:.68rem;color:var(--text-muted);">💡 ドラッグで移動 · ホイール/ピンチでサイズ変更</div>
           ` : `<div style="font-size:.75rem;color:var(--text-muted);">キャラを選択してください</div>`}
@@ -2953,6 +2953,7 @@ function clearThumbBg() {
 
 function setCharPos(x, y) {
   thumbRef.x = x; thumbRef.y = y;
+  _saveThumbRefState();
   redrawThumb();
 }
 
@@ -2998,8 +2999,10 @@ async function loadThumbRefFromUrl(url, label) {
   } catch(e) { showToast('⚠️ 読込エラー: ' + e.message); }
 }
 
-// 参照画像の変形状態
-let thumbRef = { x: 540, y: 1400, w: 400, h: 600, angle: 0 };
+// 参照画像の変形状態（localStorage永続）
+const _thumbRefDefault = { x: 810, y: 1500, w: 400, h: 600, angle: 0 };
+let thumbRef = (() => { try { return { ..._thumbRefDefault, ...JSON.parse(localStorage.getItem('ms_thumb_ref_state_v1') || '{}') }; } catch { return { ..._thumbRefDefault }; } })();
+function _saveThumbRefState() { localStorage.setItem('ms_thumb_ref_state_v1', JSON.stringify(thumbRef)); }
 let _thumbRefImg = null;
 
 function redrawThumb() {
@@ -3122,7 +3125,7 @@ function _updateThumbRefImg(dataUrl) {
     thumbRef.x = x - drag.ox; thumbRef.y = y - drag.oy;
     redrawThumb();
   });
-  document.addEventListener('mouseup', () => { drag = null; });
+  document.addEventListener('mouseup', () => { if (drag) { _saveThumbRefState(); } drag = null; });
 
   // ピンチ/ホイールでスケール
   document.addEventListener('wheel', e => {
@@ -3132,6 +3135,7 @@ function _updateThumbRefImg(dataUrl) {
     const delta = e.deltaY < 0 ? 1.05 : 0.95;
     thumbRef.w = Math.max(80, thumbRef.w * delta);
     thumbRef.h = Math.max(80, thumbRef.h * delta);
+    _saveThumbRefState();
     redrawThumb();
   }, {passive: false});
 
@@ -3169,7 +3173,7 @@ function _updateThumbRefImg(dataUrl) {
       pinchDist = d;
     }
   }, {passive: true});
-  document.addEventListener('touchend', () => { drag = null; pinchDist = 0; });
+  document.addEventListener('touchend', () => { if (drag || pinchDist) _saveThumbRefState(); drag = null; pinchDist = 0; });
 })();
 
 function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
