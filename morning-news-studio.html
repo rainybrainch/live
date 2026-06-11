@@ -2826,14 +2826,19 @@ function renderThumbPanel() {
         <!-- ② タイトル文字 -->
         <div class="card" style="padding:14px;margin:0;">
           <div style="font-size:.78rem;font-weight:700;color:var(--text-muted);margin-bottom:8px;">② タイトル文字</div>
-          ${thumbTexts.length > 0 ? `
-          <div style="display:flex;flex-direction:column;gap:4px;margin-bottom:8px;">
-            ${thumbTexts.map((t, i) => `
-              <button class="btn btn-secondary btn-sm" style="text-align:left;padding:6px 10px;font-size:.78rem;white-space:normal;height:auto;line-height:1.4;"
-                onclick="_thumbMainTextVal=this.dataset.t;document.getElementById('thumbMainText').value=this.dataset.t;redrawThumb();" data-t="${escHtml(t)}">
-                ${i+1}. ${escHtml(t)}
-              </button>`).join('')}
-          </div>` : ''}
+          <div style="margin-bottom:8px;">
+            <div id="thumbAiSuggestions" style="display:flex;flex-direction:column;gap:4px;margin-bottom:${thumbTexts.length>0?'8':'0'}px;">
+              ${thumbTexts.map((t, i) => `
+                <button class="btn btn-secondary btn-sm" style="text-align:left;padding:6px 10px;font-size:.78rem;white-space:normal;height:auto;line-height:1.4;"
+                  onclick="_thumbMainTextVal=this.dataset.t;document.getElementById('thumbMainText').value=this.dataset.t;redrawThumb();" data-t="${escHtml(t)}">
+                  ${i+1}. ${escHtml(t)}
+                </button>`).join('')}
+            </div>
+            <button class="btn btn-secondary btn-sm" id="thumbAiBtn" onclick="generateThumbTitlesAI()"
+              style="padding:4px 12px;font-size:.75rem;color:var(--char-color);border-color:var(--char-color);">
+              🤖 AIでタイトル提案
+            </button>
+          </div>
           <div style="position:relative;">
             <input type="text" id="thumbMainText" value="${escHtml(suggestedText)}"
               placeholder="例: 日経38,500円突破！今日の注目ニュース"
@@ -3326,6 +3331,58 @@ function drawWrapText(ctx, text, x, y, maxWidth, lineHeight) {
     }
   }
   if (line) ctx.fillText(line, x, lineY);
+}
+
+async function generateThumbTitlesAI() {
+  const btn = document.getElementById('thumbAiBtn');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ 生成中…'; }
+  try {
+    const newsItems = document.getElementById('newsItems')?.value.trim() || '';
+    const nikkei = document.getElementById('nikkei')?.value.trim() || '';
+    const forex  = document.getElementById('forex')?.value.trim() || '';
+    const extra  = [nikkei && '日経:'+nikkei, forex && '為替:'+forex].filter(Boolean).join(' / ');
+    const context = [newsItems, extra].filter(Boolean).join('\n');
+    if (!context) { showToast('ニュース入力タブに内容を入力してください'); return; }
+
+    const prompt = `以下の今日の経済ニュースに基づき、YouTube縦型サムネイル用の日本語タイトル案を3つ生成してください。
+条件: ・12文字以内推奨（最大22文字）・インパクトある表現・数字や！を活用・「マネぼうモーニングニュース」という番組
+ニュース内容:
+${context.slice(0, 800)}
+
+形式: 番号つきリストで3案のみ出力。説明不要。`;
+
+    const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${getGeminiKey()}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+    });
+    if (!resp.ok) throw new Error(await resp.text());
+    const data = await resp.json();
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    const titles = text.split('\n')
+      .filter(l => /^\d+[\.\．]/.test(l.trim()))
+      .map(l => l.replace(/^\d+[\.\．]\s*[「『]?/, '').replace(/[」』]?\s*$/, '').trim())
+      .filter(Boolean)
+      .slice(0, 3);
+
+    if (!titles.length) { showToast('タイトル生成に失敗しました'); return; }
+
+    // 提案ボタンを描画
+    const box = document.getElementById('thumbAiSuggestions');
+    if (box) {
+      box.style.marginBottom = '8px';
+      box.innerHTML = titles.map((t, i) => `
+        <button class="btn btn-secondary btn-sm" style="text-align:left;padding:6px 10px;font-size:.78rem;white-space:normal;height:auto;line-height:1.4;"
+          onclick="_thumbMainTextVal=this.dataset.t;document.getElementById('thumbMainText').value=this.dataset.t;redrawThumb();" data-t="${escHtml(t)}">
+          ${i+1}. ${escHtml(t)}
+        </button>`).join('');
+    }
+    showToast('✅ AI提案 ' + titles.length + '件');
+  } catch(e) {
+    showToast('❌ ' + e.message.slice(0, 60));
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '🤖 AIでタイトル提案'; }
+  }
 }
 
 function downloadThumbCanvas() {
