@@ -2832,7 +2832,7 @@ function renderThumbPanel() {
             <div id="thumbAiSuggestions" style="display:flex;flex-direction:column;gap:4px;margin-bottom:${thumbTexts.length>0?'8':'0'}px;">
               ${thumbTexts.map((t, i) => `
                 <button class="btn btn-secondary btn-sm" style="text-align:left;padding:6px 10px;font-size:.78rem;white-space:normal;height:auto;line-height:1.4;"
-                  onclick="_thumbMainTextVal=this.dataset.t;document.getElementById('thumbMainText').value=this.dataset.t;redrawThumb();" data-t="${escHtml(t)}">
+                  onclick="_setThumbTitle(this.dataset.t);" data-t="${escHtml(t)}">
                   ${i+1}. ${escHtml(t)}
                 </button>`).join('')}
             </div>
@@ -3354,6 +3354,16 @@ function drawWrapText(ctx, text, x, y, maxWidth, lineHeight) {
   }
 }
 
+function _setThumbTitle(t) {
+  _thumbMainTextVal = t;
+  const inp = document.getElementById('thumbMainText');
+  if (inp) inp.value = t;
+  const n = [...t].length;
+  const lbl = document.getElementById('thumbCharCount');
+  if (lbl) { lbl.textContent = n + '文字'; lbl.style.color = n > 22 ? '#e57373' : n > 16 ? '#ff9800' : 'var(--char-color)'; }
+  redrawThumb();
+}
+
 async function generateThumbTitlesAI() {
   const btn = document.getElementById('thumbAiBtn');
   if (btn) { btn.disabled = true; btn.textContent = '⏳ 生成中…'; }
@@ -3404,7 +3414,7 @@ ${context.slice(0, 1000)}
       box.style.marginBottom = '8px';
       box.innerHTML = titles.map((t, i) => `
         <button class="btn btn-secondary btn-sm" style="text-align:left;padding:6px 10px;font-size:.78rem;white-space:normal;height:auto;line-height:1.4;"
-          onclick="_thumbMainTextVal=this.dataset.t;document.getElementById('thumbMainText').value=this.dataset.t;redrawThumb();" data-t="${escHtml(t)}">
+          onclick="_setThumbTitle(this.dataset.t);" data-t="${escHtml(t)}">
           ${i+1}. ${escHtml(t)}
         </button>`).join('');
     }
