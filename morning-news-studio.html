@@ -3144,7 +3144,14 @@ function redrawThumb() {
       thumbCtx.fillStyle = grad; thumbCtx.fillRect(0, 0, W, H);
     }
 
-    // ② キャラクター（背景の上・テキストの下に配置）
+    // ② 下部グラデーション幕（先に背景だけ暗くする）
+    const grad2 = thumbCtx.createLinearGradient(0, H * 0.5, 0, H);
+    grad2.addColorStop(0, 'rgba(0,0,0,0)');
+    grad2.addColorStop(1, 'rgba(0,0,0,0.85)');
+    thumbCtx.fillStyle = grad2;
+    thumbCtx.fillRect(0, 0, W, H);
+
+    // ③ キャラクター（グラデーション幕の上・テキストの下に配置）
     if (_thumbRefImg) {
       thumbCtx.save();
       thumbCtx.translate(thumbRef.x, thumbRef.y);
@@ -3152,13 +3159,6 @@ function redrawThumb() {
       thumbCtx.drawImage(_thumbRefImg, -thumbRef.w / 2, -thumbRef.h / 2, thumbRef.w, thumbRef.h);
       thumbCtx.restore();
     }
-
-    // ③ 下部グラデーション幕
-    const grad2 = thumbCtx.createLinearGradient(0, H * 0.5, 0, H);
-    grad2.addColorStop(0, 'rgba(0,0,0,0)');
-    grad2.addColorStop(1, 'rgba(0,0,0,0.85)');
-    thumbCtx.fillStyle = grad2;
-    thumbCtx.fillRect(0, 0, W, H);
 
     // ④ 日付ラベル（左上）
     if (dateText) {
