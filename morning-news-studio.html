@@ -3155,13 +3155,26 @@ function redrawThumb() {
     // ⑥ メインタイトル（縦位置対応）
     if (mainText) {
       thumbCtx.save();
-      thumbCtx.shadowColor = shadowCol; thumbCtx.shadowBlur = 24;
-      thumbCtx.fillStyle = textColor;
       const fontSize = mainText.length > 16 ? 88 : 108;
       thumbCtx.font = `bold ${fontSize}px "Noto Sans JP","Hiragino Kaku Gothic ProN",sans-serif`;
       const pos = window._thumbTextPos || 'bot';
-      const ty = pos === 'top' ? 400 : pos === 'mid' ? H / 2 : H - 220;
-      wrapText(thumbCtx, mainText, 60, ty, W - 120, fontSize * 1.25);
+      const lineHeight = Math.round(fontSize * 1.25);
+      // 行数を計算してテキスト帯の高さを決める
+      const words = mainText.split('');
+      let lines = 1, testLine = '';
+      for (const ch of words) {
+        const test = testLine + ch;
+        if (thumbCtx.measureText(test).width > W - 120 && testLine) { lines++; testLine = ch; } else { testLine = test; }
+      }
+      const textBlockH = lines * lineHeight + 20;
+      const ty = pos === 'top' ? 400 : pos === 'mid' ? H / 2 : H - textBlockH - 40;
+      // テキスト背景帯（半透明黒）
+      thumbCtx.fillStyle = 'rgba(0,0,0,0.45)';
+      thumbCtx.fillRect(0, ty - fontSize + 10, W, textBlockH);
+      // テキスト描画
+      thumbCtx.shadowColor = shadowCol; thumbCtx.shadowBlur = 18;
+      thumbCtx.fillStyle = textColor;
+      wrapText(thumbCtx, mainText, 60, ty, W - 120, lineHeight);
       thumbCtx.restore();
     }
   });
