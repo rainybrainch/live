@@ -3204,6 +3204,14 @@ function _updateThumbRefImg(dataUrl) {
   document.addEventListener('mouseup', () => { if (drag) { _saveThumbRefState(); } drag = null; });
 
   // ピンチ/ホイールでスケール
+  function _syncScaleUI() {
+    const pct = Math.round((thumbRef.w / 400) * 100);
+    const sl = document.getElementById('thumbRefScale');
+    const lb = document.getElementById('charScaleLbl');
+    if (sl) sl.value = pct;
+    if (lb) lb.textContent = pct + '%';
+  }
+
   document.addEventListener('wheel', e => {
     const c = document.getElementById('thumbCanvas');
     if (!c || !c.contains(e.target) || !_thumbRefImg) return;
@@ -3211,6 +3219,7 @@ function _updateThumbRefImg(dataUrl) {
     const delta = e.deltaY < 0 ? 1.05 : 0.95;
     thumbRef.w = Math.max(80, thumbRef.w * delta);
     thumbRef.h = Math.max(80, thumbRef.h * delta);
+    _syncScaleUI();
     _saveThumbRefState();
     redrawThumb();
   }, {passive: false});
@@ -3244,6 +3253,7 @@ function _updateThumbRefImg(dataUrl) {
         const s = d / pinchDist;
         thumbRef.w = Math.max(80, thumbRef.w * s);
         thumbRef.h = Math.max(80, thumbRef.h * s);
+        _syncScaleUI();
         redrawThumb();
       }
       pinchDist = d;
