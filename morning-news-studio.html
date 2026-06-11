@@ -2768,9 +2768,11 @@ let thumbBgDataUrl  = localStorage.getItem('ms_thumb_bg_v1') || '';
 let thumbRefDataUrl = localStorage.getItem('ms_thumb_ref_v1') || '';
 let thumbCanvas, thumbCtx;
 let _parsedNewsDate = '';
+let _thumbMainTextVal = ''; // パネル再描画をまたいでタイトルを保持
 
 function renderThumbPanel() {
-  const suggestedText = generatedMeta?.thumb_text_horizontal || (window._parsedThumbTexts?.[0] || '');
+  // ユーザーが入力済みのテキストを優先、なければ自動提案
+  const suggestedText = _thumbMainTextVal || generatedMeta?.thumb_text_horizontal || (window._parsedThumbTexts?.[0] || '');
   const autoDate = (() => {
     const d = _parsedNewsDate || document.getElementById('newsDate')?.value || new Date().toISOString().slice(0,10);
     const m = d.match(/(\d{4})-(\d{2})-(\d{2})/);
@@ -2826,14 +2828,14 @@ function renderThumbPanel() {
           <div style="display:flex;flex-direction:column;gap:4px;margin-bottom:8px;">
             ${thumbTexts.map((t, i) => `
               <button class="btn btn-secondary btn-sm" style="text-align:left;padding:6px 10px;font-size:.78rem;white-space:normal;height:auto;line-height:1.4;"
-                onclick="document.getElementById('thumbMainText').value=this.dataset.t;redrawThumb();" data-t="${escHtml(t)}">
+                onclick="_thumbMainTextVal=this.dataset.t;document.getElementById('thumbMainText').value=this.dataset.t;redrawThumb();" data-t="${escHtml(t)}">
                 ${i+1}. ${escHtml(t)}
               </button>`).join('')}
           </div>` : ''}
           <div style="position:relative;">
             <input type="text" id="thumbMainText" value="${escHtml(suggestedText)}"
               placeholder="例: 日経38,500円突破！今日の注目ニュース"
-              oninput="redrawThumb();const n=this.value.length;const lbl=document.getElementById('thumbCharCount');if(lbl){lbl.textContent=n+'文字';lbl.style.color=n>16?'#e57373':'var(--char-color)';}"
+              oninput="_thumbMainTextVal=this.value;redrawThumb();const n=this.value.length;const lbl=document.getElementById('thumbCharCount');if(lbl){lbl.textContent=n+'文字';lbl.style.color=n>16?'#e57373':'var(--char-color)';}"
               style="margin-bottom:4px;padding-right:64px;">
             <span id="thumbCharCount" style="position:absolute;right:10px;top:50%;transform:translateY(-80%);font-size:.68rem;color:${suggestedText.length>16?'#e57373':'var(--char-color)'};pointer-events:none;">${suggestedText.length}文字</span>
           </div>
