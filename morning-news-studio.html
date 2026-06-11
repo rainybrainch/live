@@ -2769,6 +2769,8 @@ let thumbRefDataUrl = localStorage.getItem('ms_thumb_ref_v1') || '';
 let thumbCanvas, thumbCtx;
 let _parsedNewsDate = '';
 let _thumbMainTextVal = ''; // パネル再描画をまたいでタイトルを保持
+let _thumbTextColor  = '#FFFFFF';
+let _thumbShadowColor = '#000000';
 
 function renderThumbPanel() {
   // ユーザーが入力済みのテキストを優先、なければ自動提案
@@ -2862,11 +2864,11 @@ function renderThumbPanel() {
             </div>
             <div>
               <div style="font-size:.7rem;color:var(--text-muted);margin-bottom:4px;">テキスト色</div>
-              <input type="color" id="thumbTextColor" value="#FFFFFF" oninput="redrawThumb()" style="height:34px;width:100%;cursor:pointer;border-radius:6px;">
+              <input type="color" id="thumbTextColor" value="${_thumbTextColor}" oninput="_thumbTextColor=this.value;redrawThumb()" style="height:34px;width:100%;cursor:pointer;border-radius:6px;">
             </div>
             <div>
               <div style="font-size:.7rem;color:var(--text-muted);margin-bottom:4px;">影の色</div>
-              <input type="color" id="thumbShadowColor" value="#000000" oninput="redrawThumb()" style="height:34px;width:100%;cursor:pointer;border-radius:6px;">
+              <input type="color" id="thumbShadowColor" value="${_thumbShadowColor}" oninput="_thumbShadowColor=this.value;redrawThumb()" style="height:34px;width:100%;cursor:pointer;border-radius:6px;">
             </div>
           </div>
         </div>
@@ -3109,8 +3111,8 @@ function redrawThumb() {
   const W = 1080, H = 1920;
   const mainText  = document.getElementById('thumbMainText')?.value  || '';
   const dateText  = document.getElementById('thumbDateText')?.value  || '';
-  const textColor = document.getElementById('thumbTextColor')?.value || '#FFFFFF';
-  const shadowCol = document.getElementById('thumbShadowColor')?.value || '#000000';
+  const textColor = document.getElementById('thumbTextColor')?.value || _thumbTextColor;
+  const shadowCol = document.getElementById('thumbShadowColor')?.value || _thumbShadowColor;
 
   thumbCtx.clearRect(0, 0, W, H);
 
