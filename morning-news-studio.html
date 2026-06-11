@@ -255,6 +255,14 @@
   .sb-prompt-input { flex: 1; font-size: .8rem; padding: 6px 10px; }
   @media (max-width: 600px) { .sb-scene-body { grid-template-columns: 1fr; } .sb-image-col { border-right: none; border-bottom: 1px solid var(--border); } }
 
+  /* サムネ作成 レスポンシブ */
+  .thumb-layout { display: grid; grid-template-columns: 1fr 270px; gap: 16px; align-items: start; }
+  @media (max-width: 700px) {
+    .thumb-layout { grid-template-columns: 1fr; }
+    .thumb-layout > div:last-child { position: static !important; }
+    .thumb-layout canvas { max-height: 340px; width: auto; display: block; margin: 0 auto; }
+  }
+
   /* ── Scene Composer ── */
   .scene-layout { display: grid; grid-template-columns: 1fr 280px; gap: 16px; }
   .canvas-wrap { background: #000; border-radius: 8px; overflow: hidden; display: flex; align-items: center; justify-content: center; position: relative; }
@@ -2764,7 +2772,7 @@ function renderThumbPanel() {
   <div class="panel ${currentTab==='thumb'?'active':''}" id="panelThumb">
 
     <!-- 2カラムレイアウト: 左=コントロール / 右=プレビュー常時表示 -->
-    <div style="display:grid;grid-template-columns:1fr 270px;gap:16px;align-items:start;">
+    <div class="thumb-layout">
 
       <!-- ── 左: コントロール ── -->
       <div style="display:flex;flex-direction:column;gap:12px;">
