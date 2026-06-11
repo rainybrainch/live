@@ -7,6 +7,7 @@
 <meta charset="UTF-8">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#a78bfa">
 
 <title>RAINYBRAIN Anime Review</title>
 
@@ -41,6 +42,8 @@ button,input,select,textarea { font:inherit; }
 button { min-height:36px; border:1px solid var(--line); border-radius:8px; background:rgba(255,255,255,.08); color:var(--text); padding:7px 10px; cursor:pointer; }
 
 button:hover { background:rgba(255,255,255,.14); }
+
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
 
 button.primary { border-color:rgba(167,139,250,.55); background:rgba(167,139,250,.18); }
 
@@ -94,6 +97,9 @@ textarea { min-height:70px; resize:vertical; line-height:1.55; }
 
 .timer-time { font-size:clamp(18px,1.6vw,28px); font-weight:900; font-variant-numeric:tabular-nums; letter-spacing:.06em; }
 
+.timer-display.danger .timer-time { color:#ff6b7a; animation:timer-pulse .9s ease-in-out infinite; }
+@keyframes timer-pulse { 0%,100%{opacity:1} 50%{opacity:.55} }
+
 .timer-display.running { border-color:rgba(167,139,250,.45); box-shadow:0 0 22px rgba(167,139,250,.16), inset 0 0 12px rgba(167,139,250,.06); }
 
 .timer-display.running .timer-time { color:var(--accent); }
@@ -118,7 +124,8 @@ textarea { min-height:70px; resize:vertical; line-height:1.55; }
 
 .anime-poster img { width:100%; border-radius:6px; box-shadow:4px 8px 28px rgba(0,0,0,.62); }
 
-.anime-poster.show { display:block; }
+.anime-poster.show { display:block; opacity:1; }
+.anime-poster { opacity:0; transition:opacity .4s ease; }
 
 
 
@@ -132,7 +139,7 @@ textarea { min-height:70px; resize:vertical; line-height:1.55; }
 
 .comment-h .user::before { content:'●'; margin-right:4px; font-size:.55em; vertical-align:middle; opacity:.7; }
 
-.comment-h .text { color:var(--text); }
+.comment-h .text { color:var(--text); font-size:var(--comment-size,1em); text-shadow:0 1px 4px rgba(0,0,0,.8); }
 
 @keyframes fly-left { from{transform:translateX(100vw);} to{transform:translateX(calc(-100% - 20px));} }
 
@@ -164,7 +171,7 @@ textarea { min-height:70px; resize:vertical; line-height:1.55; }
 
 .dock { position:fixed; right:14px; top:14px; width:min(420px,calc(100vw - 28px)); max-height:calc(100vh - 28px); overflow:auto; border:1px solid rgba(255,255,255,.13); border-radius:10px; background:linear-gradient(180deg,rgba(255,255,255,.055),rgba(255,255,255,.018)), rgba(10,4,12,.92); backdrop-filter:blur(16px); z-index:20; box-shadow:0 28px 80px rgba(0,0,0,.44); }
 
-body.panel-hidden .dock { display:none; }
+body.panel-hidden .dock { transform:translateX(calc(100% + 20px)); opacity:0; pointer-events:none; }
 
 .dock-head { display:flex; align-items:center; gap:9px; padding:12px 14px; border-bottom:1px solid var(--line); background:linear-gradient(90deg,rgba(167,139,250,.14),transparent 60%),rgba(255,255,255,.04); }
 
@@ -255,6 +262,8 @@ body.obs-mode .stage::before,body.obs-mode .stage::after{display:none;}
 
 body.obs-mode .dock,body.obs-mode .open-tab,body.obs-mode .brand,body.obs-mode .timer-display,body.obs-mode .shortcut-hint{display:none!important;}
 
+body.obs-mode .kiso-display,body.obs-mode #captionCopyBtn,body.obs-mode .timer-progress-bar,body.obs-mode #lastCommentPreview,body.obs-mode .autosave-dot{display:none!important;}
+
 .obs-btn{padding:3px 9px;border-radius:5px;border:1px solid rgba(255,255,255,.2);background:0;font-size:9px;font-weight:900;color:rgba(255,255,255,.4);cursor:pointer;letter-spacing:.06em;transition:all .15s;flex-shrink:0;}
 
 .obs-btn.active{border-color:rgba(167,139,250,.5);background:rgba(167,139,250,.12);color:var(--accent);}
@@ -299,7 +308,7 @@ body.obs-mode .dock,body.obs-mode .open-tab,body.obs-mode .brand,body.obs-mode .
 
 .memo-wrap { display:flex; gap:6px; }
 
-.memo-input { flex:1; min-height:36px; resize:none; height:36px; overflow:hidden; }
+.memo-input {  flex:1; min-height:36px; resize:none; height:36px; overflow:hidden; }
 
 .memo-list { display:grid; gap:3px; max-height:120px; overflow-y:auto; margin-top:6px; }
 
@@ -348,7 +357,8 @@ body.obs-mode .dock,body.obs-mode .open-tab,body.obs-mode .brand,body.obs-mode .
 
 .kiso-step { display:flex; gap:10px; padding:9px 10px; border-radius:8px; border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.02); transition:background .15s; }
 
-.kiso-step.active { border-color:rgba(var(--accent-rgb),.3); background:rgba(var(--accent-rgb),.06); }
+@keyframes kiso-pulse{0%,100%{box-shadow:0 0 0 0 rgba(var(--accent-rgb),.2)}50%{box-shadow:0 0 0 5px rgba(var(--accent-rgb),0)}}
+.kiso-step.active{border-color:rgba(var(--accent-rgb),.3);background:rgba(var(--accent-rgb),.06);animation:kiso-pulse 2s ease-in-out infinite;}
 
 .kiso-step.done { opacity:.5; }
 
@@ -372,6 +382,70 @@ body.obs-mode .dock,body.obs-mode .open-tab,body.obs-mode .brand,body.obs-mode .
 
 .kiso-bar { height:100%; background:var(--accent); border-radius:999px; transition:width .3s; }
 
+
+/* scroll + motion */
+
+.autosave-dot { display:inline-block; width:6px; height:6px; border-radius:50%; background:transparent; margin-left:6px; transition:background .2s, box-shadow .2s; vertical-align:middle; }
+.autosave-dot.saved { background:#4ade80; box-shadow:0 0 6px rgba(74,222,128,.7); }
+.stage.frozen .comment-h { animation-play-state: paused !important; }
+.timer-progress-bar { height:2px; background:rgba(var(--accent-rgb),.12); border-radius:2px; overflow:hidden; margin-top:4px; }
+.timer-progress-fill { height:100%; background:rgba(var(--accent-rgb),.6); border-radius:2px; transition:width .9s linear; width:100%; }
+.neta-item.used { opacity:.3; text-decoration:line-through; }
+.neta-item.used:hover { opacity:.5; }
+@keyframes caption-fadein{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:none}}
+.caption-fade { animation:caption-fadein .3s ease-out; }
+.ambient-overlay { position:fixed; inset:0; background:rgba(0,0,0,.75); z-index:15; pointer-events:none; opacity:0; transition:opacity .3s; }
+body.ambient .ambient-overlay { opacity:1; }
+body.ambient .stage { z-index:16; }
+body.ambient .dock { z-index:17; }
+.gemini-dot { display:inline-block; width:6px; height:6px; border-radius:50%; background:rgba(var(--accent-rgb),.4); margin-left:5px; vertical-align:middle; }
+@keyframes gemini-pulse{0%,100%{transform:scale(1);opacity:.4}50%{transform:scale(1.5);opacity:1}}
+.gemini-dot.loading { animation:gemini-pulse .8s ease-in-out infinite; background:rgba(var(--accent-rgb),1); }
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .001ms !important; transition-duration: .001ms !important; }
+}
+/* memo char count */
+.memo-charcount { font-size: 11px; color: rgba(255,255,255,.35); text-align:right; margin-top:2px; }
+
+.neta-filter { width:100%; padding:5px 8px; margin-bottom:8px; background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.1); border-radius:6px; color:#fff; font-size:11px; }
+.neta-filter::placeholder { color:rgba(255,255,255,.3); }
+
+/* stage flash on comment */
+@keyframes stage-flash { 0%{box-shadow:0 0 0 0 rgba(255,255,255,.15)} 50%{box-shadow:0 0 0 8px rgba(255,255,255,0)} 100%{box-shadow:none} }
+.stage.flash-once { animation:stage-flash .4s ease-out; }
+
+@keyframes star-bounce{0%{transform:scale(1)}40%{transform:scale(1.4)}100%{transform:scale(1)}}
+.star-btn.active{animation:star-bounce .25s ease-out;}
+
+@keyframes comment-fadein{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.comment-h{animation:comment-fadein .25s ease-out;}
+
+/* polish hover states */
+.section-title:hover { color:rgba(255,255,255,.9); }
+.kiso-step:hover:not(.active) { border-color:rgba(255,255,255,.18); background:rgba(255,255,255,.04); }
+.neta-filter:focus { outline:none; border-color:rgba(var(--accent-rgb),.5); }
+
+/* scrollbar */
+::-webkit-scrollbar { width:4px; height:4px; }
+::-webkit-scrollbar-track { background:rgba(255,255,255,.03); }
+::-webkit-scrollbar-thumb { background:rgba(255,255,255,.18); border-radius:999px; }
+::-webkit-scrollbar-thumb:hover { background:rgba(255,255,255,.32); }
+/* comment hover pause */
+.comment-h:hover { animation-play-state:paused; cursor:default; }
+
+/* focus ring */
+:focus-visible { outline:2px solid rgba(var(--accent-rgb),.7); outline-offset:2px; }
+/* button press */
+button:active:not(:disabled) { transform:scale(.96); }
+
+.kiso-display { position:absolute; top:12px; right:16px; font-size:11px; font-weight:900; color:rgba(var(--accent-rgb),.7); letter-spacing:.06em; opacity:.8; pointer-events:none; }
+
+.dock { transition:transform .25s cubic-bezier(.4,0,.2,1); }
+body.panel-hidden .dock { transform:translateX(100%); }
+
+.memo-filter { width:100%; padding:4px 7px; margin-bottom:6px; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08); border-radius:5px; color:#fff; font-size:11px; }
+.memo-filter::placeholder { color:rgba(255,255,255,.25); }
 </style>
 
 </head>
@@ -413,8 +487,9 @@ body.obs-mode .dock,body.obs-mode .open-tab,body.obs-mode .brand,body.obs-mode .
       <div class="timer-label" id="timerLabel">REC TIMER</div>
 
     </div>
+    <div class="timer-progress-bar"><div class="timer-progress-fill" id="timerProgressFill"></div></div>
 
-    <button class="timer-btn" id="stageTimerToggle" type="button">▶</button>
+    <button onclick="window.toggleFreeze&&window.toggleFreeze()" type="button" class="timer-btn" style="opacity:.5;font-size:11px;" title="アニメ一時停止">⏸</button><button onclick="window.clearStage&&window.clearStage()" type="button" class="timer-btn" style="opacity:.5;font-size:11px;" title="コメントをクリア">🧹</button> <button class="timer-btn" id="stageTimerToggle" type="button">▶</button>
 
     <button class="timer-btn" id="stageTimerReset"  type="button">↺</button>
 
@@ -422,7 +497,7 @@ body.obs-mode .dock,body.obs-mode .open-tab,body.obs-mode .brand,body.obs-mode .
 
   <div class="avatar empty" id="avatar"></div>
 
-  <div class="anime-poster" id="animePoster"><img id="posterImg" src="" alt="poster" onerror="this.style.display='none'" onload="this.style.display=''"></div>
+  <div class="anime-poster" id="animePoster"><img id="posterImg" src="" alt="poster" loading="lazy" onerror="this.style.display='none'" onload="this.style.display=''"></div>
 
   <div class="comment-tracks" id="commentTracks">
 
@@ -434,6 +509,8 @@ body.obs-mode .dock,body.obs-mode .open-tab,body.obs-mode .brand,body.obs-mode .
 
   </div>
 
+  <div class="kiso-display" id="kisoDisplay">起: 導入</div>
+
   <section class="title-card">
 
     <div class="kicker" id="kicker">ANIME REVIEW</div>
@@ -444,15 +521,15 @@ body.obs-mode .dock,body.obs-mode .open-tab,body.obs-mode .brand,body.obs-mode .
 
     <div class="card-rating" id="cardRating" style="display:none;margin-top:6px;font-size:clamp(16px,1.6vw,24px);letter-spacing:2px;"></div>
 
-    <div id="cardKisoStep" style="display:none;margin-top:8px;font-size:11px;font-weight:900;letter-spacing:.12em;opacity:.7;text-transform:uppercase;color:var(--accent);"></div>
+    <div id="cardKisoStep" style="display:none;margin-top:10px;font-size:10px;font-weight:900;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);background:rgba(var(--accent-rgb),.15);border:1px solid rgba(var(--accent-rgb),.3);padding:3px 12px;border-radius:999px;align-self:center;"></div>
 
     <a class="card-link" id="cardLink" href="#" target="_blank" style="display:none">🎬 配信で見る</a>
 
   </section>
 
-  <div class="caption" id="caption">「マイク開始」で文字起こしが始まります</div>
+  <div class="caption" id="caption">「マイク開始」で文字起こしが始まります<button onclick="navigator.clipboard?.writeText(document.getElementById('caption').textContent).then(()=>toast('📋 キャプコピー'))" type="button" id="captionCopyBtn" style="display:none;position:absolute;top:4px;right:30px;background:none;border:none;color:rgba(255,255,255,.4);font-size:11px;cursor:pointer;padding:2px 5px;line-height:1;" title="キャプションをコピー">📋</button><button onclick="window.clearCaption()" type="button" id="captionClearBtn" style="display:none;position:absolute;top:4px;right:6px;background:none;border:none;color:rgba(255,255,255,.4);font-size:13px;cursor:pointer;padding:2px 5px;line-height:1;" title="キャプションを消去">×</button></div>
 
-  <div class="shortcut-hint">Space=タイマー　M=マイク　C=コメント　N=次ステップ　F=全画面　H=パネル　1-5=評価　O=OBS　D=DL　S=速度</div>
+  <div class="shortcut-hint">Space=タイマー　M=マイク　C=コメント　N=次ステップ　E=サマリー　F=全画面　G=トップ　H=パネル　T=タイトルコピー　P=ネタ　A=バースト　Q=折畳切替　U=メモ戻す　W=文字起こし　I=情報　J/K=暗さ　V=サマリー　L=ログコピー　1-5=評価　O=OBS　X=OBS URL　Y=設定DL　D=DL　S=速度　R=再生成　B=戻る　?=ショートカット表示切替　Z=セッションリセット　`=タイムスタンプメモ　+=コメント拡大　_=コメント縮小　Esc=アンビエント</div>
 
 </main>
 
@@ -464,15 +541,16 @@ body.obs-mode .dock,body.obs-mode .open-tab,body.obs-mode .brand,body.obs-mode .
 
     <div style="flex:1;min-width:0;">
 
-      <div class="dock-title">Anime Review<span>RAINYBRAIN アニメ紹介配信</span></div>
+      <div class="dock-title">Anime Review<span>RAINYBRAIN アニメ紹介配信</span><span class="autosave-dot" id="autosaveDot"></span></div>
 
       <div class="dock-meta" id="dockMeta">💬 0件　🎙 停止中</div>
+    <div id="lastCommentPreview" style="font-size:9px;color:rgba(255,255,255,.25);padding:2px 14px 4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%;display:none;"></div>
 
     </div>
 
-    <button class="cc-btn" id="ccBtn" onclick="toggleComments()" type="button">💬 ON</button>
+    <button onclick="window.quickStart&&window.quickStart()" type="button" title="配信開始（コメント+タイマー）" style="font-size:13px;padding:3px 7px;">🚀</button><button onclick="window.endStream&&window.endStream()" type="button" title="配信終了" style="font-size:11px;padding:3px 7px;opacity:.6;">🔴</button><button class="cc-btn" id="ccBtn" onclick="toggleComments()" type="button">💬 ON<span class="gemini-dot" id="geminiDot"></span></button>
 
-    <button id="hideDock"  type="button">閉じる</button>
+    <button onclick="window.topPersona&&window.topPersona()" type="button" title="人格ランキング" style="font-size:13px;padding:3px 7px;">🏆</button><button id="hideDock"  type="button">閉じる</button>
 
     <button id="micBtn" class="good" type="button">マイク開始</button>
 
@@ -508,7 +586,7 @@ body.obs-mode .dock,body.obs-mode .open-tab,body.obs-mode .brand,body.obs-mode .
 
       <div class="field"><label for="posterUrl">キービジュアル URL（任意）</label><input id="posterUrl" placeholder="https://..."></div>
 
-            <div class="field"><label for="hashtagText">ハッシュタグ（スペース区切り）</label><div style="display:flex;gap:6px;"><input id="hashtagText" placeholder="#アニメ感想 #配信"><button onclick="copyHashtag()" type="button">コピー</button></div></div>
+            <div class="field"><label for="hashtagText">ハッシュタグ（スペース区切り）</label><div style="display:flex;gap:6px;"><input id="hashtagText" placeholder="#アニメ感想 #配信" list="hashtagHistoryList" autocomplete="off"><datalist id="hashtagHistoryList"></datalist<button onclick="copyHashtag()" type="button">コピー</button></div></div>
 
 <div class="actions">
 
@@ -532,7 +610,7 @@ body.obs-mode .dock,body.obs-mode .open-tab,body.obs-mode .brand,body.obs-mode .
 
       <div class="kiso-flow" id="kisoFlow">
 
-      <div class="kiso-step active" id="kisoStep0">
+      <div class="kiso-step active" id="kisoStep0" onclick="kisoIdx=0;kisoRender();toast('起ステップへ')" style="cursor:pointer">
 
         <div class="kiso-num">起</div>
 
@@ -548,7 +626,7 @@ body.obs-mode .dock,body.obs-mode .open-tab,body.obs-mode .brand,body.obs-mode .
 
       </div>
 
-      <div class="kiso-step " id="kisoStep1">
+      <div class="kiso-step " id="kisoStep1" onclick="kisoIdx=1;kisoRender();toast('承ステップへ')" style="cursor:pointer">
 
         <div class="kiso-num">承</div>
 
@@ -564,7 +642,7 @@ body.obs-mode .dock,body.obs-mode .open-tab,body.obs-mode .brand,body.obs-mode .
 
       </div>
 
-      <div class="kiso-step " id="kisoStep2">
+      <div class="kiso-step " id="kisoStep2" onclick="kisoIdx=2;kisoRender();toast('転ステップへ')" style="cursor:pointer">
 
         <div class="kiso-num">転</div>
 
@@ -580,7 +658,7 @@ body.obs-mode .dock,body.obs-mode .open-tab,body.obs-mode .brand,body.obs-mode .
 
       </div>
 
-      <div class="kiso-step " id="kisoStep3">
+      <div class="kiso-step " id="kisoStep3" onclick="kisoIdx=3;kisoRender();toast('結ステップへ')" style="cursor:pointer">
 
         <div class="kiso-num">結</div>
 
@@ -614,7 +692,13 @@ body.obs-mode .dock,body.obs-mode .open-tab,body.obs-mode .brand,body.obs-mode .
 
     <section class="section">
 
-      <div class="section-title"><span class="step">3</span>配信ネタ帳 <button onclick="randomNeta()" style="font-size:10px;padding:3px 8px;min-height:24px;margin-left:4px;opacity:.7;" type="button" title="ランダムに字幕表示">🎲</button> <button onclick="copyAllNeta()" style="font-size:10px;padding:3px 8px;min-height:24px;margin-left:6px;opacity:.7;" type="button">📋 全コピー</button></div>
+      <div class="section-title"><span class="step">3</span>配信ネタ帳<span id="netaCount" style="font-size:9px;font-weight:400;opacity:.5;margin-left:4px;"></span> <button onclick="randomNeta()" style="font-size:10px;padding:3px 8px;min-height:24px;margin-left:4px;opacity:.7;" type="button" title="ランダムに字幕表示">🎲</button> <button onclick="copyAllNeta()" style="font-size:10px;padding:3px 8px;min-height:24px;margin-left:6px;opacity:.7;" type="button">📋 全コピー</button></div>
+
+      <input class="neta-filter" id="netaFilterInput" type="text" placeholder="ネタを絞り込む…" autocomplete="off">
+<div style="display:flex;gap:4px;margin-top:6px;">
+          <input id="customNetaInput" type="text" placeholder="カスタムネタを追加…" style="flex:1;font-size:10px;padding:4px 6px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:5px;color:#fff;" maxlength="80" autocomplete="off">
+          <button type="button" onclick="window.addCustomNeta&&window.addCustomNeta()" style="font-size:10px;padding:3px 8px;" title="ネタ追加">＋</button>
+        </div>
 
       <div class="neta-list">
 
@@ -651,7 +735,7 @@ body.obs-mode .dock,body.obs-mode .open-tab,body.obs-mode .brand,body.obs-mode .
 
         <div class="field"><label for="timerPreset">プリセット</label>
 
-          <select id="timerPreset"><option value="60">60分</option><option value="30">30分</option><option value="90">90分</option><option value="120">120分</option></select>
+          <select id="timerPreset"><option value="10">10分</option><option value="15">15分</option><option value="20">20分</option><option value="30">30分</option><option value="60">60分</option><option value="90">90分</option><option value="120">120分</option></select>
 
         </div>
 
@@ -725,9 +809,12 @@ body.obs-mode .dock,body.obs-mode .open-tab,body.obs-mode .brand,body.obs-mode .
 
         <div class="grid2">
 
+          <div class="field"><label>コメントサイズ <span id="commentSizeVal">100%</span></label>
+          <input type="range" id="commentSizeSlider" min="60" max="200" value="100" step="10"
+            oninput="document.documentElement.style.setProperty('--comment-size',(this.value/100)+'em');document.getElementById('commentSizeVal').textContent=this.value+'%';"></div>
           <div class="field"><label for="commentSpeed">コメント速度</label>
 
-            <select id="commentSpeed"><option value="normal">ふつう</option><option value="slow">ゆっくり</option><option value="fast">多め</option></select>
+            <select id="commentSpeed"><option value="surge">怒涛</option><option value="fast">多め</option><option value="normal">ふつう</option><option value="slow">ゆっくり</option><option value="veryslow">まれ</option></select>
 
           </div>
 
@@ -775,15 +862,18 @@ body.obs-mode .dock,body.obs-mode .open-tab,body.obs-mode .brand,body.obs-mode .
 
       <div class="memo-wrap">
 
-        <textarea class="memo-input" id="memoInput" placeholder="気づいたことをメモ…" rows="1"></textarea>
+        <textarea class="memo-input" id="memoInput" placeholder="気づいたことをメモ…" rows="1" maxlength="100" oninput="(function(el){const cnt=document.getElementById('memoCharCount');if(cnt)cnt.textContent=el.value.length+'/100';})(this)"></textarea>
+
+        <div class="memo-charcount" id="memoCharCount">0/100</div>
 
         <button onclick="window.saveMemo()" type="button">保存</button>
 
       </div>
 
+      <input class="memo-filter" id="memoFilterInput" type="text" placeholder="メモを検索…" autocomplete="off" oninput="(function(q){document.querySelectorAll('#memoList .memo-item,#memoList div').forEach(function(el){el.style.display=!q||el.textContent.toLowerCase().includes(q.toLowerCase())?'':' none';});})(this.value)">
       <div class="memo-list" id="memoList"></div>
 
-      <button onclick="window.clearMemos()" type="button" style="font-size:10px;margin-top:4px;opacity:.5;">メモ全削除</button>
+      <button onclick="window.copyMemos&&window.copyMemos()" type="button" style="font-size:10px;margin-top:4px;opacity:.6;" title="メモ全コピー">📋 コピー</button> <button onclick="window.downloadMemos&&window.downloadMemos()" type="button" style="font-size:10px;margin-top:4px;opacity:.6;" title="メモTXTダウンロード">⬇ DL</button> <button onclick="window.exportCommentLogCsv&&window.exportCommentLogCsv()" type="button" style="font-size:10px;margin-top:4px;opacity:.6;" title="コメントログCSV">📊 CSV</button> <button onclick="window.clearMemos()" type="button" style="font-size:10px;margin-top:4px;opacity:.4;">🗑</button>
 
     </section>
 
@@ -798,6 +888,9 @@ body.obs-mode .dock,body.obs-mode .open-tab,body.obs-mode .brand,body.obs-mode .
       <div style="display:flex;gap:6px;">
       <button onclick="window.copySummary()" type="button" id="copySummaryBtn" style="display:none;flex:1;margin-top:6px;">コピー</button>
       <button onclick="window.downloadSummary()" type="button" id="dlSummaryBtn" style="display:none;margin-top:6px;padding:0 12px;" title="txtとしてダウンロード">⬇</button>
+      <button onclick="window.summaryToMemo&&window.summaryToMemo()" type="button" id="summaryToMemo" style="display:none;margin-top:6px;padding:0 10px;font-size:9px;" title="サマリーをメモに追加">→メモ</button>
+      <button onclick="window.copySummary&&window.copySummary()" type="button" id="copySummaryBtn" style="display:none;margin-top:6px;padding:0 10px;font-size:9px;" title="サマリーをコピー">📋</button>
+      <button onclick="window.exportSummaryMd&&window.exportSummaryMd()" type="button" id="exportMdBtn" style="display:none;margin-top:6px;padding:0 10px;font-size:9px;" title="Markdownで保存">📥 MD</button>
       </div>
 
     </section>
@@ -874,10 +967,52 @@ let commentsEnabled=true, commentCountN=0;
 
 
 init();
+document.querySelector('.stage')?.addEventListener('dblclick',()=>window.toggleFreeze&&window.toggleFreeze());
+// Screen Wake Lock
+let _wakeLock = null;
+async function requestWakeLock() {
+  try {
+    if ('wakeLock' in navigator) {
+      _wakeLock = await navigator.wakeLock.request('screen');
+      _wakeLock.addEventListener('release', () => { _wakeLock = null; });
+    }
+  } catch(e) {}
+}
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && !_wakeLock) requestWakeLock();
+(function(){
+  const _SC_KEY="rb_session_count_v1";
+  const today=new Date().toISOString().slice(0,10);
+  try{
+    const data=JSON.parse(localStorage.getItem(_SC_KEY)||"{}");
+    data[today]=(data[today]||0)+1;
+    localStorage.setItem(_SC_KEY,JSON.stringify(data));
+    const n=data[today];
+    if(n>1)setTimeout(()=>toast("📅 今日"+n+"回目の配信"),2000);
+    // Clean old entries (keep 30 days)
+    const keys=Object.keys(data).sort();
+    if(keys.length>30)keys.slice(0,keys.length-30).forEach(k=>delete data[k]);
+    localStorage.setItem(_SC_KEY,JSON.stringify(data));
+  }catch{}
+})();
+(function(){
+  let _cursorTimer;
+  const stage=document.querySelector(".stage");
+  if(!stage)return;
+  document.addEventListener("mousemove",()=>{
+    document.body.style.cursor="";
+    clearTimeout(_cursorTimer);
+    _cursorTimer=setTimeout(()=>{document.body.style.cursor="none";},3000);
+  });
+})();
+});
+requestWakeLock();
 
 
 
 function init() { hydrate(); bind(); applyStage(); startClock(); scheduleComment();
+  if(localStorage.getItem("rb_panel_hidden"))document.body.classList.add("panel-hidden");
+  if(personas.length>0)setStatus(`人格 ${personas.length}件（キャッシュ）`);
   // Wall-clock display
   (function startWallClock(){
     function tick(){
@@ -931,6 +1066,14 @@ function setSpeed(spd){
 
 }
 
+
+function sessionDuration(){
+  if(!state.streamStartedAt)return"";
+  const s=Math.floor((Date.now()-state.streamStartedAt)/1000);
+  if(s<60)return s+"秒";
+  const m=Math.floor(s/60),r=s%60;
+  return m+"分"+(r>0?r+"秒":"");
+}
 function updateDockMeta(){
 
   const el=$("dockMeta");
@@ -939,8 +1082,9 @@ function updateDockMeta(){
   const t=normalizeTimer(state.timer);
   const rem=t.running?Math.max(0,Math.ceil((t.endAt-Date.now())/1000)):t.remainingSec;
   const mm=String(Math.floor(rem/60)).padStart(2,'0'),ss=String(rem%60).padStart(2,'0');
-  const timerStr=t.running?`<span class="on">⏱ ${mm}:${ss}</span>`:`⏱ ${mm}:${ss}`;
-  el.innerHTML=`💬 ${commentCountN}件　🎙 ${listening?'<span class="on">● 収録中</span>':"停止中"}　${timerStr}`;
+  const _endTime=t.running?new Date(t.endAt):null;const _endHHMM=_endTime?String(_endTime.getHours()).padStart(2,'0')+':'+String(_endTime.getMinutes()).padStart(2,'0'):null;const timerStr=t.running?`<span class="on">⏱ ${mm}:${ss}${_endHHMM?' ('+_endHHMM+'終了)':''}</span>`:`⏱ ${mm}:${ss}`;
+  const dur=sessionDuration();const now=new Date();const wallClock=now.getHours().toString().padStart(2,"0")+":"+now.getMinutes().toString().padStart(2,"0");const spdIcon={"surge":"🔥","fast":"⚡","normal":"▷","slow":"🐢","veryslow":"💤"}[state.commentSpeed||"normal"]||"▷";const pCount=personas&&personas.length?` 👥${personas.length}`:"";
+  el.innerHTML=`💬 ${commentCountN.toLocaleString()}件　🎙 ${listening?'<span class="on">● 収録中</span>':"停止中"}　${timerStr}${dur?" 　⏳ "+dur:""}　🕐 ${wallClock}　${spdIcon}${pCount}　💬${commentRate()}/分　${["起","承","転","結"][kisoIdx]||"起"}${kisoIdx+1}/4`;
 
 }
 
@@ -966,6 +1110,11 @@ function hydrate() {
 
   document.querySelectorAll(".spd-btn").forEach(b=>b.classList.toggle("active",b.dataset.speed===(state.commentSpeed||"normal")));
 
+  if(state.commentCountN>0){commentCountN=state.commentCountN;}
+  if(state.commentSize){const sl=document.getElementById("commentSizeSlider");const vl=document.getElementById("commentSizeVal");if(sl){sl.value=state.commentSize;document.documentElement.style.setProperty("--comment-size",(state.commentSize/100)+"em");}if(vl)vl.textContent=state.commentSize+"%";}
+  if(state.kisoIdx>=0&&state.kisoIdx<4){kisoIdx=state.kisoIdx;kisoRender();}
+  if(state.starVal>0)setRating(state.starVal);
+
 }
 
 
@@ -974,7 +1123,7 @@ function bind() {
 
   ["animeTitle","studio","season","serviceUrl","posterUrl","avatarInput","personaSheetUrl","commentSpeed"].forEach(id=>{
 
-    if($(id)) $(id).addEventListener("input",()=>{ state[id]=$(id).value; saveSettings(); applyStage(); });
+    if($(id)) $(id).addEventListener("input",()=>{ state[id]=$(id).value; saveSettings(); applyStageDebounced(); });
 
   });
 
@@ -1009,9 +1158,9 @@ function bind() {
 
   $("commentEngine")?.addEventListener("change",()=>{ state.commentEngine=$("commentEngine").value; if($("geminiArea"))$("geminiArea").style.display=state.commentEngine==="gemini"?"flex":"none"; saveSettings(); });
 
-  $("hideDock")?.addEventListener("click",()=>document.body.classList.add("panel-hidden"));
+  $("hideDock")?.addEventListener("click",()=>{document.body.classList.add("panel-hidden");localStorage.setItem("rb_panel_hidden","1");});
 
-  $("openDock")?.addEventListener("click",()=>document.body.classList.remove("panel-hidden"));
+  $("openDock")?.addEventListener("click",()=>{document.body.classList.remove("panel-hidden");localStorage.removeItem("rb_panel_hidden");});
 
   $("planFreeBtn")?.addEventListener("click",()=>{ $("planFreeBtn").classList.add("active"); $("planProBtn").classList.remove("active"); $("planFreeArea").style.display=""; $("planProArea").style.display="none"; });
 
@@ -1022,6 +1171,8 @@ function bind() {
   document.addEventListener("keydown",e=>{
 
     if(e.target.matches("input,textarea,select"))return;
+
+    if(e.key==="Escape"){if(window.clearCaption)window.clearCaption();}
 
     if(e.code==="Space"){e.preventDefault();toggleTimer();toast(state.timer.running?"⏸ タイマー停止":"▶ タイマー開始");}
 
@@ -1041,7 +1192,49 @@ function bind() {
 
     if(e.key==="d"||e.key==="D"){if(window.downloadSummary)window.downloadSummary();}
 
+    if(e.key==="e"||e.key==="E"){if(window.genSummary)window.genSummary();toast("📝 サマリー生成");}
+
+    if(e.key==="?"||e.key==="？"){const sh=document.querySelector(".shortcut-hint");if(sh){sh.style.display=sh.style.display==="none"?"":"none";}}
+
     if(e.key==="s"||e.key==="S"){const speeds=["slow","normal","fast"];const cur=document.querySelector(".spd-btn.active");const curSpeed=cur?cur.dataset.speed:"normal";const next=speeds[(speeds.indexOf(curSpeed)+1)%speeds.length];if(window.setSpeed)window.setSpeed(next);toast({slow:"🐢 低速",normal:"▷ 普通",fast:"🔥 高速"}[next]||next);}
+
+    if(e.key==="r"||e.key==="R"){spawnComment();toast("💬 コメント再生成");}
+
+    if(e.key==="g"||e.key==="G"){const d=document.getElementById("dock");if(d)d.scrollTop=0;toast("⬆ トップへ");}
+
+    if(e.key==="t"||e.key==="T"){const tt=state.animeTitle||"";if(tt){navigator.clipboard?.writeText(tt).then(()=>toast("📋 タイトルコピー"));}else toast("タイトル未設定");}
+
+    if(e.key==="p"||e.key==="P"){if(typeof randomNeta==="function")randomNeta();else toast("ネタなし");}
+
+    if(e.key==="v"||e.key==="V"){const secs=document.querySelectorAll(".section");secs.forEach(s=>{if(s.querySelector("#summaryBox"))s.classList.remove("collapsed");});const sb=document.getElementById("summaryBox");if(sb){sb.scrollIntoView({behavior:"smooth",block:"nearest"});}toast("📋 サマリーへ");}
+
+    if(e.key==="l"||e.key==="L"){if(window.copyCommentLog)window.copyCommentLog();}
+
+    if(e.key==="i"||e.key==="I"){const dur=sessionDuration();const step=["起","承","転","結"][kisoIdx]||"起";const rating=state.starVal>0?"★".repeat(state.starVal):"未評価";const title=state.animeTitle||"タイトル未設定";const kc=kisoCommentCounts;toast(`${title} | ${step} | ${commentCountN}件 | ${rating}${dur?" | "+dur:""} | 起${kc[0]}/承${kc[1]}/転${kc[2]}/結${kc[3]}`);}
+
+    if(e.key==="a"||e.key==="A"){[1,2,3].forEach((_,i)=>setTimeout(spawnComment,i*300));toast("🔥 バースト！");}
+
+    if(e.key==="q"||e.key==="Q"){const secs=document.querySelectorAll(".section");const anyOpen=Array.from(secs).some(s=>!s.classList.contains("collapsed"));secs.forEach(s=>s.classList.toggle("collapsed",anyOpen));toast(anyOpen?"📂 全セクション折り畳み":"📂 全セクション展開");}
+
+    if(e.key==="u"||e.key==="U"){try{const memos=JSON.parse(localStorage.getItem(window._MEMO_KEY||"rb_memo")||"[]");if(!memos.length){toast("メモなし");}else{memos.pop();localStorage.setItem(window._MEMO_KEY||"rb_memo",JSON.stringify(memos));if(typeof renderMemos==="function")renderMemos();toast("↩ 最後のメモを削除");}
+
+    if(e.key==="w"||e.key==="W"){const tr=document.getElementById("manualTranscript");if(tr){const sec=tr.closest(".section");if(sec)sec.classList.remove("collapsed");tr.focus();toast("⌨ 文字起こし欄");}}
+
+    if(e.key==="x"||e.key==="X"){if(window.copyObsUrl)window.copyObsUrl();}
+
+    if(e.key==="y"||e.key==="Y"){if(window.downloadSettings)window.downloadSettings();}}catch{toast("エラー");}}
+
+    if(e.key==="-"||e.key==="j"||e.key==="J"){const sl=document.getElementById("dimSlider");if(sl){sl.value=Math.min(80,+sl.value+5);sl.dispatchEvent(new Event("input"));}}
+
+    if(e.key==="+"||e.key==="k"||e.key==="K"){const sl=document.getElementById("dimSlider");if(sl){sl.value=Math.max(0,+sl.value-5);sl.dispatchEvent(new Event("input"));}}
+
+    if(e.key==="b"||e.key==="B"){if(window.kisoBack)window.kisoBack();toast("◀ ステップ戻る");}
+
+    if(e.key==="Z"||e.key==="z"){window.resetSession&&window.resetSession();}
+    if(e.key==="`"){window.stampMemo&&window.stampMemo();}
+    if(e.key==="ArrowRight"&&!e.shiftKey&&!e.ctrlKey&&!e.altKey){if(window.kisoNext)window.kisoNext();}
+
+    if(e.key==="ArrowLeft"&&!e.shiftKey&&!e.ctrlKey&&!e.altKey){if(window.kisoBack)window.kisoBack();}
 
   });
 
@@ -1049,7 +1242,14 @@ function bind() {
 
 
 
+
+// debounced applyStage
+let _applyTimer;
+function applyStageDebounced(){clearTimeout(_applyTimer);_applyTimer=setTimeout(applyStage,250);}
 function applyStage() {
+
+  if(state.animeTitle&&state.animeTitle!==(state._lastAppliedTitle||"")){state.streamStartedAt=Date.now();commentCountN=0;updateDockMeta();}
+  state._lastAppliedTitle=state.animeTitle;
 
   $("cardTitle").textContent = state.animeTitle||"今日のアニメ";
 
@@ -1074,7 +1274,7 @@ function applyStage() {
   const dot=document.getElementById("setupDot"); if(dot) dot.classList.toggle("ok", !!state.animeTitle);
 
 
-  document.title = state.animeTitle ? state.animeTitle+" | RAINYBRAIN" : "RAINYBRAIN ANIME REVIEW";}
+  document.title = state.animeTitle ? state.animeTitle+" | RAINYBRAIN" : "RAINYBRAIN ANIME REVIEW"; toast("ステージ更新 ✓");}
 
 function updateAvatar(){
 
@@ -1089,6 +1289,7 @@ function updateAvatar(){
   el.src=src;
 
   if(el.tagName==="VIDEO"){el.autoplay=true;el.loop=true;el.muted=true;el.playsInline=true;}
+  el.onerror=()=>{av.innerHTML="";av.classList.add("empty");toast("⚠ アバター画像を読み込めません");};
 
   av.append(el);
 
@@ -1144,19 +1345,24 @@ function updateClock(){
 
   const prevRem=state.timer.remainingSec;state.timer=normalizeTimer(state.timer);
 
-  if(state.timer.running&&state.timer.remainingSec<=0){state.timer.running=false;state.timer.endAt=0;if(prevRem>0){toast("⏱ タイマー終了！");playTimerBeep();$("timerDisplay")?.classList.add("flash");setTimeout(()=>$("timerDisplay")?.classList.remove("flash"),2800);}}if(state.timer.running&&prevRem>60&&state.timer.remainingSec<=60&&state.timer.remainingSec>0)toast("⚠ 残り1分！");if(state.timer.running&&prevRem>30&&state.timer.remainingSec<=30&&state.timer.remainingSec>0)toast("🔴 残り30秒！");
+  if(state.timer.running&&state.timer.remainingSec<=0){state.timer.running=false;state.timer.endAt=0;if(prevRem>0){// auto-gen summary
+  toast("⏱ タイマー終了！ 📋 E キーでサマリー生成");playTimerBeep();// auto-pause on timer end
+if(commentsEnabled){commentsEnabled=false;const cb=document.getElementById("ccBtn");if(cb)cb.textContent="💬 OFF";}$("timerDisplay")?.classList.add("flash");setTimeout(()=>$("timerDisplay")?.classList.remove("flash"),2800);}}if(state.timer.running&&prevRem>60&&state.timer.remainingSec<=60&&state.timer.remainingSec>0)toast("⚠ 残り1分！");if(state.timer.running&&prevRem>30&&state.timer.remainingSec<=30&&state.timer.remainingSec>0)toast("🔴 残り30秒！");
 
   $("timerTime").textContent=fmt(state.timer.remainingSec);
 
-  $("timerLabel").textContent=state.timer.running?"REC RUNNING":"REC TIMER";
+  $("timerLabel").textContent=state.timer.running?"REC RUNNING":state.timer.remainingSec===0?"✓ 完了":"REC TIMER";
 
   $("timerDisplay").classList.toggle("running",state.timer.running);
+  $("timerDisplay").classList.toggle("danger",state.timer.running&&state.timer.remainingSec<=60&&state.timer.remainingSec>0);
 
   $("timerStartBtn").textContent=state.timer.running?"停止":"開始";
 
   $("stageTimerToggle").textContent=state.timer.running?"Ⅱ":"▶";
 
   $("stageTimerToggle").classList.toggle("running",state.timer.running);
+  // tab title timer
+  const _tt=state.animeTitle||"RAINYBRAIN ANIME REVIEW";document.title=state.timer.running?`⏱ ${fmt(state.timer.remainingSec)} | ${_tt}`:state.timer.remainingSec===0?"✓ 完了 | "+_tt:_tt+" | RAINYBRAIN";
 
 }
 
@@ -1202,7 +1408,7 @@ function toggleMic(){
 
   if(!SpeechRecognition){$("caption").textContent="⚠ Chrome / Edge が必要です";toast("Chrome/Edge の音声認識が必要です");return;}
 
-  if(listening){clearTimeout(restartTimer);listening=false;try{recognition.stop();}catch{}stopMeter();$("micBtn").textContent="マイク開始";$("micBtn").className="good";$("micLive")?.classList.remove("active");toast("マイク停止");updateDockMeta();return;}
+  if(listening){clearTimeout(restartTimer);listening=false;try{recognition.stop();}catch{}stopMeter();$("micBtn").textContent="マイク開始";$("micBtn").className="good";$("micBtn").setAttribute("aria-label","マイクオフ");$("micLive")?.classList.remove("active");toast("マイク停止");updateDockMeta();return;}
 
   recognition=new SpeechRecognition();recognition.lang="ja-JP";recognition.continuous=true;recognition.interimResults=true;
 
@@ -1212,7 +1418,7 @@ function toggleMic(){
 
   recognition.onend=()=>{if(listening){clearTimeout(restartTimer);restartTimer=setTimeout(()=>{if(listening)try{recognition.start();}catch{}},700);}};
 
-  recognition.start();listening=true;$("micBtn").textContent="マイク停止";$("micBtn").className="warn";$("micLive")?.classList.add("active");toast("マイク開始 — 話してください");startMeter();updateDockMeta();
+  recognition.start();listening=true;$("micBtn").setAttribute("aria-label","マイク収録中");$("micBtn").textContent="マイク停止";$("micBtn").className="warn";$("micLive")?.classList.add("active");toast("マイク開始 — 話してください");startMeter();updateDockMeta();
 
 }
 
@@ -1228,11 +1434,12 @@ function spawnComment(){
 
   if(state.commentEngine==="gemini"&&k){spawnGeminiComment();return;}
 
-  const p=pickPersona();const text=buildComment(p);addComment(text,p.name,p.color);saveCommentLog({user:p.name,text});
+  const p=pickPersona();const text=buildComment(p);addComment(text,p.name,p.color);saveCommentLog({user:p.name,text,step:(["起","承","転","結"][kisoIdx]||"起")});
 
 }
 
 async function spawnGeminiComment(){
+  const _gd=document.getElementById("geminiDot");if(_gd)_gd.classList.add("loading");
 
   const apiKey=localStorage.getItem(GEMINI_KEY_STORE)||"";
 
@@ -1254,9 +1461,9 @@ async function spawnGeminiComment(){
 
     if(!comment)throw new Error();
 
-    addComment(comment,p.name,p.color);saveCommentLog({user:p.name,text:comment});
+    addComment(comment,p.name,p.color);saveCommentLog({user:p.name,text:comment,step:(["起","承","転","結"][kisoIdx]||"起")});
 
-  }catch{const text=buildComment(p);addComment(text,p.name,p.color);saveCommentLog({user:p.name,text});}
+  }catch{const text=buildComment(p);addComment(text,p.name,p.color);saveCommentLog({user:p.name,text,step:(["起","承","転","結"][kisoIdx]||"起")});}
 
 }
 
@@ -1278,7 +1485,18 @@ function saveGeminiKey(){
 
 function toggleObsMode(){document.body.classList.toggle("obs-mode");const btn=$("btnObs");if(btn)btn.classList.toggle("active");}
 
-function addComment(text,name,color){commentCountN++;updateDockMeta();
+
+// comment rate tracking
+const _commentTimes=[];
+function commentRate(){
+  const now=Date.now();
+  _commentTimes.push(now);
+  // keep only last 60s window
+  while(_commentTimes.length&&now-_commentTimes[0]>60000)_commentTimes.shift();
+  return _commentTimes.length;
+}
+function addComment(text,name,color){commentCountN++;commentRate();kisoCommentCounts[kisoIdx]++;updateDockMeta();trackPersonaStat(name||"??");if(commentCountN===1){const _at=normalizeTimer(state.timer);if(!_at.running){const _asb=document.getElementById("timerStartBtn");if(_asb)_asb.click();}// auto-start timer
+}const _lcp=document.getElementById("lastCommentPreview");if(_lcp){_lcp.style.display="";_lcp.textContent="💬 "+text;}if([10,25,50,100,200].includes(commentCountN))toast(`🎉 ${commentCountN}コメント達成！`);
 
   const track=document.getElementById(`track${trackRR%3}`);trackRR++;if(!track)return;
 
@@ -1292,7 +1510,7 @@ function addComment(text,name,color){commentCountN++;updateDockMeta();
 
   const t=document.createElement("span");t.className="text";t.textContent=text;
 
-  node.append(u,t);track.append(node);node.addEventListener("animationend",()=>node.remove());
+  node.append(u,t);track.append(node);node.addEventListener("animationend",()=>node.remove());while(track.children.length>25)track.firstElementChild.remove();
 
 }
 
@@ -1396,7 +1614,7 @@ function defaultPersonas(){
 
 }
 
-function intervalRange(){if(state.commentSpeed==="fast")return[3000,7000];if(state.commentSpeed==="slow")return[10000,18000];return[6000,12000];}
+function intervalRange(){if(state.commentSpeed==="surge")return[800,2500];if(state.commentSpeed==="fast")return[3000,7000];if(state.commentSpeed==="slow")return[10000,18000];if(state.commentSpeed==="veryslow")return[25000,45000];return[6000,12000];}
 
 function scheduleComment(){clearTimeout(commentTimer);if(!commentsEnabled)return;const[mn,mx]=intervalRange();commentTimer=setTimeout(()=>{spawnComment();scheduleComment();},mn+Math.random()*(mx-mn));}
 
@@ -1440,17 +1658,21 @@ function tags(v){return String(v||"").split(/[;,、・\s]+/).map(x=>x.trim()).fi
 
 function saveCommentLog(entry){try{const log=JSON.parse(localStorage.getItem(SHARED_COMMENT_KEY)||"[]");log.push({...entry,screen:"anime",at:new Date().toISOString()});localStorage.setItem(SHARED_COMMENT_KEY,JSON.stringify(log.slice(-200)));}catch{}}
 
-function saveSettings(){localStorage.setItem(SETTINGS_KEY,JSON.stringify({animeTitle:state.animeTitle,studio:state.studio,season:state.season,serviceUrl:state.serviceUrl,posterUrl:state.posterUrl,avatarInput:state.avatarInput,personaSheetUrl:state.personaSheetUrl,commentSpeed:state.commentSpeed,commentEngine:state.commentEngine,timer:state.timer,starVal:starVal,hashtag:(document.getElementById("hashtagText")||{}).value||""}));}
+function saveSettings(){flashAutosave();localStorage.setItem(SETTINGS_KEY,JSON.stringify({animeTitle:state.animeTitle,studio:state.studio,season:state.season,serviceUrl:state.serviceUrl,posterUrl:state.posterUrl,avatarInput:state.avatarInput,personaSheetUrl:state.personaSheetUrl,commentSpeed:state.commentSpeed,commentEngine:state.commentEngine,commentCountN:commentCountN,kisoIdx:kisoIdx,commentSize:+(document.getElementById("commentSizeSlider")||{value:100}).value,timer:state.timer,starVal:starVal,hashtag:(document.getElementById("hashtagText")||{}).value||""}));}
 
 function loadSettings(){try{return JSON.parse(localStorage.getItem(SETTINGS_KEY)||"{}");}catch{return{};}}
 
-function copyObsUrl(){const url=new URL(location.href);if(state.animeTitle)url.searchParams.set("title",state.animeTitle);const ht=(document.getElementById("hashtagText")||{}).value;if(ht)url.searchParams.set("hashtag",ht);if(starVal>0)url.searchParams.set("stars",starVal);const str=url.toString();if(navigator.clipboard){navigator.clipboard.writeText(str).then(()=>toast("OBS URL をコピーしました ✓")).catch(()=>{prompt("URL をコピーしてください:",str);});}else{prompt("URL をコピーしてください:",str);}}
+function copyObsUrl(){const url=new URL(location.href);if(state.animeTitle)url.searchParams.set("title",state.animeTitle);const ht=(document.getElementById("hashtagText")||{}).value;if(ht)url.searchParams.set("hashtag",ht);if(starVal>0)url.searchParams.set("stars",starVal);if(state.commentSpeed&&state.commentSpeed!=="normal")url.searchParams.set("speed",state.commentSpeed);const str=url.toString();if(navigator.clipboard){navigator.clipboard.writeText(str).then(()=>toast("OBS URL をコピーしました ✓")).catch(()=>{prompt("URL をコピーしてください:",str);});}else{prompt("URL をコピーしてください:",str);}}
 
 function toSheetCsvUrl(url){const t=String(url||"").trim(),m=t.match(/\/spreadsheets\/d\/([^/]+)/);if(!m)return t;const gid=(t.match(/[?&]gid=(\d+)/)||[])[1];return`https://docs.google.com/spreadsheets/d/${m[1]}/export?format=csv${gid?`&gid=${gid}`:""}` ;}
 
-let toastTimer=null;
 
-function toast(msg){const el=$("toast");if(!el)return;clearTimeout(toastTimer);el.textContent=msg;el.classList.add("show");toastTimer=setTimeout(()=>el.classList.remove("show"),2800);}
+
+// toast queue
+let _toastQ=[];let _toastBusy=false;
+function toast(msg){_toastQ.push(msg);if(!_toastBusy)_nextToast();}
+function _nextToast(){if(!_toastQ.length){_toastBusy=false;return;}_toastBusy=true;const msg=_toastQ.shift();const el=$("toast");if(!el){_toastBusy=false;return;}el.textContent=msg;el.classList.add("show");setTimeout(()=>{el.classList.remove("show");setTimeout(_nextToast,150);},2200);}
+
 
 function setStatus(t){if($("personaStatus"))$("personaStatus").textContent=t;toast(t);}
 
@@ -1459,6 +1681,7 @@ function setStatus(t){if($("personaStatus"))$("personaStatus").textContent=t;toa
   // ── 起承転結フロー ──
 
   let kisoIdx = 0;
+  const kisoCommentCounts=[0,0,0,0];
 
   const KISO_TOTAL = 4;
 
@@ -1481,6 +1704,7 @@ function setStatus(t){if($("personaStatus"))$("personaStatus").textContent=t;toa
     const bar = document.getElementById('kisoBar');
 
     if (bar) bar.style.width = Math.round(kisoIdx / KISO_TOTAL * 100) + '%';
+    const _kd=document.getElementById('kisoDisplay');if(_kd)_kd.textContent=(['起','承','転','結'][kisoIdx]||'')+'  '+(kisoIdx+1)+'/4';
 
     const btn = document.getElementById('kisoNextBtn');
 
@@ -1525,9 +1749,11 @@ function setStatus(t){if($("personaStatus"))$("personaStatus").textContent=t;toa
 
   function kisoNext() {
 
+    // kisoNext step toast
+    const _prevIdx=kisoIdx;
     if (kisoIdx < KISO_TOTAL - 1) { kisoIdx++; kisoRender(); }
-
     else { kisoIdx = 0; kisoRender(); }
+    if(kisoIdx!==_prevIdx)toast(['起','承','転','結'][kisoIdx]+' ステップ');
 
   }
 
@@ -1548,6 +1774,25 @@ function setStatus(t){if($("personaStatus"))$("personaStatus").textContent=t;toa
   });
 
   renderMemos();
+  (()=>{const nc=document.getElementById("netaCount");if(nc){const n=document.querySelectorAll(".neta-item").length;nc.textContent=n?"("+n+"件)":"";}})()
+(function(){
+  const _usedKey="rb_neta_used";
+  function _loadUsed(){try{return JSON.parse(sessionStorage.getItem(_usedKey)||"[]");}catch{return[];}}
+  function _applyUsed(){const used=_loadUsed();document.querySelectorAll(".neta-item").forEach(el=>{el.classList.toggle("used",used.includes(el.textContent.trim().slice(0,40)));});}
+  document.querySelectorAll(".neta-item").forEach(el=>{
+    el.addEventListener("dblclick",function(e){
+      e.stopPropagation();
+      const key=this.textContent.trim().slice(0,40);
+      const used=_loadUsed();
+      const idx=used.indexOf(key);
+      if(idx>=0)used.splice(idx,1);else used.push(key);
+      sessionStorage.setItem(_usedKey,JSON.stringify(used));
+      _applyUsed();
+      toast(idx>=0?"ネタ復活":"✓ 使用済み");
+    });
+  });
+  _applyUsed();
+})();
 
 
 
@@ -1607,6 +1852,12 @@ function setStatus(t){if($("personaStatus"))$("personaStatus").textContent=t;toa
     if (cmtCnt > 0) summary += `コメント: ${cmtCnt}件
 
 `;
+    if(typeof kisoCommentCounts!=='undefined'&&kisoCommentCounts.some(n=>n>0))summary+=`起${kisoCommentCounts[0]}/承${kisoCommentCounts[1]}/転${kisoCommentCounts[2]}/結${kisoCommentCounts[3]}件
+
+`;
+    if(typeof _personaStats!=='undefined'){const _pe=Object.entries(_personaStats).sort((a,b)=>b[1]-a[1]).slice(0,3);if(_pe.length)summary+=`人格TOP: ${_pe.map(([n,c])=>n+'('+c+')').join(' / ')}
+
+`;}
 
     if (hashtag) summary += `${hashtag}
 
@@ -1629,6 +1880,12 @@ function setStatus(t){if($("personaStatus"))$("personaStatus").textContent=t;toa
 ${memoLines}
 
 `;
+
+    if(window._netaUsed&&window._netaUsed.length)summary+=`
+
+▼ 使用ネタ
+${window._netaUsed.map((n,i)=>`${i+1}. ${n}`).join("
+")}`;
 
     summary += `
 
@@ -1656,7 +1913,7 @@ ${lines.join('
     if (box) { box.textContent = summary; box.style.display = ''; }
 
     if (btn) btn.style.display = '';
-    const dlBtn=document.getElementById('dlSummaryBtn');if(dlBtn)dlBtn.style.display='';
+    const dlBtn=document.getElementById('dlSummaryBtn');if(dlBtn)dlBtn.style.display='';const cpBtn=document.getElementById('copySummaryBtn');if(cpBtn)cpBtn.style.display='';const mdBtn=document.getElementById('exportMdBtn');if(mdBtn)mdBtn.style.display='';
 
     if(typeof toast==='function') toast('サマリー生成 ✓');
 
@@ -1712,6 +1969,10 @@ ${lines.join('
 
     el.textContent = t;
 
+    // caption history
+    if(t&&!window._captionHistory)window._captionHistory=[];
+    if(t&&window._captionHistory&&!window._captionHistory.includes(t)){window._captionHistory.unshift(t);if(window._captionHistory.length>20)window._captionHistory.pop();}
+
     el.classList.remove('flash-in');
 
     void el.offsetWidth; // reflow
@@ -1719,6 +1980,8 @@ ${lines.join('
     el.classList.add('flash-in');
 
     setTimeout(() => el.classList.remove('flash-in'), 800);
+
+    const _cb=document.getElementById('captionClearBtn');if(_cb)_cb.style.display=t?'':"none";
 
     if (autoClear !== false) {
 
@@ -1732,12 +1995,31 @@ ${lines.join('
 
   
   
-  window.netaClick = function(t){
+  window.addCustomNeta=function(){
+  const inp=document.getElementById("customNetaInput");
+  if(!inp||!inp.value.trim())return;
+  const text=inp.value.trim();
+  const list=document.querySelector(".neta-list");
+  if(!list)return;
+  const div=document.createElement("div");
+  div.className="neta-item";
+  div.textContent="★ "+text;
+  div.onclick=function(){if(window.setCaption)window.setCaption(text,false);};
+  div.addEventListener("dblclick",function(e){e.stopPropagation();this.remove();toast("ネタ削除");});
+  list.prepend(div);
+  inp.value="";
+  toast("ネタ追加 ✓");
+  const nc=document.getElementById("netaCount");
+  if(nc)nc.textContent="("+document.querySelectorAll(".neta-item").length+"件)";
+};
+window.netaClick = function(t){
     const titleKeys = ['animeTitle','mangaTitle','movieTitle','dramaTitle','bookTitle'];
     let title = '';
     for(const k of titleKeys){ if(state[k]){ title=state[k]; break; } }
     const caption = title ? t.replace(/\{T\}/g, title) : t;
     if(window.setCaption) window.setCaption(caption, false);
+    if(!window._netaUsed)window._netaUsed=[];
+    if(!window._netaUsed.includes(caption))window._netaUsed.push(caption);
   };
   
   window.randomNeta = function(){
@@ -1757,6 +2039,133 @@ ${lines.join('
 ');
     navigator.clipboard ? navigator.clipboard.writeText(text).then(()=>toast('ネタ帳をコピーしました ✓')).catch(()=>prompt('コピー:',text)) : prompt('コピー:',text);
   };
+  // セクション折りたたみ（バグ修正: JSハンドラー未実装だった）
+  const _SEC_KEY = 'rb_sec_states';
+  (function initSectionCollapse(){
+    const secs = Array.from(document.querySelectorAll('.section'));
+    // restore saved states
+    try{
+      const saved = JSON.parse(localStorage.getItem(_SEC_KEY)||'[]');
+      secs.forEach((s,i)=>{ if(saved[i]) s.classList.add('collapsed'); });
+    }catch{}
+    // bind click handlers
+    secs.forEach((sec,i)=>{
+      const title = sec.querySelector('.section-title');
+      if(!title) return;
+      title.addEventListener('click',()=>{
+        sec.classList.toggle('collapsed');
+        const states = secs.map(s=>s.classList.contains('collapsed')?1:0);
+        localStorage.setItem(_SEC_KEY, JSON.stringify(states));
+      });
+    });
+  })();
+
+    // メモ機能（バグ修正: 未定義だった関数を実装）
+  const _MEMO_KEY = 'rb_anime_memos'; window._MEMO_KEY = _MEMO_KEY;
+  function deleteMemo(i){
+    const memos=loadMemos();
+    memos.splice(memos.length-1-i,1);
+    localStorage.setItem(_MEMO_KEY,JSON.stringify(memos));
+    renderMemos();
+    toast('メモ削除');
+  }
+  function loadMemos(){try{return JSON.parse(localStorage.getItem(_MEMO_KEY)||'[]');}catch{return[];}}
+  
+function initMemoAutoGrow(){
+  const ta=document.getElementById("memoInput");
+  if(!ta)return;
+  ta.style.overflow="hidden";
+  ta.style.resize="none";
+  function grow(){ta.style.height="auto";ta.style.height=ta.scrollHeight+"px";}
+  ta.addEventListener("input",grow);
+  grow();
+}
+
+function initNetaFilter(){
+  const fi=document.getElementById("netaFilterInput");
+  if(!fi)return;
+  fi.addEventListener("keydown",function(e){if(e.key==="Escape"){this.value="";document.querySelectorAll(".neta-item").forEach(function(el){el.style.display="";});}});
+  fi.addEventListener("input",function(){
+    const q=this.value.trim().toLowerCase();
+    document.querySelectorAll(".neta-item").forEach(function(el){
+      el.style.display=(!q||el.textContent.toLowerCase().includes(q))?"":"none";
+    });
+  });
+}
+function saveMemo(){
+    const el=$('memoInput');if(!el)return;
+    const text=el.value.trim();if(!text)return;
+    const memos=loadMemos();memos.push({text,at:Date.now()});
+    localStorage.setItem(_MEMO_KEY,JSON.stringify(memos));
+    el.value='';renderMemos();toast('メモ保存 ✓');
+  }
+  function clearMemos(){if(!confirm('メモを全削除しますか？'))return;localStorage.removeItem(_MEMO_KEY);renderMemos();toast('メモ削除 ✓');}
+  function renderMemos(){
+    const list=$('memoList');if(!list)return;
+    const memos=loadMemos();
+    list.innerHTML=memos.slice().reverse().map(m=>{
+      const d=new Date(m.at),h=String(d.getHours()).padStart(2,'0'),mi=String(d.getMinutes()).padStart(2,'0');
+      return '<div style="font-size:11px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.06);display:flex;align-items:flex-start;gap:4px">'
+            +'<span style="color:rgba(255,255,255,.3);font-size:9px;flex-shrink:0;margin-top:1px" title="'+h+':'+mi+'">'+relTime(m.at)+'</span>'
+            +'<span style="flex:1;word-break:break-all">'+m.text.replace(/</g,'&lt;')+'</span>'
+            +'<button onclick="deleteMemo('+i+')" style="font-size:9px;padding:0 4px;min-height:16px;opacity:.4;flex-shrink:0;" type="button" title="削除">×</button>'
+            +'</div>';
+    }).join('');
+    if(!memos.length)list.innerHTML='<div style="color:rgba(255,255,255,.2);font-size:10px;padding:6px 0;">まだメモなし</div>';
+    // memo count in section title
+    const memoSec=list.closest('.section');
+    if(memoSec){const title=memoSec.querySelector('.section-title');if(title){const base=title.textContent.replace(/\s*\(\d+件\)/,'');title.textContent=memos.length>0?base+` (${memos.length}件)`:base;}}
+  }
+  
+  window.downloadCommentLog=function(){
+    try{
+      const log=JSON.parse(localStorage.getItem("rainybrain_comment_log_v1")||"[]");
+      if(!log.length){toast("ログなし");return;}
+      const text=log.map(e=>`[${e.at||""}][${e.step||""}] ${e.user||"??"}:  ${e.text||""}`).join("
+");
+      const blob=new Blob([text],{type:"text/plain"});
+      const a=document.createElement("a");
+      a.href=URL.createObjectURL(blob);
+      a.download="rainybrain_anime_log.txt";
+      a.click();
+      toast("⬇ ログDL ✓");
+    }catch{toast("DL失敗");}
+  };
+window.copyCommentLog=function(){try{const log=JSON.parse(localStorage.getItem("rainybrain_comment_log_v1")||"[]");if(!log.length){toast("コメントログが空です");return;}const text=log.slice(-100).map(e=>`[${e.at||""}][${e.step||""}] ${e.user||"??"}: ${e.text||""}`).join("
+");navigator.clipboard?navigator.clipboard.writeText(text).then(()=>toast("コメントログをコピー ✓")).catch(()=>prompt("コピー:",text)):prompt("コピー:",text);}catch{toast("ログ取得エラー");}};
+window.clearCommentLog=function(){try{localStorage.removeItem(SHARED_COMMENT_KEY);toast("コメントログ消去 ✓");}catch{toast("ログ消去失敗");}};
+window.exportCommentLogCsv=function(){
+  try{
+    const log=JSON.parse(localStorage.getItem("rainybrain_comment_log_v1")||"[]");
+    if(!log.length){toast("ログなし");return;}
+    const header="時刻,人格,テキスト,ステップ,画面
+";
+    const rows=log.map(e=>[e.at||"",e.user||"",'"'+(e.text||"").replace(/"/g,'""')+'"',e.step||"",e.screen||""].join(",")).join("
+");
+    const blob=new Blob(["﻿"+header+rows],{type:"text/csv"});
+    const a=document.createElement("a");
+    a.href=URL.createObjectURL(blob);
+    a.download="comment_log_"+new Date().toISOString().slice(0,10)+".csv";
+    a.click();
+    toast("📊 CSV DL ✓ ("+log.length+"件)");
+  }catch{toast("CSV出力失敗");}
+};
+function relTime(ms){const s=Math.floor((Date.now()-ms)/1000);if(s<60)return s+"秒前";const m=Math.floor(s/60);if(m<60)return m+"分前";const h=Math.floor(m/60);if(h<24)return h+"時間前";return Math.floor(h/24)+"日前";}
+const _personaStats = {};
+function trackPersonaStat(name) {
+  _personaStats[name] = (_personaStats[name]||0) + 1;
+}
+window.topPersona = function() {
+  const entries = Object.entries(_personaStats);
+  if (!entries.length) { toast("まだコメントなし"); return; }
+  entries.sort((a,b)=>b[1]-a[1]);
+  const top3 = entries.slice(0,3).map(([n,c])=>n+"("+c+")").join(" / ");
+  toast("🏆 " + top3);
+};
+function flashAutosave(){const d=document.getElementById("autosaveDot");if(!d)return;d.classList.add("saved");clearTimeout(d._t);d._t=setTimeout(()=>d.classList.remove("saved"),1200);}
+  window.saveMemo=saveMemo;window.clearMemos=clearMemos;
+  window.clearCaption=function(){const el=document.getElementById("caption");if(!el)return;el.textContent="";el.style.opacity="";clearTimeout(window._captionTimer);const btn=document.getElementById("captionClearBtn");if(btn)btn.style.display="none";const cpBtn=document.getElementById("captionCopyBtn");if(cpBtn)cpBtn.style.display="none";};
+
   window.kisoNext = kisoNext;
 
   window.kisoBack = kisoBack;
@@ -1766,6 +2175,163 @@ ${lines.join('
   window.setRating = setRating;
 
   window.copyHashtag = copyHashtag;
+
+  
+
+  window.importSettings = function(){
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = ".json";
+    input.onchange = function(){
+      const file = this.files[0];
+      if(!file)return;
+      const reader = new FileReader();
+      reader.onload = function(e){
+        try{
+          const data = JSON.parse(e.target.result);
+          const key = Object.keys(localStorage).find(k=>k.includes("_stream_v1"))||"";
+          if(!key){toast("設定キーが見つかりません");return;}
+          localStorage.setItem(key, JSON.stringify(data));
+          toast("✓ インポート完了 - リロード中...");
+          setTimeout(()=>location.reload(),1000);
+        }catch{toast("インポート失敗：無効なJSON");}
+      };
+      reader.readAsText(file);
+    };
+    input.click();
+  };
+
+  window.summaryToMemo=function(){
+    const box=document.getElementById("summaryBox");
+    if(!box||!box.textContent.trim()){toast("サマリーなし");return;}
+    const text=box.textContent.trim().slice(0,100);
+    const memoKey=window._MEMO_KEY;if(!memoKey){toast("メモキー不明");return;}
+    const memos=JSON.parse(localStorage.getItem(memoKey)||"[]");
+    memos.push({text:"[サマリー] "+text,at:Date.now()});
+    localStorage.setItem(memoKey,JSON.stringify(memos));
+    if(typeof renderMemos==="function")renderMemos();
+    toast("サマリーをメモに追加 ✓");
+  };
+window.exportSummaryMd=function(){
+  const box=document.getElementById("summaryBox");
+  if(!box||!box.textContent.trim()){toast("サマリーなし");return;}
+  const title=state.animeTitle||state.mangaTitle||state.movieTitle||state.dramaTitle||state.bookTitle||"配信";
+  const date=new Date().toISOString().slice(0,10);
+  const md="# "+title+"
+
+**日付**: "+date+"
+
+**評価**: "+"★".repeat(state.starVal||0)+"
+
+---
+
+"+box.textContent.trim();
+  const blob=new Blob([md],{type:"text/markdown"});
+  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=title.replace(/[\s/\:*?"<>|]/g,"_")+"_"+date+".md";a.click();
+  toast("📥 Markdown DL ✓");
+};window.copySummary=function(){
+  const box=document.getElementById("summaryBox");
+  if(!box||!box.textContent.trim()){toast("サマリーなし");return;}
+  navigator.clipboard?navigator.clipboard.writeText(box.textContent.trim()).then(()=>toast("📋 サマリーコピー ✓")).catch(()=>prompt("コピー:",box.textContent.trim())):prompt("コピー:",box.textContent.trim());
+};
+
+  
+  window.downloadMemos=function(){
+    const memos=loadMemos();
+    if(!memos.length){toast("メモなし");return;}
+    const text=memos.map((m,i)=>{const d=new Date(m.at);return `[${d.toLocaleString()}] ${m.text}`;}).join("
+");
+    const blob=new Blob([text],{type:"text/plain"});
+    const a=document.createElement("a");
+    a.href=URL.createObjectURL(blob);
+    a.download="memos.txt";
+    a.click();
+    toast("⬇ メモDL ✓");
+  };
+window.copyMemos=function(){
+  const memos=loadMemos();
+  if(!memos.length){toast("メモなし");return;}
+  const text=memos.map((m,i)=>{const d=new Date(m.at);return "["+d.toLocaleTimeString()+"] "+m.text;}).join("
+");
+  navigator.clipboard?navigator.clipboard.writeText(text).then(()=>toast("📋 メモ全コピー ✓")).catch(()=>prompt("コピー:",text)):prompt("コピー:",text);
+};
+  
+  window.clearStage=function(){
+    [0,1,2].forEach(i=>{const t=document.getElementById("track"+i);if(t)t.innerHTML="";});
+    toast("🧹 コメント消去");
+  };
+window.resetSession=function(){if(!confirm("セッションをリセット？
+コメント数・ステップをリセットします"))return;commentCountN=0;kisoIdx=0;kisoCommentCounts.fill(0);state.streamStartedAt=null;kisoRender();updateDockMeta();saveSettings();toast("🔄 セッションリセット ✓");};
+window.stampMemo=function(){
+  const step=["起","承","転","結"][kisoIdx]||"起";
+  const cnt=commentCountN;
+  const text="["+step+"] "+cnt+"件 "+sessionDuration();
+  const memos=loadMemos();
+  memos.push({text,at:Date.now()});
+  localStorage.setItem(window._MEMO_KEY,JSON.stringify(memos));
+  if(typeof renderMemos==="function")renderMemos();
+  toast("📌 "+text);
+};
+window.quickStart=function(){
+  let acted=[];
+  if(!commentsEnabled){toggleComments();acted.push("💬コメントON");}
+  const t=normalizeTimer(state.timer);
+  if(!t.running){const btn=document.getElementById("timerStartBtn");if(btn)btn.click();acted.push("⏱タイマー開始");}
+  if(acted.length)toast("🚀 "+acted.join(" / "));else toast("既に配信中");
+};
+window.endStream=function(){
+  if(!confirm("配信を終了しますか？
+・コメントOFF
+・タイマー停止
+・サマリー生成"))return;
+  if(commentsEnabled){toggleComments();}
+  const t=normalizeTimer(state.timer);
+  if(t.running){state.timer.running=false;state.timer.endAt=0;updateClock();}
+  saveSettings();
+  if(typeof window.genSummary==="function"){window.genSummary();toast("✓ 配信終了 - サマリーを確認");}
+  else toast("✓ 配信終了");
+};
+window.toggleFreeze=function(){
+  const st=document.querySelector(".stage");if(!st)return;
+  const frozen=st.classList.toggle("frozen");
+  const btn=document.querySelector('[onclick*="toggleFreeze"]');
+  if(btn)btn.textContent=frozen?"▶":"⏸";
+  toast(frozen?"❄ ステージ停止":"▶ ステージ再生");
+};
+  window.downloadSettings = function(){
+  try{
+    const data = localStorage.getItem("rainybrain_anime_stream_v1") || "{}";
+    const blob = new Blob([data], {type:"application/json"});
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "rainybrain_anime_backup.json";
+    a.click();
+    toast("⬇ 設定をダウンロード ✓");
+  }catch{toast("ダウンロード失敗");}
+};
+window.resetSettings = function(){if(!confirm("設定をリセットしますか？（タイトル・評価・メモ等が消えます）"))return;localStorage.removeItem("rainybrain_anime_stream_v1");localStorage.removeItem("rb_anime_memos");localStorage.removeItem("rb_panel_hidden");localStorage.removeItem("rb_sec_states");toast("設定をリセットしました");setTimeout(()=>location.reload(),800);};
+
+  // ハッシュタグ履歴
+  const HT_HIST_KEY="rb_ht_history";
+  function saveHashtagHistory(){
+    const val=(document.getElementById("hashtagText")||{}).value||"";
+    if(!val.trim())return;
+    try{
+      const hist=JSON.parse(localStorage.getItem(HT_HIST_KEY)||"[]");
+      const next=[val,...hist.filter(h=>h!==val)].slice(0,6);
+      localStorage.setItem(HT_HIST_KEY,JSON.stringify(next));
+      populateHashtagDatalist();
+    }catch{}
+  }
+  function populateHashtagDatalist(){
+    const dl=document.getElementById("hashtagHistoryList");if(!dl)return;
+    try{
+      const hist=JSON.parse(localStorage.getItem(HT_HIST_KEY)||"[]");
+      dl.innerHTML=hist.map(h=>`<option value="${h.replace(/"/g,"&quot;")}"></option>`).join("");
+    }catch{}
+  }
+  populateHashtagDatalist();
+  document.getElementById("applyBtn")?.addEventListener("click",saveHashtagHistory,{capture:true});
 
 })();
 

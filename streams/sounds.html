@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RAINYBRAIN 編集音ボード</title>
+<style>
+:root {
+  --accent: #a78bfa;
+  --accent-rgb: 167,139,250;
+  --bg: #0f0e17;
+  --surface: rgba(255,255,255,.045);
+  --border: rgba(255,255,255,.1);
+  --text: #f7f8fb;
+  --muted: rgba(247,248,251,.5);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:"Yu Gothic","Hiragino Kaku Gothic ProN",sans-serif;min-height:100vh;padding:16px;}
+h1{font-size:17px;font-weight:900;letter-spacing:.06em;color:var(--accent);margin-bottom:16px;}
+h1 span{color:var(--muted);font-weight:400;font-size:12px;margin-left:8px;}
+
+/* Top bar */
+.topbar{display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap;}
+.topbar input[type=range]{width:100px;accent-color:var(--accent);}
+.topbar label{font-size:11px;color:var(--muted);}
+#volVal{font-size:11px;color:var(--accent);width:30px;}
+.search{flex:1;min-width:140px;padding:5px 10px;background:var(--surface);border:1px solid var(--border);border-radius:7px;color:var(--text);font-size:12px;}
+.search::placeholder{color:var(--muted);}
+.search:focus{outline:none;border-color:rgba(var(--accent-rgb),.5);}
+.cat-filter{display:flex;gap:6px;flex-wrap:wrap;}
+.cat-btn{padding:3px 10px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:10px;cursor:pointer;transition:all .15s;}
+.cat-btn.active,.cat-btn:hover{border-color:rgba(var(--accent-rgb),.5);background:rgba(var(--accent-rgb),.1);color:var(--text);}
+
+/* Add form */
+.add-form{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:16px;display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;}
+.add-form label{font-size:10px;color:var(--muted);display:block;margin-bottom:3px;}
+.add-form input,.add-form select{padding:5px 8px;background:rgba(255,255,255,.06);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:11px;}
+.add-form input:focus,.add-form select:focus{outline:none;border-color:rgba(var(--accent-rgb),.5);}
+.fi-name{flex:1;min-width:100px;}
+.fi-url{flex:3;min-width:200px;}
+.fi-cat{width:110px;}
+.fi-key{width:60px;}
+.add-btn{padding:5px 14px;background:rgba(var(--accent-rgb),.2);border:1px solid rgba(var(--accent-rgb),.4);border-radius:6px;color:var(--accent);font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;}
+.add-btn:hover{background:rgba(var(--accent-rgb),.35);}
+
+/* Sound grid */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;}
+.sound-card{position:relative;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 12px 28px;cursor:pointer;transition:background .12s,border-color .15s,transform .1s;user-select:none;}
+.sound-card:hover{background:rgba(var(--accent-rgb),.08);border-color:rgba(var(--accent-rgb),.3);}
+.sound-card:active{transform:scale(.96);}
+.sound-card.playing{border-color:rgba(var(--accent-rgb),.7);background:rgba(var(--accent-rgb),.14);animation:card-play .15s ease-out;}
+@keyframes card-play{0%{transform:scale(1)}50%{transform:scale(1.04)}100%{transform:scale(1)}}
+.sc-name{font-size:12px;font-weight:700;word-break:break-all;line-height:1.4;}
+.sc-cat{font-size:9px;color:var(--muted);margin-top:3px;}
+.sc-key{position:absolute;top:6px;right:8px;font-size:9px;font-weight:900;color:rgba(var(--accent-rgb),.6);background:rgba(var(--accent-rgb),.1);border-radius:3px;padding:1px 4px;}
+.sc-del{position:absolute;bottom:5px;right:6px;font-size:9px;opacity:0;padding:2px 6px;border-radius:4px;background:rgba(255,80,80,.15);border:1px solid rgba(255,80,80,.25);color:rgba(255,120,120,.8);cursor:pointer;transition:opacity .15s;}
+.sound-card:hover .sc-del{opacity:1;}
+.sc-playing-bar{position:absolute;bottom:0;left:0;height:2px;background:rgba(var(--accent-rgb),.7);border-radius:0 0 10px 10px;width:0%;transition:width linear;}
+
+/* Toast */
+#toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(10px);background:rgba(30,28,45,.95);border:1px solid var(--border);border-radius:8px;padding:7px 16px;font-size:12px;opacity:0;transition:opacity .2s,transform .2s;pointer-events:none;z-index:999;}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+/* Empty state */
+.empty{text-align:center;color:var(--muted);font-size:12px;padding:40px 20px;}
+.empty strong{display:block;font-size:20px;margin-bottom:8px;}
+
+/* Help */
+.help{background:rgba(var(--accent-rgb),.06);border:1px solid rgba(var(--accent-rgb),.15);border-radius:8px;padding:10px 14px;font-size:10px;color:var(--muted);line-height:1.7;margin-bottom:14px;}
+.help strong{color:rgba(var(--accent-rgb),.9);}
+
+button:active:not(:disabled){transform:scale(.96);}
+:focus-visible{outline:2px solid rgba(var(--accent-rgb),.7);outline-offset:2px;}
+::-webkit-scrollbar{width:4px;height:4px;}
+::-webkit-scrollbar-thumb{background:rgba(255,255,255,.15);border-radius:999px;}
+</style>
+</head>
+<body>
+<h1>🎵 RAINYBRAIN 編集音ボード<span>動画編集・配信用サウンド</span></h1>
+
+<div class="help">
+  <strong>myinstants の音の URL の取得方法:</strong>
+  myinstants.com で音を見つけ → ボタンを右クリック →「音声の URL をコピー」→ 下の URL 欄に貼り付け。
+  または <code>https://www.myinstants.com/media/sounds/xxx.mp3</code> 形式で直接入力。
+  <br>キーボードショートカット: 各音に <code>1〜9</code> などのキーを割り当て可能。
+</div>
+
+<div class="add-form">
+  <div class="fi-name">
+    <label>名前</label>
+    <input id="inpName" type="text" placeholder="ドラムロール" maxlength="40" autocomplete="off">
+  </div>
+  <div class="fi-url">
+    <label>音声URL（MP3/OGG など）</label>
+    <input id="inpUrl" type="url" placeholder="https://www.myinstants.com/media/sounds/..." autocomplete="off">
+  </div>
+  <div class="fi-cat">
+    <label>カテゴリ</label>
+    <select id="inpCat">
+      <option value="効果音">効果音</option>
+      <option value="ドラム">ドラム</option>
+      <option value="コミカル">コミカル</option>
+      <option value="BGM">BGM</option>
+      <option value="アニメ">アニメ</option>
+      <option value="ゲーム">ゲーム</option>
+      <option value="その他">その他</option>
+    </select>
+  </div>
+  <div class="fi-key">
+    <label>キー（任意）</label>
+    <input id="inpKey" type="text" placeholder="1" maxlength="1" autocomplete="off">
+  </div>
+  <button class="add-btn" onclick="addSound()">＋ 追加</button>
+</div>
+
+<div class="topbar">
+  <label>🔊 音量</label>
+  <input type="range" id="volSlider" min="0" max="100" value="80" oninput="setVol(this.value)">
+  <span id="volVal">80%</span>
+  <input class="search" type="text" id="searchInput" placeholder="🔍 音を検索…" oninput="renderGrid()">
+  <div class="cat-filter" id="catFilter"></div>
+  <button onclick="stopAll()" style="font-size:10px;padding:4px 10px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;" title="全停止">⏹ 全停止</button>
+  <button onclick="clearAll()" style="font-size:10px;padding:4px 10px;border-radius:6px;border:1px solid rgba(255,80,80,.25);background:transparent;color:rgba(255,120,120,.6);cursor:pointer;">🗑 全削除</button>
+</div>
+
+<div class="grid" id="soundGrid"></div>
+<div id="toast"></div>
+
+<script>
+(() => {
+"use strict";
+
+const STORE_KEY = "rb_sounds_v1";
+let sounds = [];
+let volume = 0.8;
+let activeCategory = "すべて";
+const audioCache = {};
+let _toastQ=[],_toastBusy=false;
+function toast(msg){_toastQ.push(msg);if(!_toastBusy)_nextToast();}
+function _nextToast(){if(!_toastQ.length){_toastBusy=false;return;}_toastBusy=true;const msg=_toastQ.shift();const el=document.getElementById("toast");el.textContent=msg;el.classList.add("show");setTimeout(()=>{el.classList.remove("show");setTimeout(_nextToast,150);},2000);}
+
+function load(){
+  try{sounds=JSON.parse(localStorage.getItem(STORE_KEY)||"[]");}catch{sounds=[];}
+}
+function save(){
+  localStorage.setItem(STORE_KEY,JSON.stringify(sounds));
+}
+
+function setVol(v){
+  volume=v/100;
+  document.getElementById("volVal").textContent=v+"%";
+  Object.values(audioCache).forEach(a=>{try{a.volume=volume;}catch{}});
+}
+
+function getCategories(){
+  const cats=["すべて",...new Set(sounds.map(s=>s.cat||"その他"))];
+  return cats;
+}
+
+function renderCatFilter(){
+  const cats=getCategories();
+  const el=document.getElementById("catFilter");
+  el.innerHTML=cats.map(c=>`<button class="cat-btn${c===activeCategory?" active":""}" onclick="setCategory('${c.replace(/'/g,"\\'")}')"> ${c}</button>`).join("");
+}
+
+function setCategory(c){
+  activeCategory=c;
+  renderCatFilter();
+  renderGrid();
+}
+
+function renderGrid(){
+  const grid=document.getElementById("soundGrid");
+  const q=(document.getElementById("searchInput").value||"").toLowerCase();
+  let list=sounds;
+  if(activeCategory!=="すべて")list=list.filter(s=>(s.cat||"その他")===activeCategory);
+  if(q)list=list.filter(s=>s.name.toLowerCase().includes(q)||(s.cat||"").toLowerCase().includes(q));
+
+  if(!list.length){
+    grid.innerHTML=`<div class="empty" style="grid-column:1/-1;"><strong>🎵</strong>${sounds.length===0?"音をまだ追加していません":"一致する音がありません"}<br><span style="font-size:10px;">上のフォームから追加してください</span></div>`;
+    return;
+  }
+
+  grid.innerHTML=list.map((s,i)=>{
+    const origIdx=sounds.indexOf(s);
+    return `<div class="sound-card" id="card_${origIdx}" onclick="playSound(${origIdx})" title="${s.url}">
+      <div class="sc-name">${s.name}</div>
+      <div class="sc-cat">${s.cat||"その他"}</div>
+      ${s.key?`<div class="sc-key">${s.key}</div>`:""}
+      <div class="sc-playing-bar" id="bar_${origIdx}"></div>
+      <button class="sc-del" onclick="event.stopPropagation();deleteSound(${origIdx})" type="button">✕ 削除</button>
+    </div>`;
+  }).join("");
+}
+
+function playSound(idx){
+  const s=sounds[idx];
+  if(!s)return;
+  stopAll();
+  let audio=audioCache[idx];
+  if(!audio){
+    audio=new Audio(s.url);
+    audio.volume=volume;
+    audioCache[idx]=audio;
+  }else{
+    audio.currentTime=0;
+    audio.volume=volume;
+  }
+  const card=document.getElementById("card_"+idx);
+  const bar=document.getElementById("bar_"+idx);
+  audio.play().catch(e=>{toast("再生失敗: "+s.name);console.error(e);});
+  if(card)card.classList.add("playing");
+  if(bar)bar.style.transition="none";
+  if(bar)bar.style.width="0%";
+  audio.addEventListener("loadedmetadata",()=>{
+    if(bar&&audio.duration){
+      requestAnimationFrame(()=>{
+        bar.style.transition=`width ${audio.duration}s linear`;
+        bar.style.width="100%";
+      });
+    }
+  },{once:true});
+  audio.addEventListener("ended",()=>{
+    if(card)card.classList.remove("playing");
+    if(bar){bar.style.transition="none";bar.style.width="0%";}
+  },{once:true});
+  toast("▶ "+s.name);
+}
+
+function stopAll(){
+  Object.entries(audioCache).forEach(([idx,a])=>{
+    try{a.pause();a.currentTime=0;}catch{}
+    const card=document.getElementById("card_"+idx);
+    const bar=document.getElementById("bar_"+idx);
+    if(card)card.classList.remove("playing");
+    if(bar){bar.style.transition="none";bar.style.width="0%";}
+  });
+}
+
+function addSound(){
+  const name=(document.getElementById("inpName").value||"").trim();
+  const url=(document.getElementById("inpUrl").value||"").trim();
+  const cat=document.getElementById("inpCat").value||"効果音";
+  const key=(document.getElementById("inpKey").value||"").trim().slice(0,1);
+  if(!name){toast("名前を入力してください");return;}
+  if(!url){toast("URL を入力してください");return;}
+  sounds.push({name,url,cat,key,addedAt:Date.now()});
+  save();
+  document.getElementById("inpName").value="";
+  document.getElementById("inpUrl").value="";
+  document.getElementById("inpKey").value="";
+  renderCatFilter();
+  renderGrid();
+  toast("✓ 追加: "+name);
+}
+
+function deleteSound(idx){
+  if(!confirm("「"+sounds[idx].name+"」を削除しますか？"))return;
+  delete audioCache[idx];
+  sounds.splice(idx,1);
+  save();
+  renderCatFilter();
+  renderGrid();
+  toast("削除しました");
+}
+
+function clearAll(){
+  if(!sounds.length)return;
+  if(!confirm("全"+sounds.length+"件を削除しますか？"))return;
+  sounds=[];
+  Object.keys(audioCache).forEach(k=>delete audioCache[k]);
+  save();
+  renderCatFilter();
+  renderGrid();
+  toast("全削除しました");
+}
+
+// Keyboard shortcuts
+document.addEventListener("keydown",e=>{
+  if(document.activeElement.tagName==="INPUT"||document.activeElement.tagName==="TEXTAREA")return;
+  if(e.key==="Escape"){stopAll();return;}
+  const s=sounds.find(s=>s.key===e.key);
+  if(s){const idx=sounds.indexOf(s);playSound(idx);}
+});
+
+// Enter key in form
+["inpName","inpUrl","inpCat","inpKey"].forEach(id=>{
+  document.getElementById(id)?.addEventListener("keydown",e=>{if(e.key==="Enter")addSound();});
+});
+
+// Init
+load();
+renderCatFilter();
+renderGrid();
+
+})();
+</script>
+</body>
+</html>
