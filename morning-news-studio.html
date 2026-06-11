@@ -2775,6 +2775,8 @@ let _thumbShadowColor = '#000000';
 let _thumbRefLabel = ''; // 現在選択中のキャラ名
 
 function renderThumbPanel() {
+  // テキスト位置をlocalStorageから復元（未設定時のみ）
+  if (!window._thumbTextPos) window._thumbTextPos = localStorage.getItem('ms_thumb_textpos_v1') || 'bot';
   // ユーザーが入力済みのテキストを優先、なければ自動提案
   const suggestedText = _thumbMainTextVal || generatedMeta?.thumb_text_horizontal || (window._parsedThumbTexts?.[0] || '');
   const _autoDate = (() => {
@@ -2856,7 +2858,7 @@ function renderThumbPanel() {
               const pos=['top','mid','bot'][i];
               return `<button class="btn btn-secondary btn-sm" id="txtpos_${pos}"
                 style="padding:3px 10px;font-size:.72rem;${(window._thumbTextPos||'bot')===pos?'border-color:var(--char-color);background:rgba(212,168,67,.15);':''}"
-                onclick="window._thumbTextPos='${pos}';['top','mid','bot'].forEach(p=>{const b=document.getElementById('txtpos_'+p);if(b)b.style.cssText=b.style.cssText.replace(/border-color[^;]+;/,'').replace(/background[^;]+;/,'');});this.style.borderColor='var(--char-color)';this.style.background='rgba(212,168,67,.15)';redrawThumb();">${v}</button>`;
+                onclick="window._thumbTextPos='${pos}';localStorage.setItem('ms_thumb_textpos_v1','${pos}');['top','mid','bot'].forEach(p=>{const b=document.getElementById('txtpos_'+p);if(b)b.style.cssText=b.style.cssText.replace(/border-color[^;]+;/,'').replace(/background[^;]+;/,'');});this.style.borderColor='var(--char-color)';this.style.background='rgba(212,168,67,.15)';redrawThumb();">${v}</button>`;
             }).join('')}
           </div>
         </div>
