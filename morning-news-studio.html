@@ -2970,13 +2970,20 @@ function initThumbCanvas() {
   thumbCanvas = document.getElementById('thumbCanvas');
   if (!thumbCanvas) return;
   thumbCtx = thumbCanvas.getContext('2d');
-  // localStorage からキャラ画像復元
-  if (thumbRefDataUrl && !_thumbRefImg) {
-    const img = new Image();
-    img.onload = () => { _thumbRefImg = img; redrawThumb(); };
-    img.src = thumbRefDataUrl;
+  // Google Fonts 読み込み完了を待ってからキャンバスを描画（フォント未読みのまま描画するとテキストが崩れる）
+  const doInit = () => {
+    if (thumbRefDataUrl && !_thumbRefImg) {
+      const img = new Image();
+      img.onload = () => { _thumbRefImg = img; redrawThumb(); };
+      img.src = thumbRefDataUrl;
+    } else {
+      redrawThumb();
+    }
+  };
+  if (document.fonts?.ready) {
+    document.fonts.ready.then(doInit);
   } else {
-    redrawThumb();
+    doInit();
   }
 }
 
