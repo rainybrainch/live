@@ -2857,10 +2857,10 @@ function renderThumbPanel() {
           <div style="margin-bottom:10px;">
             <div style="font-size:.7rem;color:var(--text-muted);margin-bottom:5px;">位置プリセット</div>
             <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;">
-              <button class="btn btn-secondary btn-sm" style="padding:4px;font-size:.7rem;" onclick="setCharPos(810,1500)">右下</button>
-              <button class="btn btn-secondary btn-sm" style="padding:4px;font-size:.7rem;" onclick="setCharPos(270,1500)">左下</button>
-              <button class="btn btn-secondary btn-sm" style="padding:4px;font-size:.7rem;" onclick="setCharPos(810,500)">右上</button>
-              <button class="btn btn-secondary btn-sm" style="padding:4px;font-size:.7rem;" onclick="setCharPos(540,960)">中央</button>
+              ${[['右下',810,1500],['左下',270,1500],['右上',810,500],['中央',540,960]].map(([label,x,y])=>{
+                const active = Math.abs(thumbRef.x-x)<5 && Math.abs(thumbRef.y-y)<5;
+                return `<button class="btn btn-secondary btn-sm" style="padding:4px;font-size:.7rem;${active?'border-color:var(--char-color);background:rgba(212,168,67,.18);font-weight:700;':''}" onclick="setCharPos(${x},${y})">${label}</button>`;
+              }).join('')}
             </div>
           </div>
           <!-- サイズスライダー -->
@@ -2982,6 +2982,7 @@ async function loadThumbBgFromUrl(url, label) {
 
 function clearThumbBg() {
   thumbBgDataUrl = '';
+  _thumbBgImgCache = null; _thumbBgUrlCache = '';
   localStorage.removeItem('ms_thumb_bg_v1');
   const panel = document.getElementById('panelThumb');
   if (panel) panel.outerHTML = renderThumbPanel();
@@ -2991,7 +2992,9 @@ function clearThumbBg() {
 function setCharPos(x, y) {
   thumbRef.x = x; thumbRef.y = y;
   _saveThumbRefState();
-  redrawThumb();
+  const el = document.getElementById('panelThumb');
+  if (el) el.outerHTML = renderThumbPanel();
+  setTimeout(initThumbCanvas, 50);
 }
 
 function loadThumbRef(input) {
@@ -3042,6 +3045,16 @@ let thumbRef = (() => { try { return { ..._thumbRefDefault, ...JSON.parse(localS
 function _saveThumbRefState() { localStorage.setItem('ms_thumb_ref_state_v1', JSON.stringify(thumbRef)); }
 let _thumbRefImg = null;
 let _thumbDrawToken = 0;
+let _thumbBgImgCache = null;
+let _thumbBgUrlCache = '';
+
+function _getThumbBgImg(cb) {
+  if (!thumbBgDataUrl) { cb(null); return; }
+  if (_thumbBgImgCache && _thumbBgUrlCache === thumbBgDataUrl) { cb(_thumbBgImgCache); return; }
+  const img = new Image();
+  img.onload = () => { _thumbBgImgCache = img; _thumbBgUrlCache = thumbBgDataUrl; cb(img); };
+  img.src = thumbBgDataUrl;
+}
 
 function redrawThumb() {
   if (!thumbCtx) { initThumbCanvas(); return; }
@@ -3102,20 +3115,17 @@ function redrawThumb() {
     }
   };
 
-  if (thumbBgDataUrl) {
-    const img = new Image();
-    img.onload = () => {
-      if (token !== _thumbDrawToken) return; // 古い描画は破棄
+  _getThumbBgImg(img => {
+    if (token !== _thumbDrawToken) return;
+    if (img) {
       thumbCtx.drawImage(img, 0, 0, W, H);
-      drawOverlay();
-    };
-    img.src = thumbBgDataUrl;
-  } else {
-    const grad = thumbCtx.createLinearGradient(0, 0, W, H);
-    grad.addColorStop(0, '#0d1a2e'); grad.addColorStop(1, '#1a2e45');
-    thumbCtx.fillStyle = grad; thumbCtx.fillRect(0, 0, W, H);
+    } else {
+      const grad = thumbCtx.createLinearGradient(0, 0, W, H);
+      grad.addColorStop(0, '#0d1a2e'); grad.addColorStop(1, '#1a2e45');
+      thumbCtx.fillStyle = grad; thumbCtx.fillRect(0, 0, W, H);
+    }
     drawOverlay();
-  }
+  });
 }
 
 // 参照画像が変わった時にキャッシュ更新
