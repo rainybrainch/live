@@ -2769,13 +2769,14 @@ let thumbRefDataUrl = localStorage.getItem('ms_thumb_ref_v1') || '';
 let thumbCanvas, thumbCtx;
 let _parsedNewsDate = '';
 let _thumbMainTextVal = ''; // パネル再描画をまたいでタイトルを保持
+let _thumbDateTextVal = ''; // 日付テキストもパネル再描画で保持
 let _thumbTextColor  = '#FFFFFF';
 let _thumbShadowColor = '#000000';
 
 function renderThumbPanel() {
   // ユーザーが入力済みのテキストを優先、なければ自動提案
   const suggestedText = _thumbMainTextVal || generatedMeta?.thumb_text_horizontal || (window._parsedThumbTexts?.[0] || '');
-  const autoDate = (() => {
+  const _autoDate = (() => {
     const d = _parsedNewsDate || document.getElementById('newsDate')?.value || new Date().toISOString().slice(0,10);
     const m = d.match(/(\d{4})-(\d{2})-(\d{2})/);
     if (m) {
@@ -2865,7 +2866,7 @@ function renderThumbPanel() {
           <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;align-items:end;">
             <div>
               <div style="font-size:.7rem;color:var(--text-muted);margin-bottom:4px;">日付</div>
-              <input type="text" id="thumbDateText" value="${escHtml(autoDate)}" oninput="redrawThumb()" style="padding:6px 8px;font-size:.85rem;">
+              <input type="text" id="thumbDateText" value="${escHtml(_thumbDateTextVal || _autoDate)}" oninput="_thumbDateTextVal=this.value;redrawThumb()" style="padding:6px 8px;font-size:.85rem;">
             </div>
             <div>
               <div style="font-size:.7rem;color:var(--text-muted);margin-bottom:4px;">テキスト色</div>
