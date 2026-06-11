@@ -2864,11 +2864,21 @@ function renderThumbPanel() {
             </div>
             <div>
               <div style="font-size:.7rem;color:var(--text-muted);margin-bottom:4px;">テキスト色</div>
-              <input type="color" id="thumbTextColor" value="${_thumbTextColor}" oninput="_thumbTextColor=this.value;redrawThumb()" style="height:34px;width:100%;cursor:pointer;border-radius:6px;">
+              <div style="display:flex;gap:5px;align-items:center;">
+                <input type="color" id="thumbTextColor" value="${_thumbTextColor}" oninput="_thumbTextColor=this.value;document.getElementById('thumbTextColorHex').value=this.value;redrawThumb()" style="height:34px;width:40px;flex-shrink:0;cursor:pointer;border-radius:5px;padding:2px;">
+                <input type="text" id="thumbTextColorHex" value="${_thumbTextColor}" maxlength="7" placeholder="#ffffff"
+                  oninput="const v=this.value;if(/^#[0-9a-fA-F]{6}$/.test(v)){document.getElementById('thumbTextColor').value=v;_thumbTextColor=v;redrawThumb();}"
+                  style="flex:1;font-size:.75rem;font-family:monospace;padding:5px 6px;min-width:0;">
+              </div>
             </div>
             <div>
               <div style="font-size:.7rem;color:var(--text-muted);margin-bottom:4px;">影の色</div>
-              <input type="color" id="thumbShadowColor" value="${_thumbShadowColor}" oninput="_thumbShadowColor=this.value;redrawThumb()" style="height:34px;width:100%;cursor:pointer;border-radius:6px;">
+              <div style="display:flex;gap:5px;align-items:center;">
+                <input type="color" id="thumbShadowColor" value="${_thumbShadowColor}" oninput="_thumbShadowColor=this.value;document.getElementById('thumbShadowColorHex').value=this.value;redrawThumb()" style="height:34px;width:40px;flex-shrink:0;cursor:pointer;border-radius:5px;padding:2px;">
+                <input type="text" id="thumbShadowColorHex" value="${_thumbShadowColor}" maxlength="7" placeholder="#000000"
+                  oninput="const v=this.value;if(/^#[0-9a-fA-F]{6}$/.test(v)){document.getElementById('thumbShadowColor').value=v;_thumbShadowColor=v;redrawThumb();}"
+                  style="flex:1;font-size:.75rem;font-family:monospace;padding:5px 6px;min-width:0;">
+              </div>
             </div>
           </div>
         </div>
