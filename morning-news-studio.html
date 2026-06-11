@@ -3184,7 +3184,7 @@ function redrawThumb() {
       // テキスト描画
       thumbCtx.shadowColor = shadowCol; thumbCtx.shadowBlur = 18;
       thumbCtx.fillStyle = textColor;
-      wrapText(thumbCtx, mainText, 60, ty, W - 120, lineHeight);
+      drawWrapText(thumbCtx, mainText, 60, ty, W - 120, lineHeight);
       thumbCtx.restore();
     }
   });
@@ -3301,7 +3301,7 @@ function _updateThumbRefImg(dataUrl) {
   document.addEventListener('touchend', () => { if (drag || pinchDist) _saveThumbRefState(); drag = null; pinchDist = 0; });
 })();
 
-function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
+function drawWrapText(ctx, text, x, y, maxWidth, lineHeight) {
   const chars = [...text];
   let line = '';
   let lineY = y;
