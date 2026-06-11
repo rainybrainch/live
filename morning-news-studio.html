@@ -2835,11 +2835,11 @@ function renderThumbPanel() {
           <div style="position:relative;">
             <input type="text" id="thumbMainText" value="${escHtml(suggestedText)}"
               placeholder="例: 日経38,500円突破！今日の注目ニュース"
-              oninput="_thumbMainTextVal=this.value;redrawThumb();const n=this.value.length;const lbl=document.getElementById('thumbCharCount');if(lbl){lbl.textContent=n+'文字';lbl.style.color=n>16?'#e57373':'var(--char-color)';}"
+              oninput="_thumbMainTextVal=this.value;redrawThumb();const n=this.value.length;const lbl=document.getElementById('thumbCharCount');if(lbl){lbl.textContent=n+'文字';lbl.style.color=n>22?'#e57373':n>16?'#ff9800':'var(--char-color)';}"
               style="margin-bottom:4px;padding-right:64px;">
             <span id="thumbCharCount" style="position:absolute;right:10px;top:50%;transform:translateY(-80%);font-size:.68rem;color:${suggestedText.length>16?'#e57373':'var(--char-color)'};pointer-events:none;">${suggestedText.length}文字</span>
           </div>
-          <div style="font-size:.68rem;color:var(--text-muted);margin-bottom:8px;">16文字以内: 大フォント / 17文字以上: 小フォント</div>
+          <div style="font-size:.68rem;color:var(--text-muted);margin-bottom:8px;">〜12字: 最大 / 13〜16字: 大 / 17〜22字: 中 / 23字〜: 小</div>
           <!-- テキスト縦位置 -->
           <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
             <span style="font-size:.72rem;color:var(--text-muted);">位置:</span>
@@ -3155,7 +3155,8 @@ function redrawThumb() {
     // ⑥ メインタイトル（縦位置対応）
     if (mainText) {
       thumbCtx.save();
-      const fontSize = mainText.length > 16 ? 88 : 108;
+      const len = mainText.length;
+      const fontSize = len <= 12 ? 120 : len <= 16 ? 100 : len <= 22 ? 84 : 72;
       thumbCtx.font = `bold ${fontSize}px "Noto Sans JP","Hiragino Kaku Gothic ProN",sans-serif`;
       const pos = window._thumbTextPos || 'bot';
       const lineHeight = Math.round(fontSize * 1.25);
