@@ -2777,6 +2777,7 @@ let _thumbBadgeVisible = localStorage.getItem('ms_thumb_badge_v1') !== 'false';
 let _thumbBandOpacity = parseFloat(localStorage.getItem('ms_thumb_bandop_v1') || '0.45');
 let _thumbFlipChar = localStorage.getItem('ms_thumb_flip_v1') === 'true';
 let _thumbFontSizeOverride = parseInt(localStorage.getItem('ms_thumb_fontsize_v1') || '0', 10) || null;
+let _thumbBgBrightness = parseFloat(localStorage.getItem('ms_thumb_bgbright_v1') || '1.0');
 let _thumbRefLabel = ''; // 現在選択中のキャラ名
 
 function renderThumbPanel() {
@@ -2830,6 +2831,14 @@ function renderThumbPanel() {
             ${thumbBgDataUrl ? `<button class="btn btn-secondary btn-sm" style="padding:5px 10px;font-size:.72rem;color:#e57373;" onclick="clearThumbBg()">✕ クリア</button>` : ''}
           </div>
           ${thumbBgDataUrl ? `<div style="font-size:.7rem;color:#4caf50;">✅ 設定済み（次回も保持）</div>` : `<div style="font-size:.7rem;color:var(--text-muted);">未選択（一度設定すると次回も記憶）</div>`}
+          <div style="margin-top:8px;">
+            <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+              <span style="font-size:.7rem;color:var(--text-muted);">背景の明るさ</span>
+              <span id="bgBrightLbl" style="font-size:.7rem;color:var(--char-color);">${Math.round(_thumbBgBrightness*100)}%</span>
+            </div>
+            <input type="range" min="20" max="150" value="${Math.round(_thumbBgBrightness*100)}" step="5" style="width:100%;"
+              oninput="_thumbBgBrightness=+this.value/100;localStorage.setItem('ms_thumb_bgbright_v1',_thumbBgBrightness);document.getElementById('bgBrightLbl').textContent=this.value+'%';redrawThumb();">
+          </div>
         </div>
 
         <!-- ② タイトル文字 -->
@@ -3193,7 +3202,9 @@ function redrawThumb() {
 
     // ① 背景
     if (img) {
+      thumbCtx.filter = `brightness(${_thumbBgBrightness})`;
       thumbCtx.drawImage(img, 0, 0, W, H);
+      thumbCtx.filter = 'none';
     } else {
       const grad = thumbCtx.createLinearGradient(0, 0, W, H);
       grad.addColorStop(0, '#0d1a2e'); grad.addColorStop(1, '#1a2e45');
