@@ -2819,7 +2819,10 @@ function renderThumbPanel() {
         <!-- ヘッダー -->
         <div style="display:flex;justify-content:space-between;align-items:center;">
           <div style="font-size:.9rem;font-weight:700;color:var(--char-color);">🖼 サムネイル作成</div>
-          <button class="btn btn-secondary btn-sm" onclick="switchTab('meta')">← 概要・タイトルへ</button>
+          <div style="display:flex;gap:6px;">
+            <button class="btn btn-secondary btn-sm" style="padding:3px 8px;font-size:.68rem;color:#e57373;" onclick="if(confirm('全サムネ設定をリセットしますか？')){['ms_thumb_bg_v1','ms_thumb_ref_v1','ms_thumb_ref_state_v1','ms_thumb_textpos_v1','ms_thumb_textcol_v1','ms_thumb_shadowcol_v1','ms_thumb_shadowblur_v1','ms_thumb_bandop_v1','ms_thumb_badge_v1','ms_thumb_flip_v1','ms_thumb_fontsize_v1','ms_thumb_bgbright_v1','ms_thumb_gradop_v1','ms_thumb_datecol_v1'].forEach(k=>localStorage.removeItem(k));location.reload();}">↺ 設定初期化</button>
+            <button class="btn btn-secondary btn-sm" onclick="switchTab('meta')">← 概要・タイトルへ</button>
+          </div>
         </div>
 
         <!-- ① 背景 -->
