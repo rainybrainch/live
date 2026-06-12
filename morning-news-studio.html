@@ -3148,6 +3148,8 @@ function _saveThumbRefState() { localStorage.setItem('ms_thumb_ref_state_v1', JS
 function resetThumbRef() {
   Object.assign(thumbRef, _thumbRefDefault);
   _saveThumbRefState();
+  _thumbFlipChar = false;
+  localStorage.removeItem('ms_thumb_flip_v1');
   const el = document.getElementById('panelThumb');
   if (el) el.outerHTML = renderThumbPanel();
   setTimeout(initThumbCanvas, 50);
