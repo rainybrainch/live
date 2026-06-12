@@ -2847,11 +2847,11 @@ function renderThumbPanel() {
           <div style="position:relative;">
             <input type="text" id="thumbMainText" value="${escHtml(suggestedText)}"
               placeholder="例: 日経38,500円突破！今日の注目ニュース"
-              oninput="_thumbMainTextVal=this.value;redrawThumb();const n=this.value.length;const lbl=document.getElementById('thumbCharCount');if(lbl){lbl.textContent=n+'文字';lbl.style.color=n>22?'#e57373':n>16?'#ff9800':'var(--char-color)';}"
+              oninput="_thumbMainTextVal=this.value;redrawThumb();const n=this.value.length;const lbl=document.getElementById('thumbCharCount');if(lbl){lbl.textContent=n+'文字';lbl.style.color=n>22?'#e57373':n>16?'#ff9800':'var(--char-color)';}const hint=document.getElementById('thumbFontHint');if(hint)hint.innerHTML=_thumbFontTier(n);"
               style="margin-bottom:4px;padding-right:64px;">
             <span id="thumbCharCount" style="position:absolute;right:10px;top:50%;transform:translateY(-80%);font-size:.68rem;color:${suggestedText.length>16?'#e57373':'var(--char-color)'};pointer-events:none;">${suggestedText.length}文字</span>
           </div>
-          <div style="font-size:.68rem;color:var(--text-muted);margin-bottom:8px;">〜12字: 最大 / 13〜16字: 大 / 17〜22字: 中 / 23字〜: 小</div>
+          <div id="thumbFontHint" style="font-size:.68rem;margin-bottom:8px;">${_thumbFontTier(suggestedText.length)}</div>
           <!-- テキスト縦位置 -->
           <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
             <span style="font-size:.72rem;color:var(--text-muted);">位置:</span>
@@ -3375,6 +3375,11 @@ function drawWrapText(ctx, text, x, y, maxWidth, lineHeight) {
   }
 }
 
+function _thumbFontTier(n) {
+  const tiers = [['〜12字','最大',n<=12],['13〜16字','大',n>=13&&n<=16],['17〜22字','中',n>=17&&n<=22],['23字〜','小',n>=23]];
+  return tiers.map(([range,size,active])=>`<span style="color:${active?'var(--char-color)':'var(--text-muted)'};font-weight:${active?'700':'400'};">${range}: ${size}</span>`).join('<span style="color:var(--text-muted);"> / </span>');
+}
+
 function _setThumbTitle(t) {
   _thumbMainTextVal = t;
   const inp = document.getElementById('thumbMainText');
@@ -3382,6 +3387,8 @@ function _setThumbTitle(t) {
   const n = [...t].length;
   const lbl = document.getElementById('thumbCharCount');
   if (lbl) { lbl.textContent = n + '文字'; lbl.style.color = n > 22 ? '#e57373' : n > 16 ? '#ff9800' : 'var(--char-color)'; }
+  const hint = document.getElementById('thumbFontHint');
+  if (hint) hint.innerHTML = _thumbFontTier(n);
   redrawThumb();
 }
 
