@@ -2890,6 +2890,15 @@ function renderThumbPanel() {
               </div>
             </div>
           </div>
+          <!-- テキスト色クイックプリセット -->
+          <div style="display:flex;gap:5px;align-items:center;margin-top:8px;flex-wrap:wrap;">
+            <span style="font-size:.68rem;color:var(--text-muted);">プリセット:</span>
+            ${[['白','#ffffff'],['金','#F5C842'],['黄','#FFE94E'],['赤','#FF5252'],['黒','#000000']].map(([label,col])=>`
+              <button class="btn btn-secondary btn-sm" title="${label} ${col}"
+                style="padding:3px 8px;font-size:.68rem;display:flex;align-items:center;gap:4px;${_thumbTextColor.toLowerCase()===col.toLowerCase()?'border-color:var(--char-color);background:rgba(212,168,67,.15);':''}"
+                onclick="_thumbTextColor='${col}';document.getElementById('thumbTextColor').value='${col}';document.getElementById('thumbTextColorHex').value='${col}';redrawThumb();[...this.parentElement.querySelectorAll('button')].forEach(b=>b.style.cssText=b.style.cssText.replace(/border-color[^;]+;/g,'').replace(/background[^;]+;/g,''));this.style.borderColor='var(--char-color)';this.style.background='rgba(212,168,67,.15)';">
+                <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${col};border:1px solid rgba(255,255,255,.3);flex-shrink:0;"></span>${label}</button>`).join('')}
+          </div>
         </div>
 
         <!-- ④ キャラクター -->
