@@ -2776,6 +2776,7 @@ let _thumbShadowBlur = parseInt(localStorage.getItem('ms_thumb_shadowblur_v1') |
 let _thumbBadgeVisible = localStorage.getItem('ms_thumb_badge_v1') !== 'false';
 let _thumbBandOpacity = parseFloat(localStorage.getItem('ms_thumb_bandop_v1') || '0.45');
 let _thumbFlipChar = localStorage.getItem('ms_thumb_flip_v1') === 'true';
+let _thumbFontSizeOverride = parseInt(localStorage.getItem('ms_thumb_fontsize_v1') || '0', 10) || null;
 let _thumbRefLabel = ''; // 現在選択中のキャラ名
 
 function renderThumbPanel() {
@@ -2854,7 +2855,16 @@ function renderThumbPanel() {
               style="margin-bottom:4px;padding-right:64px;">
             <span id="thumbCharCount" style="position:absolute;right:10px;top:50%;transform:translateY(-80%);font-size:.68rem;color:${suggestedText.length>16?'#e57373':'var(--char-color)'};pointer-events:none;">${suggestedText.length}文字</span>
           </div>
-          <div id="thumbFontHint" style="font-size:.68rem;margin-bottom:8px;">${_thumbFontTier(suggestedText.length)}</div>
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+            <div id="thumbFontHint" style="font-size:.68rem;flex:1;">${_thumbFontTier(suggestedText.length)}</div>
+            <div style="display:flex;align-items:center;gap:4px;flex-shrink:0;">
+              <span style="font-size:.68rem;color:var(--text-muted);">px上書き:</span>
+              <input type="number" id="thumbFontOverride" min="40" max="200" placeholder="自動"
+                value="${_thumbFontSizeOverride || ''}"
+                style="width:58px;padding:3px 5px;font-size:.75rem;text-align:center;"
+                oninput="const v=+this.value;_thumbFontSizeOverride=(v>=40&&v<=200)?v:null;localStorage.setItem('ms_thumb_fontsize_v1',_thumbFontSizeOverride||'');redrawThumb();">
+            </div>
+          </div>
           <!-- テキスト縦位置 -->
           <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
             <span style="font-size:.72rem;color:var(--text-muted);">位置:</span>
@@ -3230,7 +3240,7 @@ function redrawThumb() {
     if (mainText) {
       thumbCtx.save();
       const len = mainText.length;
-      const fontSize = len <= 12 ? 120 : len <= 16 ? 100 : len <= 22 ? 84 : 72;
+      const fontSize = _thumbFontSizeOverride || (len <= 12 ? 120 : len <= 16 ? 100 : len <= 22 ? 84 : 72);
       thumbCtx.font = `bold ${fontSize}px "Noto Sans JP","Hiragino Kaku Gothic ProN",sans-serif`;
       const pos = window._thumbTextPos || 'bot';
       const lineHeight = Math.round(fontSize * 1.25);
