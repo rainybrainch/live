@@ -2770,8 +2770,8 @@ let thumbCanvas, thumbCtx;
 let _parsedNewsDate = '';
 let _thumbMainTextVal = ''; // パネル再描画をまたいでタイトルを保持
 let _thumbDateTextVal = ''; // 日付テキストもパネル再描画で保持
-let _thumbTextColor  = '#FFFFFF';
-let _thumbShadowColor = '#000000';
+let _thumbTextColor  = localStorage.getItem('ms_thumb_textcol_v1') || '#FFFFFF';
+let _thumbShadowColor = localStorage.getItem('ms_thumb_shadowcol_v1') || '#000000';
 let _thumbRefLabel = ''; // 現在選択中のキャラ名
 
 function renderThumbPanel() {
@@ -2874,18 +2874,18 @@ function renderThumbPanel() {
             <div>
               <div style="font-size:.7rem;color:var(--text-muted);margin-bottom:4px;">テキスト色</div>
               <div style="display:flex;gap:5px;align-items:center;">
-                <input type="color" id="thumbTextColor" value="${_thumbTextColor}" oninput="_thumbTextColor=this.value;document.getElementById('thumbTextColorHex').value=this.value;redrawThumb()" style="height:34px;width:40px;flex-shrink:0;cursor:pointer;border-radius:5px;padding:2px;">
+                <input type="color" id="thumbTextColor" value="${_thumbTextColor}" oninput="_thumbTextColor=this.value;localStorage.setItem('ms_thumb_textcol_v1',this.value);document.getElementById('thumbTextColorHex').value=this.value;redrawThumb()" style="height:34px;width:40px;flex-shrink:0;cursor:pointer;border-radius:5px;padding:2px;">
                 <input type="text" id="thumbTextColorHex" value="${_thumbTextColor}" maxlength="7" placeholder="#ffffff"
-                  oninput="const v=this.value;if(/^#[0-9a-fA-F]{6}$/.test(v)){document.getElementById('thumbTextColor').value=v;_thumbTextColor=v;redrawThumb();}"
+                  oninput="const v=this.value;if(/^#[0-9a-fA-F]{6}$/.test(v)){document.getElementById('thumbTextColor').value=v;_thumbTextColor=v;localStorage.setItem('ms_thumb_textcol_v1',v);redrawThumb();}"
                   style="flex:1;font-size:.75rem;font-family:monospace;padding:5px 6px;min-width:0;">
               </div>
             </div>
             <div>
               <div style="font-size:.7rem;color:var(--text-muted);margin-bottom:4px;">影の色</div>
               <div style="display:flex;gap:5px;align-items:center;">
-                <input type="color" id="thumbShadowColor" value="${_thumbShadowColor}" oninput="_thumbShadowColor=this.value;document.getElementById('thumbShadowColorHex').value=this.value;redrawThumb()" style="height:34px;width:40px;flex-shrink:0;cursor:pointer;border-radius:5px;padding:2px;">
+                <input type="color" id="thumbShadowColor" value="${_thumbShadowColor}" oninput="_thumbShadowColor=this.value;localStorage.setItem('ms_thumb_shadowcol_v1',this.value);document.getElementById('thumbShadowColorHex').value=this.value;redrawThumb()" style="height:34px;width:40px;flex-shrink:0;cursor:pointer;border-radius:5px;padding:2px;">
                 <input type="text" id="thumbShadowColorHex" value="${_thumbShadowColor}" maxlength="7" placeholder="#000000"
-                  oninput="const v=this.value;if(/^#[0-9a-fA-F]{6}$/.test(v)){document.getElementById('thumbShadowColor').value=v;_thumbShadowColor=v;redrawThumb();}"
+                  oninput="const v=this.value;if(/^#[0-9a-fA-F]{6}$/.test(v)){document.getElementById('thumbShadowColor').value=v;_thumbShadowColor=v;localStorage.setItem('ms_thumb_shadowcol_v1',v);redrawThumb();}"
                   style="flex:1;font-size:.75rem;font-family:monospace;padding:5px 6px;min-width:0;">
               </div>
             </div>
@@ -2896,7 +2896,7 @@ function renderThumbPanel() {
             ${[['白','#ffffff'],['金','#F5C842'],['黄','#FFE94E'],['赤','#FF5252'],['黒','#000000']].map(([label,col])=>`
               <button class="btn btn-secondary btn-sm" title="${label} ${col}"
                 style="padding:3px 8px;font-size:.68rem;display:flex;align-items:center;gap:4px;${_thumbTextColor.toLowerCase()===col.toLowerCase()?'border-color:var(--char-color);background:rgba(212,168,67,.15);':''}"
-                onclick="_thumbTextColor='${col}';document.getElementById('thumbTextColor').value='${col}';document.getElementById('thumbTextColorHex').value='${col}';redrawThumb();[...this.parentElement.querySelectorAll('button')].forEach(b=>b.style.cssText=b.style.cssText.replace(/border-color[^;]+;/g,'').replace(/background[^;]+;/g,''));this.style.borderColor='var(--char-color)';this.style.background='rgba(212,168,67,.15)';">
+                onclick="_thumbTextColor='${col}';localStorage.setItem('ms_thumb_textcol_v1','${col}');document.getElementById('thumbTextColor').value='${col}';document.getElementById('thumbTextColorHex').value='${col}';redrawThumb();[...this.parentElement.querySelectorAll('button')].forEach(b=>b.style.cssText=b.style.cssText.replace(/border-color[^;]+;/g,'').replace(/background[^;]+;/g,''));this.style.borderColor='var(--char-color)';this.style.background='rgba(212,168,67,.15)';">
                 <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${col};border:1px solid rgba(255,255,255,.3);flex-shrink:0;"></span>${label}</button>`).join('')}
           </div>
         </div>
