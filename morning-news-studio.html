@@ -2778,6 +2778,7 @@ let _thumbBadgeText = localStorage.getItem('ms_thumb_badgetxt_v1') || '🦉 マ�
 let _thumbBandOpacity = parseFloat(localStorage.getItem('ms_thumb_bandop_v1') || '0.45');
 let _thumbFlipChar = localStorage.getItem('ms_thumb_flip_v1') === 'true';
 let _thumbRefOpacity = parseFloat(localStorage.getItem('ms_thumb_refop_v1') || '1.0');
+let _thumbTextAlign = localStorage.getItem('ms_thumb_textalign_v1') || 'left';
 let _thumbFontSizeOverride = parseInt(localStorage.getItem('ms_thumb_fontsize_v1') || '0', 10) || null;
 let _thumbBgBrightness = parseFloat(localStorage.getItem('ms_thumb_bgbright_v1') || '1.0');
 let _thumbGradOpacity = parseFloat(localStorage.getItem('ms_thumb_gradop_v1') || '0.85');
@@ -2822,7 +2823,7 @@ function renderThumbPanel() {
         <div style="display:flex;justify-content:space-between;align-items:center;">
           <div style="font-size:.9rem;font-weight:700;color:var(--char-color);">🖼 サムネイル作成</div>
           <div style="display:flex;gap:6px;">
-            <button class="btn btn-secondary btn-sm" style="padding:3px 8px;font-size:.68rem;color:#e57373;" onclick="if(confirm('全サムネ設定をリセットしますか？')){['ms_thumb_bg_v1','ms_thumb_ref_v1','ms_thumb_ref_state_v1','ms_thumb_textpos_v1','ms_thumb_textcol_v1','ms_thumb_shadowcol_v1','ms_thumb_shadowblur_v1','ms_thumb_bandop_v1','ms_thumb_badge_v1','ms_thumb_flip_v1','ms_thumb_fontsize_v1','ms_thumb_bgbright_v1','ms_thumb_gradop_v1','ms_thumb_datecol_v1','ms_thumb_refop_v1','ms_thumb_badgetxt_v1'].forEach(k=>localStorage.removeItem(k));location.reload();}">↺ 設定初期化</button>
+            <button class="btn btn-secondary btn-sm" style="padding:3px 8px;font-size:.68rem;color:#e57373;" onclick="if(confirm('全サムネ設定をリセットしますか？')){['ms_thumb_bg_v1','ms_thumb_ref_v1','ms_thumb_ref_state_v1','ms_thumb_textpos_v1','ms_thumb_textcol_v1','ms_thumb_shadowcol_v1','ms_thumb_shadowblur_v1','ms_thumb_bandop_v1','ms_thumb_badge_v1','ms_thumb_flip_v1','ms_thumb_fontsize_v1','ms_thumb_bgbright_v1','ms_thumb_gradop_v1','ms_thumb_datecol_v1','ms_thumb_refop_v1','ms_thumb_badgetxt_v1','ms_thumb_textalign_v1'].forEach(k=>localStorage.removeItem(k));location.reload();}">↺ 設定初期化</button>
             <button class="btn btn-secondary btn-sm" onclick="switchTab('meta')">← 概要・タイトルへ</button>
           </div>
         </div>
@@ -2891,7 +2892,7 @@ function renderThumbPanel() {
                 oninput="const v=+this.value;_thumbFontSizeOverride=(v>=40&&v<=200)?v:null;localStorage.setItem('ms_thumb_fontsize_v1',_thumbFontSizeOverride||'');redrawThumb();">
             </div>
           </div>
-          <!-- テキスト縦位置 -->
+          <!-- テキスト縦位置 + 揃え -->
           <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
             <span style="font-size:.72rem;color:var(--text-muted);">位置:</span>
             ${['上','中','下'].map((v,i)=>{
@@ -2900,6 +2901,12 @@ function renderThumbPanel() {
                 style="padding:3px 10px;font-size:.72rem;${(window._thumbTextPos||'bot')===pos?'border-color:var(--char-color);background:rgba(212,168,67,.15);':''}"
                 onclick="window._thumbTextPos='${pos}';localStorage.setItem('ms_thumb_textpos_v1','${pos}');['top','mid','bot'].forEach(p=>{const b=document.getElementById('txtpos_'+p);if(b)b.style.cssText=b.style.cssText.replace(/border-color[^;]+;/,'').replace(/background[^;]+;/,'');});this.style.borderColor='var(--char-color)';this.style.background='rgba(212,168,67,.15)';redrawThumb();">${v}</button>`;
             }).join('')}
+            <span style="font-size:.72rem;color:var(--text-muted);margin-left:6px;">揃え:</span>
+            ${[['左','left','≡'],['中','center','≡̈']].map(([label,val,icon])=>
+              `<button class="btn btn-secondary btn-sm" id="txtalign_${val}"
+                style="padding:3px 8px;font-size:.72rem;${_thumbTextAlign===val?'border-color:var(--char-color);background:rgba(212,168,67,.15);':''}"
+                onclick="_thumbTextAlign='${val}';localStorage.setItem('ms_thumb_textalign_v1','${val}');['left','center'].forEach(v=>{const b=document.getElementById('txtalign_'+v);if(b){b.style.borderColor='';b.style.background='';}});this.style.borderColor='var(--char-color)';this.style.background='rgba(212,168,67,.15)';redrawThumb();">${label}</button>`
+            ).join('')}
           </div>
         </div>
 
@@ -3314,7 +3321,13 @@ function redrawThumb() {
       // テキスト描画
       thumbCtx.shadowColor = shadowCol; thumbCtx.shadowBlur = _thumbShadowBlur;
       thumbCtx.fillStyle = textColor;
-      drawWrapText(thumbCtx, mainText, 60, ty, W - 120, lineHeight);
+      if (_thumbTextAlign === 'center') {
+        thumbCtx.textAlign = 'center';
+        drawWrapText(thumbCtx, mainText, W / 2, ty, W - 120, lineHeight);
+        thumbCtx.textAlign = 'left';
+      } else {
+        drawWrapText(thumbCtx, mainText, 60, ty, W - 120, lineHeight);
+      }
       thumbCtx.restore();
     }
   });
