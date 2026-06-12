@@ -2917,7 +2917,11 @@ function renderThumbPanel() {
           <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;align-items:end;">
             <div>
               <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
-                <span style="font-size:.7rem;color:var(--text-muted);">日付</span>
+                <div style="display:flex;align-items:center;gap:4px;">
+                  <span style="font-size:.7rem;color:var(--text-muted);">日付</span>
+                  <button style="padding:1px 5px;font-size:.6rem;border-radius:3px;border:1px solid var(--text-muted);background:transparent;color:var(--text-muted);cursor:pointer;line-height:1.4;"
+                    onclick="const d=_computeAutoDate();_thumbDateTextVal='';const inp=document.getElementById('thumbDateText');if(inp)inp.value=d;redrawThumb();">今日</button>
+                </div>
                 <input type="color" value="${_thumbDateColor}" title="日付・バッジ色"
                   oninput="_thumbDateColor=this.value;localStorage.setItem('ms_thumb_datecol_v1',this.value);redrawThumb();"
                   style="height:20px;width:28px;padding:1px;cursor:pointer;border-radius:3px;flex-shrink:0;">
@@ -3457,6 +3461,23 @@ function drawWrapText(ctx, text, x, y, maxWidth, lineHeight) {
     ctx.fillText(l, x, lineY);
     lineY += lineHeight;
   }
+}
+
+function _computeAutoDate() {
+  const raw = _parsedNewsDate || document.getElementById('newsDate')?.value || new Date().toISOString().slice(0,10);
+  const m = raw.match(/(\d{4})-(\d{2})-(\d{2})/);
+  if (m) {
+    const dt = new Date(+m[1], +m[2]-1, +m[3]);
+    const wd = ['日','月','火','水','木','金','土'][dt.getDay()];
+    return `${+m[2]}月${+m[3]}日(${wd})`;
+  }
+  const m2 = raw.match(/^(\d{1,2})\/(\d{1,2})$/);
+  if (m2) {
+    const dt = new Date(new Date().getFullYear(), +m2[1]-1, +m2[2]);
+    const wd = ['日','月','火','水','木','金','土'][dt.getDay()];
+    return `${+m2[1]}月${+m2[2]}日(${wd})`;
+  }
+  return raw;
 }
 
 function _thumbFontTier(n) {
