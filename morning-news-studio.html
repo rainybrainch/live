@@ -2779,6 +2779,7 @@ let _thumbFlipChar = localStorage.getItem('ms_thumb_flip_v1') === 'true';
 let _thumbFontSizeOverride = parseInt(localStorage.getItem('ms_thumb_fontsize_v1') || '0', 10) || null;
 let _thumbBgBrightness = parseFloat(localStorage.getItem('ms_thumb_bgbright_v1') || '1.0');
 let _thumbGradOpacity = parseFloat(localStorage.getItem('ms_thumb_gradop_v1') || '0.85');
+let _thumbDateColor = localStorage.getItem('ms_thumb_datecol_v1') || '#F5C842';
 let _thumbRefLabel = ''; // 現在選択中のキャラ名
 
 function renderThumbPanel() {
@@ -2904,7 +2905,12 @@ function renderThumbPanel() {
           </div>
           <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;align-items:end;">
             <div>
-              <div style="font-size:.7rem;color:var(--text-muted);margin-bottom:4px;">日付</div>
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+                <span style="font-size:.7rem;color:var(--text-muted);">日付</span>
+                <input type="color" value="${_thumbDateColor}" title="日付・バッジ色"
+                  oninput="_thumbDateColor=this.value;localStorage.setItem('ms_thumb_datecol_v1',this.value);redrawThumb();"
+                  style="height:20px;width:28px;padding:1px;cursor:pointer;border-radius:3px;flex-shrink:0;">
+              </div>
               <input type="text" id="thumbDateText" value="${escHtml(_thumbDateTextVal || _autoDate)}" oninput="_thumbDateTextVal=this.value;redrawThumb()" style="padding:6px 8px;font-size:.85rem;">
             </div>
             <div>
@@ -3242,7 +3248,7 @@ function redrawThumb() {
       thumbCtx.save();
       thumbCtx.font = 'bold 72px "Noto Sans JP", sans-serif';
       thumbCtx.shadowColor = shadowCol; thumbCtx.shadowBlur = 16;
-      thumbCtx.fillStyle = '#F5C842';
+      thumbCtx.fillStyle = _thumbDateColor;
       thumbCtx.fillText(dateText, 60, 140);
       thumbCtx.restore();
     }
@@ -3251,7 +3257,7 @@ function redrawThumb() {
     if (_thumbBadgeVisible) {
       thumbCtx.save();
       thumbCtx.font = 'bold 44px sans-serif';
-      thumbCtx.fillStyle = 'rgba(245,200,66,0.9)';
+      thumbCtx.fillStyle = _thumbDateColor;
       thumbCtx.fillText('🦉 マネぼうモーニングニュース', 56, 220);
       thumbCtx.restore();
     }
