@@ -2782,6 +2782,7 @@ let _thumbTextAlign = localStorage.getItem('ms_thumb_textalign_v1') || 'left';
 let _thumbFontSizeOverride = parseInt(localStorage.getItem('ms_thumb_fontsize_v1') || '0', 10) || null;
 let _thumbBgBrightness = parseFloat(localStorage.getItem('ms_thumb_bgbright_v1') || '1.0');
 let _thumbGradOpacity = parseFloat(localStorage.getItem('ms_thumb_gradop_v1') || '0.85');
+let _thumbTopGradOpacity = parseFloat(localStorage.getItem('ms_thumb_topgrad_v1') || '0.0');
 let _thumbDateColor = localStorage.getItem('ms_thumb_datecol_v1') || '#F5C842';
 let _thumbRefLabel = localStorage.getItem('ms_thumb_reflabel_v1') || ''; // 現在選択中のキャラ名
 
@@ -2824,7 +2825,7 @@ function renderThumbPanel() {
         <div style="display:flex;justify-content:space-between;align-items:center;">
           <div style="font-size:.9rem;font-weight:700;color:var(--char-color);">🖼 サムネイル作成</div>
           <div style="display:flex;gap:6px;">
-            <button class="btn btn-secondary btn-sm" style="padding:3px 8px;font-size:.68rem;color:#e57373;" onclick="if(confirm('全サムネ設定をリセットしますか？')){['ms_thumb_bg_v1','ms_thumb_ref_v1','ms_thumb_ref_state_v1','ms_thumb_textpos_v1','ms_thumb_textcol_v1','ms_thumb_shadowcol_v1','ms_thumb_shadowblur_v1','ms_thumb_bandop_v1','ms_thumb_badge_v1','ms_thumb_flip_v1','ms_thumb_fontsize_v1','ms_thumb_bgbright_v1','ms_thumb_gradop_v1','ms_thumb_datecol_v1','ms_thumb_refop_v1','ms_thumb_badgetxt_v1','ms_thumb_textalign_v1','ms_thumb_reflabel_v1'].forEach(k=>localStorage.removeItem(k));location.reload();}">↺ 設定初期化</button>
+            <button class="btn btn-secondary btn-sm" style="padding:3px 8px;font-size:.68rem;color:#e57373;" onclick="if(confirm('全サムネ設定をリセットしますか？')){['ms_thumb_bg_v1','ms_thumb_ref_v1','ms_thumb_ref_state_v1','ms_thumb_textpos_v1','ms_thumb_textcol_v1','ms_thumb_shadowcol_v1','ms_thumb_shadowblur_v1','ms_thumb_bandop_v1','ms_thumb_badge_v1','ms_thumb_flip_v1','ms_thumb_fontsize_v1','ms_thumb_bgbright_v1','ms_thumb_gradop_v1','ms_thumb_topgrad_v1','ms_thumb_datecol_v1','ms_thumb_refop_v1','ms_thumb_badgetxt_v1','ms_thumb_textalign_v1','ms_thumb_reflabel_v1'].forEach(k=>localStorage.removeItem(k));location.reload();}">↺ 設定初期化</button>
             <button class="btn btn-secondary btn-sm" onclick="switchTab('meta')">← 概要・タイトルへ</button>
           </div>
         </div>
@@ -2855,6 +2856,14 @@ function renderThumbPanel() {
             </div>
             <input type="range" min="0" max="100" value="${Math.round(_thumbGradOpacity*100)}" step="5" style="width:100%;"
               oninput="_thumbGradOpacity=+this.value/100;localStorage.setItem('ms_thumb_gradop_v1',_thumbGradOpacity);document.getElementById('gradOpLbl').textContent=this.value+'%';redrawThumb();">
+          </div>
+          <div style="margin-top:8px;">
+            <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+              <span style="font-size:.7rem;color:var(--text-muted);">上部グラデーション幕</span>
+              <span id="topGradOpLbl" style="font-size:.7rem;color:var(--char-color);">${Math.round(_thumbTopGradOpacity*100)}%</span>
+            </div>
+            <input type="range" min="0" max="80" value="${Math.round(_thumbTopGradOpacity*100)}" step="5" style="width:100%;"
+              oninput="_thumbTopGradOpacity=+this.value/100;localStorage.setItem('ms_thumb_topgrad_v1',_thumbTopGradOpacity);document.getElementById('topGradOpLbl').textContent=this.value+'%';redrawThumb();">
           </div>
         </div>
 
@@ -3275,6 +3284,15 @@ function redrawThumb() {
     grad2.addColorStop(1, `rgba(0,0,0,${_thumbGradOpacity})`);
     thumbCtx.fillStyle = grad2;
     thumbCtx.fillRect(0, 0, W, H);
+
+    // ②b 上部グラデーション幕（日付テキストの可読性向上）
+    if (_thumbTopGradOpacity > 0) {
+      const gradTop = thumbCtx.createLinearGradient(0, 0, 0, H * 0.35);
+      gradTop.addColorStop(0, `rgba(0,0,0,${_thumbTopGradOpacity})`);
+      gradTop.addColorStop(1, 'rgba(0,0,0,0)');
+      thumbCtx.fillStyle = gradTop;
+      thumbCtx.fillRect(0, 0, W, H);
+    }
 
     // ③ キャラクター（グラデーション幕の上・テキストの下に配置）
     if (_thumbRefImg) {
