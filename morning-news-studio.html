@@ -2783,6 +2783,7 @@ let _thumbFontSizeOverride = parseInt(localStorage.getItem('ms_thumb_fontsize_v1
 let _thumbBgBrightness = parseFloat(localStorage.getItem('ms_thumb_bgbright_v1') || '1.0');
 let _thumbGradOpacity = parseFloat(localStorage.getItem('ms_thumb_gradop_v1') || '0.85');
 let _thumbTopGradOpacity = parseFloat(localStorage.getItem('ms_thumb_topgrad_v1') || '0.0');
+let _thumbStrokeWidth = parseInt(localStorage.getItem('ms_thumb_stroke_v1') || '0', 10);
 let _thumbDateColor = localStorage.getItem('ms_thumb_datecol_v1') || '#F5C842';
 let _thumbRefLabel = localStorage.getItem('ms_thumb_reflabel_v1') || ''; // 現在選択中のキャラ名
 
@@ -2825,7 +2826,7 @@ function renderThumbPanel() {
         <div style="display:flex;justify-content:space-between;align-items:center;">
           <div style="font-size:.9rem;font-weight:700;color:var(--char-color);">🖼 サムネイル作成</div>
           <div style="display:flex;gap:6px;">
-            <button class="btn btn-secondary btn-sm" style="padding:3px 8px;font-size:.68rem;color:#e57373;" onclick="if(confirm('全サムネ設定をリセットしますか？')){['ms_thumb_bg_v1','ms_thumb_ref_v1','ms_thumb_ref_state_v1','ms_thumb_textpos_v1','ms_thumb_textcol_v1','ms_thumb_shadowcol_v1','ms_thumb_shadowblur_v1','ms_thumb_bandop_v1','ms_thumb_badge_v1','ms_thumb_flip_v1','ms_thumb_fontsize_v1','ms_thumb_bgbright_v1','ms_thumb_gradop_v1','ms_thumb_topgrad_v1','ms_thumb_datecol_v1','ms_thumb_refop_v1','ms_thumb_badgetxt_v1','ms_thumb_textalign_v1','ms_thumb_reflabel_v1'].forEach(k=>localStorage.removeItem(k));location.reload();}">↺ 設定初期化</button>
+            <button class="btn btn-secondary btn-sm" style="padding:3px 8px;font-size:.68rem;color:#e57373;" onclick="if(confirm('全サムネ設定をリセットしますか？')){['ms_thumb_bg_v1','ms_thumb_ref_v1','ms_thumb_ref_state_v1','ms_thumb_textpos_v1','ms_thumb_textcol_v1','ms_thumb_shadowcol_v1','ms_thumb_shadowblur_v1','ms_thumb_bandop_v1','ms_thumb_badge_v1','ms_thumb_flip_v1','ms_thumb_fontsize_v1','ms_thumb_bgbright_v1','ms_thumb_gradop_v1','ms_thumb_topgrad_v1','ms_thumb_datecol_v1','ms_thumb_refop_v1','ms_thumb_badgetxt_v1','ms_thumb_textalign_v1','ms_thumb_reflabel_v1','ms_thumb_stroke_v1'].forEach(k=>localStorage.removeItem(k));location.reload();}">↺ 設定初期化</button>
             <button class="btn btn-secondary btn-sm" onclick="switchTab('meta')">← 概要・タイトルへ</button>
           </div>
         </div>
@@ -2974,6 +2975,15 @@ function renderThumbPanel() {
             </div>
             <input type="range" min="0" max="40" value="${_thumbShadowBlur}" step="1" style="width:100%;"
               oninput="_thumbShadowBlur=+this.value;localStorage.setItem('ms_thumb_shadowblur_v1',this.value);document.getElementById('shadowBlurLbl').textContent=this.value+'px';redrawThumb();">
+          </div>
+          <!-- テキスト輪郭線スライダー -->
+          <div style="margin-top:10px;">
+            <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+              <span style="font-size:.7rem;color:var(--text-muted);">テキスト輪郭線</span>
+              <span id="strokeWidthLbl" style="font-size:.7rem;color:var(--char-color);">${_thumbStrokeWidth > 0 ? _thumbStrokeWidth + 'px' : 'なし'}</span>
+            </div>
+            <input type="range" min="0" max="6" value="${_thumbStrokeWidth}" step="1" style="width:100%;"
+              oninput="_thumbStrokeWidth=+this.value;localStorage.setItem('ms_thumb_stroke_v1',this.value);document.getElementById('strokeWidthLbl').textContent=this.value>0?this.value+'px':'なし';redrawThumb();">
           </div>
           <!-- テキスト帯の濃さスライダー -->
           <div style="margin-top:10px;">
@@ -3347,12 +3357,17 @@ function redrawThumb() {
       // テキスト描画
       thumbCtx.shadowColor = shadowCol; thumbCtx.shadowBlur = _thumbShadowBlur;
       thumbCtx.fillStyle = textColor;
+      if (_thumbStrokeWidth > 0) {
+        thumbCtx.lineWidth = _thumbStrokeWidth * 2;
+        thumbCtx.strokeStyle = shadowCol;
+        thumbCtx.lineJoin = 'round';
+      }
       if (_thumbTextAlign === 'center') {
         thumbCtx.textAlign = 'center';
-        drawWrapText(thumbCtx, mainText, W / 2, ty, W - 120, lineHeight);
+        drawWrapText(thumbCtx, mainText, W / 2, ty, W - 120, lineHeight, _thumbStrokeWidth > 0);
         thumbCtx.textAlign = 'left';
       } else {
-        drawWrapText(thumbCtx, mainText, 60, ty, W - 120, lineHeight);
+        drawWrapText(thumbCtx, mainText, 60, ty, W - 120, lineHeight, _thumbStrokeWidth > 0);
       }
       thumbCtx.restore();
     }
@@ -3470,7 +3485,7 @@ function _updateThumbRefImg(dataUrl) {
   document.addEventListener('touchend', () => { if (drag || pinchDist) _saveThumbRefState(); drag = null; pinchDist = 0; });
 })();
 
-function drawWrapText(ctx, text, x, y, maxWidth, lineHeight) {
+function drawWrapText(ctx, text, x, y, maxWidth, lineHeight, stroke = false) {
   const chars = [...text];
   const lines = [];
   let line = '';
@@ -3503,6 +3518,7 @@ function drawWrapText(ctx, text, x, y, maxWidth, lineHeight) {
 
   let lineY = y;
   for (const l of lines) {
+    if (stroke) ctx.strokeText(l, x, lineY);
     ctx.fillText(l, x, lineY);
     lineY += lineHeight;
   }
