@@ -3466,15 +3466,19 @@ function drawWrapText(ctx, text, x, y, maxWidth, lineHeight) {
   }
   if (line) lines.push(line);
 
-  // 最後の行が短すぎる（≤2文字）場合、前の行から文字を移して均等化
-  if (lines.length >= 2 && [...lines[lines.length - 1]].length <= 2) {
-    const prevChars = [...lines[lines.length - 2]];
-    const lastChars = [...lines[lines.length - 1]];
-    const move = Math.min(2, Math.floor((prevChars.length - lastChars.length) / 2));
-    if (move > 0) {
-      const moved = prevChars.splice(prevChars.length - move, move);
-      lines[lines.length - 2] = prevChars.join('');
-      lines[lines.length - 1] = moved.join('') + lastChars.join('');
+  // 最後の行が短すぎる（前の行の半分未満）場合、前の行から文字を移して均等化
+  if (lines.length >= 2) {
+    const prevLen = [...lines[lines.length - 2]].length;
+    const lastLen = [...lines[lines.length - 1]].length;
+    if (lastLen < Math.ceil(prevLen / 2)) {
+      const prevChars = [...lines[lines.length - 2]];
+      const lastChars = [...lines[lines.length - 1]];
+      const move = Math.min(2, Math.floor((prevLen - lastLen) / 2));
+      if (move > 0) {
+        const moved = prevChars.splice(prevChars.length - move, move);
+        lines[lines.length - 2] = prevChars.join('');
+        lines[lines.length - 1] = moved.join('') + lastChars.join('');
+      }
     }
   }
 
