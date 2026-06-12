@@ -2790,6 +2790,7 @@ function renderThumbPanel() {
   if (!window._thumbTextPos) window._thumbTextPos = localStorage.getItem('ms_thumb_textpos_v1') || 'bot';
   // ユーザーが入力済みのテキストを優先、なければ自動提案
   const suggestedText = _thumbMainTextVal || generatedMeta?.thumb_text_horizontal || (window._parsedThumbTexts?.[0] || '');
+  const _autoFontSize = (() => { const n = [...suggestedText].length; return n <= 12 ? 120 : n <= 16 ? 100 : n <= 22 ? 84 : 72; })();
   const _autoDate = (() => {
     const d = _parsedNewsDate || document.getElementById('newsDate')?.value || new Date().toISOString().slice(0,10);
     const m = d.match(/(\d{4})-(\d{2})-(\d{2})/);
@@ -2878,7 +2879,7 @@ function renderThumbPanel() {
           <div style="position:relative;">
             <input type="text" id="thumbMainText" value="${escHtml(suggestedText)}"
               placeholder="例: 日経38,500円突破！今日の注目ニュース"
-              oninput="_thumbMainTextVal=this.value;redrawThumb();const n=this.value.length;const lbl=document.getElementById('thumbCharCount');if(lbl){lbl.textContent=n+'文字';lbl.style.color=n>22?'#e57373':n>16?'#ff9800':'var(--char-color)';}const hint=document.getElementById('thumbFontHint');if(hint)hint.innerHTML=_thumbFontTier(n);"
+              oninput="_thumbMainTextVal=this.value;redrawThumb();const n=[...this.value].length;const lbl=document.getElementById('thumbCharCount');if(lbl){lbl.textContent=n+'文字';lbl.style.color=n>22?'#e57373':n>16?'#ff9800':'var(--char-color)';}const hint=document.getElementById('thumbFontHint');if(hint)hint.innerHTML=_thumbFontTier(n);const ov=document.getElementById('thumbFontOverride');if(ov&&!ov.value){const sz=n<=12?120:n<=16?100:n<=22?84:72;ov.placeholder='自動('+sz+'px)';}"
               style="margin-bottom:4px;padding-right:64px;">
             <span id="thumbCharCount" style="position:absolute;right:10px;top:50%;transform:translateY(-80%);font-size:.68rem;color:${suggestedText.length>16?'#e57373':'var(--char-color)'};pointer-events:none;">${suggestedText.length}文字</span>
           </div>
@@ -2886,9 +2887,9 @@ function renderThumbPanel() {
             <div id="thumbFontHint" style="font-size:.68rem;flex:1;">${_thumbFontTier(suggestedText.length)}</div>
             <div style="display:flex;align-items:center;gap:4px;flex-shrink:0;">
               <span style="font-size:.68rem;color:var(--text-muted);">px上書き:</span>
-              <input type="number" id="thumbFontOverride" min="40" max="200" placeholder="自動"
+              <input type="number" id="thumbFontOverride" min="40" max="200" placeholder="自動(${_autoFontSize}px)"
                 value="${_thumbFontSizeOverride || ''}"
-                style="width:58px;padding:3px 5px;font-size:.75rem;text-align:center;"
+                style="width:72px;padding:3px 5px;font-size:.75rem;text-align:center;"
                 oninput="const v=+this.value;_thumbFontSizeOverride=(v>=40&&v<=200)?v:null;localStorage.setItem('ms_thumb_fontsize_v1',_thumbFontSizeOverride||'');redrawThumb();">
             </div>
           </div>
@@ -3520,6 +3521,11 @@ function _setThumbTitle(t) {
   if (lbl) { lbl.textContent = n + '文字'; lbl.style.color = n > 22 ? '#e57373' : n > 16 ? '#ff9800' : 'var(--char-color)'; }
   const hint = document.getElementById('thumbFontHint');
   if (hint) hint.innerHTML = _thumbFontTier(n);
+  const overrideInp = document.getElementById('thumbFontOverride');
+  if (overrideInp && !overrideInp.value) {
+    const autoSz = n <= 12 ? 120 : n <= 16 ? 100 : n <= 22 ? 84 : 72;
+    overrideInp.placeholder = `自動(${autoSz}px)`;
+  }
   redrawThumb();
 }
 
