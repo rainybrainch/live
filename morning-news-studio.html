@@ -3057,7 +3057,10 @@ function renderThumbPanel() {
           <canvas id="thumbCanvas" width="1080" height="1920"
             style="width:100%;height:auto;border-radius:8px;background:#1a1a1a;display:block;cursor:grab;"></canvas>
           <div style="display:flex;flex-direction:column;gap:6px;margin-top:10px;">
-            <button class="btn btn-primary btn-sm" style="width:100%;padding:8px;" onclick="downloadThumbCanvas()">💾 PNG保存（1080×1920）</button>
+            <div style="display:flex;gap:6px;">
+              <button class="btn btn-primary btn-sm" style="flex:1;padding:8px;" onclick="downloadThumbCanvas()">💾 PNG保存（1080×1920）</button>
+              <button class="btn btn-secondary btn-sm" style="padding:8px 12px;font-size:.8rem;" onclick="copyThumbToClipboard()" title="クリップボードにコピー">📋</button>
+            </div>
             <button class="btn btn-secondary btn-sm" style="width:100%;padding:8px;" onclick="saveThumbAndGoPublish()">✅ 保存して投稿へ →</button>
           </div>
         </div>
@@ -3587,6 +3590,18 @@ function downloadThumbCanvas() {
   link.href = thumbCanvas.toDataURL('image/png');
   link.click();
   showToast('💾 サムネイルをダウンロードしました');
+}
+
+async function copyThumbToClipboard() {
+  if (!thumbCanvas) { showToast('サムネイルを先に作成してください'); return; }
+  if (!navigator.clipboard?.write) { showToast('このブラウザではクリップボードコピーに対応していません'); return; }
+  try {
+    const blob = await new Promise(res => thumbCanvas.toBlob(res, 'image/png'));
+    await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+    showToast('📋 クリップボードにコピーしました');
+  } catch(e) {
+    showToast('❌ コピー失敗: ' + e.message.slice(0, 40));
+  }
 }
 
 function saveThumbAndGoPublish() {
