@@ -2861,11 +2861,13 @@ function renderThumbPanel() {
           <div style="font-size:.78rem;font-weight:700;color:var(--text-muted);margin-bottom:8px;">② タイトル文字</div>
           <div style="margin-bottom:8px;">
             <div id="thumbAiSuggestions" style="display:flex;flex-direction:column;gap:4px;margin-bottom:${thumbTexts.length>0?'8':'0'}px;">
-              ${thumbTexts.map((t, i) => `
-                <button class="btn btn-secondary btn-sm" style="text-align:left;padding:6px 10px;font-size:.78rem;white-space:normal;height:auto;line-height:1.4;"
-                  onclick="_setThumbTitle(this.dataset.t);" data-t="${escHtml(t)}">
+              ${thumbTexts.map((t, i) => {
+                const isSelected = (_thumbMainTextVal || suggestedText) === t;
+                return `<button class="btn btn-secondary btn-sm" style="text-align:left;padding:6px 10px;font-size:.78rem;white-space:normal;height:auto;line-height:1.4;${isSelected?'border-color:var(--char-color);background:rgba(212,168,67,.15);':''}"
+                  onclick="_setThumbTitle(this.dataset.t);[...this.parentElement.querySelectorAll('button')].forEach(b=>{b.style.borderColor='';b.style.background='';});this.style.borderColor='var(--char-color)';this.style.background='rgba(212,168,67,.15)';" data-t="${escHtml(t)}">
                   ${i+1}. ${escHtml(t)}
-                </button>`).join('')}
+                </button>`;
+              }).join('')}
             </div>
             <button class="btn btn-secondary btn-sm" id="thumbAiBtn" onclick="generateThumbTitlesAI()"
               style="padding:4px 12px;font-size:.75rem;color:var(--char-color);border-color:var(--char-color);">
@@ -3547,7 +3549,7 @@ ${context.slice(0, 1000)}
       box.style.marginBottom = '8px';
       box.innerHTML = titles.map((t, i) => `
         <button class="btn btn-secondary btn-sm" style="text-align:left;padding:6px 10px;font-size:.78rem;white-space:normal;height:auto;line-height:1.4;"
-          onclick="_setThumbTitle(this.dataset.t);" data-t="${escHtml(t)}">
+          onclick="_setThumbTitle(this.dataset.t);[...this.parentElement.querySelectorAll('button')].forEach(b=>{b.style.borderColor='';b.style.background='';});this.style.borderColor='var(--char-color)';this.style.background='rgba(212,168,67,.15)';" data-t="${escHtml(t)}">
           ${i+1}. ${escHtml(t)}
         </button>`).join('');
     }
