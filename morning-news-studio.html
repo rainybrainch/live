@@ -2775,6 +2775,7 @@ let _thumbShadowColor = localStorage.getItem('ms_thumb_shadowcol_v1') || '#00000
 let _thumbShadowBlur = parseInt(localStorage.getItem('ms_thumb_shadowblur_v1') || '18', 10);
 let _thumbBadgeVisible = localStorage.getItem('ms_thumb_badge_v1') !== 'false';
 let _thumbBandOpacity = parseFloat(localStorage.getItem('ms_thumb_bandop_v1') || '0.45');
+let _thumbFlipChar = localStorage.getItem('ms_thumb_flip_v1') === 'true';
 let _thumbRefLabel = ''; // 現在選択中のキャラ名
 
 function renderThumbPanel() {
@@ -2968,7 +2969,11 @@ function renderThumbPanel() {
           </div>
           <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;">
             <div style="font-size:.68rem;color:var(--text-muted);">💡 ドラッグで移動 · ホイール/ピンチでサイズ変更</div>
-            <button class="btn btn-secondary btn-sm" style="padding:3px 8px;font-size:.68rem;" onclick="resetThumbRef()">↺ リセット</button>
+            <div style="display:flex;gap:5px;">
+              <button class="btn btn-secondary btn-sm" style="padding:3px 10px;font-size:.68rem;${_thumbFlipChar?'border-color:var(--char-color);background:rgba(212,168,67,.15);':''}"
+                onclick="_thumbFlipChar=!_thumbFlipChar;localStorage.setItem('ms_thumb_flip_v1',_thumbFlipChar);this.style.borderColor=_thumbFlipChar?'var(--char-color)':'';this.style.background=_thumbFlipChar?'rgba(212,168,67,.15)':'';redrawThumb();">↔ 反転</button>
+              <button class="btn btn-secondary btn-sm" style="padding:3px 8px;font-size:.68rem;" onclick="resetThumbRef()">↺ リセット</button>
+            </div>
           </div>
           ` : `<div style="font-size:.75rem;color:var(--text-muted);">キャラを選択してください</div>`}
         </div>
@@ -3195,6 +3200,7 @@ function redrawThumb() {
       thumbCtx.save();
       thumbCtx.translate(thumbRef.x, thumbRef.y);
       thumbCtx.rotate(thumbRef.angle * Math.PI / 180);
+      if (_thumbFlipChar) thumbCtx.scale(-1, 1);
       thumbCtx.drawImage(_thumbRefImg, -thumbRef.w / 2, -thumbRef.h / 2, thumbRef.w, thumbRef.h);
       thumbCtx.restore();
     }
