@@ -2773,6 +2773,7 @@ let _thumbDateTextVal = ''; // 日付テキストもパネル再描画で保持
 let _thumbTextColor  = localStorage.getItem('ms_thumb_textcol_v1') || '#FFFFFF';
 let _thumbShadowColor = localStorage.getItem('ms_thumb_shadowcol_v1') || '#000000';
 let _thumbShadowBlur = parseInt(localStorage.getItem('ms_thumb_shadowblur_v1') || '18', 10);
+let _thumbBadgeVisible = localStorage.getItem('ms_thumb_badge_v1') !== 'false';
 let _thumbRefLabel = ''; // 現在選択中のキャラ名
 
 function renderThumbPanel() {
@@ -2866,7 +2867,11 @@ function renderThumbPanel() {
 
         <!-- ③ 日付 + 色 -->
         <div class="card" style="padding:14px;margin:0;">
-          <div style="font-size:.78rem;font-weight:700;color:var(--text-muted);margin-bottom:8px;">③ 日付 / テキスト色</div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+            <span style="font-size:.78rem;font-weight:700;color:var(--text-muted);">③ 日付 / テキスト色</span>
+            <button class="btn btn-secondary btn-sm" style="padding:2px 10px;font-size:.7rem;${_thumbBadgeVisible?'border-color:var(--char-color);background:rgba(212,168,67,.15);':''}"
+              onclick="_thumbBadgeVisible=!_thumbBadgeVisible;localStorage.setItem('ms_thumb_badge_v1',_thumbBadgeVisible);this.style.borderColor=_thumbBadgeVisible?'var(--char-color)':'';this.style.background=_thumbBadgeVisible?'rgba(212,168,67,.15)':'';this.textContent=_thumbBadgeVisible?'🦉 バッジ ON':'🦉 バッジ OFF';redrawThumb();">${_thumbBadgeVisible?'🦉 バッジ ON':'🦉 バッジ OFF'}</button>
+          </div>
           <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;align-items:end;">
             <div>
               <div style="font-size:.7rem;color:var(--text-muted);margin-bottom:4px;">日付</div>
@@ -3195,11 +3200,13 @@ function redrawThumb() {
     }
 
     // ⑤ バッジ
-    thumbCtx.save();
-    thumbCtx.font = 'bold 44px sans-serif';
-    thumbCtx.fillStyle = 'rgba(245,200,66,0.9)';
-    thumbCtx.fillText('🦉 マネぼうモーニングニュース', 56, 220);
-    thumbCtx.restore();
+    if (_thumbBadgeVisible) {
+      thumbCtx.save();
+      thumbCtx.font = 'bold 44px sans-serif';
+      thumbCtx.fillStyle = 'rgba(245,200,66,0.9)';
+      thumbCtx.fillText('🦉 マネぼうモーニングニュース', 56, 220);
+      thumbCtx.restore();
+    }
 
     // ⑥ メインタイトル（縦位置対応）
     if (mainText) {
